@@ -8833,7 +8833,14 @@ function computeGroupStatement(statementCode){
   }
 
   // ---- Journal-entry adjustment columns ----
-  const postedJEs = journalEntries.filter(je => je.posted);
+  /* v39.39 FIX: journalEntries has no period scoping of its own (a single global array
+     shared by every reporting period) - without this filter, a prior period's posted JEs
+     (e.g. FY2023's intercompany eliminations) silently re-apply on top of the active
+     period's own JEs, double-adjusting the group statement. Each period must carry its
+     own complete set of JEs (this mirrors how consolidation adjustments actually work -
+     they don't roll forward automatically; see the "FY23 rollforward" JEs that re-post
+     prior-year eliminations explicitly for the new period). */
+  const postedJEs = journalEntries.filter(je => je.posted && je.periodId === activePeriodId);
   const jeColumns = jePerColumnImpact(statementCode); // [{je, impact:{code:amt}}]
   const jeAgg = jeAggregateImpact(statementCode);      // {code: totalAmt}
 
@@ -9018,7 +9025,9 @@ function jeImpact(je){
 /* Aggregate impact of all POSTED JEs for a given statement: {accountCode: totalSignedAmount} */
 function jeAggregateImpact(statementCode){
   const agg = {};
-  journalEntries.filter(je => je.posted).forEach(je => {
+  /* v39.39 FIX: same period-scoping bug as computeGroupStatement's postedJEs - without it,
+     every prior period's posted JEs double-adjust the active period's statement. */
+  journalEntries.filter(je => je.posted && je.periodId === activePeriodId).forEach(je => {
     const imp = jeImpact(je);
     const src = statementCode === 'PL' ? imp.pl : imp.bs;
     Object.keys(src).forEach(code => { agg[code] = (agg[code] || 0) + src[code]; });
@@ -9028,7 +9037,8 @@ function jeAggregateImpact(statementCode){
 
 /* Per-JE impact for a statement (used for individual JE columns). */
 function jePerColumnImpact(statementCode){
-  return journalEntries.filter(je => je.posted).map(je => {
+  /* v39.39 FIX: same period-scoping bug as computeGroupStatement's postedJEs. */
+  return journalEntries.filter(je => je.posted && je.periodId === activePeriodId).map(je => {
     const imp = jeImpact(je);
     return { je, impact: statementCode === 'PL' ? imp.pl : imp.bs, plNet: imp.plNet, ociNet: imp.ociNet };
   });
@@ -10063,7 +10073,7 @@ function openJournalEntry(id){
   // build a working copy
   if(id == null){
     jeEditing = { id:null, number:jeNextNumber, category:jeCategories[0]||'', frequency:'One-off',
-                  entity:'', description:'', posted:false, lines:[ blankJeLine(), blankJeLine() ] };
+                  entity:'', description:'', posted:false, periodId:activePeriodId, lines:[ blankJeLine(), blankJeLine() ] };
     document.getElementById('jeModalTitle').textContent = 'New journal entry';
   } else {
     const src = journalEntries.find(j => j.id === id);
@@ -10297,7 +10307,7 @@ function handleJEImport(evt){
         g.lines = g.lines.filter(l => l.accountCode && (l.debit!==0 || l.credit!==0));
         if(!g.lines.length) return;
         if(!jeCategories.includes(g.category)) jeCategories.push(g.category);
-        journalEntries.push({ id:jeNextId++, number:jeNextNumber++, ...g });
+        journalEntries.push({ id:jeNextId++, number:jeNextNumber++, periodId:activePeriodId, ...g });
         added++;
       });
       renderJournalEntriesPage();
@@ -19378,6 +19388,16 @@ function cxLoadDurableState(){
     soceSplitsFcy = s.soceSplitsFcy || {};
     nciAlloc = s.nciAlloc || {};
     journalEntries = s.journalEntries || [];
+    /* v39.39 FIX: journalEntries gained period scoping (see computeGroupStatement) but
+       entries saved before this existed have no periodId at all - left as-is they'd
+       vanish from every period's statement. Bridge them onto the earliest reporting
+       period, the same convention `hold()`-era ownership records use elsewhere: these
+       entries predate multi-period JE scoping entirely, so the oldest period is the only
+       one that could have posted them. */
+    if(journalEntries.some(je => je.periodId == null) && reportingPeriods.length){
+      const oldest = reportingPeriods.slice().sort((a,b) => (parseDMY(a.startDate)||0) - (parseDMY(b.startDate)||0))[0];
+      journalEntries.forEach(je => { if(je.periodId == null) je.periodId = oldest.id; });
+    }
     icSplits = s.icSplits || {};
     cfIcSplits = s.cfIcSplits || {};
     financialsUploads = s.financialsUploads || {};
