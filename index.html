@@ -10320,18 +10320,40 @@ function handleJEImport(evt){
 function exportGroupStatementExcel(statementCode){
   if(!activePeriodId){ showToast('Select a reporting period first', warnIcon()); return; }
   const data = computeGroupStatement(statementCode);
-  const { sortedEntities, rows } = data;
+  const { sortedEntities, rows, jeColumns } = data;
   const period = activePeriod();
 
-  // Column index map: 0=Account label, 1=GROUP, 2..=entities
+  // Column index map: 0=Account label, 1=GROUP, 2..=entities, then one column per
+  // posted JE, then ADJUSTMENT (sum of the JE columns), then FINAL (GROUP+ADJUSTMENT) -
+  // mirrors the on-screen Group BS/P&L view, which this export previously omitted
+  // entirely (it only ever showed pre-elimination entity figures summed into GROUP,
+  // with no visible bridge to the actual consolidated position).
   const COL_GROUP = 1;
   const COL_ENT0 = 2;
   const nEntCols = sortedEntities.length;
   const lastEntColIdx = COL_ENT0 + nEntCols - 1;
+  const nJECols = jeColumns.length;
+  const COL_JE0 = COL_ENT0 + nEntCols;
+  const COL_ADJ = COL_JE0 + nJECols;
+  const COL_FINAL = COL_ADJ + 1;
   const colL = XLSX_W.colLetter;
   const groupColL = colL(COL_GROUP);
   const entFirstL = colL(COL_ENT0);
   const entLastL = colL(lastEntColIdx);
+  const adjColL = colL(COL_ADJ);
+
+  // Appends the JE / ADJUSTMENT / FINAL cells for one row, given the same {byJE,
+  // adjustment} shape computeGroupStatement() already attaches to every account
+  // (rows.acct[code]) and every total (rows.totals[key]) - reads existing
+  // precomputed figures rather than re-deriving them.
+  function appendTrailingCols(rowArr, dataObj, groupCellRef, numStyle, strongStyle){
+    const rowNum = sheetRows.length + 1; // this row's 1-based number once pushed
+    jeColumns.forEach((col, idx) => {
+      rowArr.push({v: Math.round((dataObj && dataObj.byJE && dataObj.byJE[idx]) || 0), s:numStyle});
+    });
+    rowArr.push({v: Math.round((dataObj && dataObj.adjustment) || 0), s:strongStyle});
+    rowArr.push({f: `${groupCellRef}${rowNum}+${adjColL}${rowNum}`, s:strongStyle});
+  }
 
   // Styles: 0 normal, 1 bold, 2 header fill, 3 section, 4 number, 5 bold number, 6 title, 7 grand total num, 8 grand total label
   const S = {normal:0, bold:1, header:2, section:3, num:4, boldNum:5, title:6, gtNum:7, gtLabel:8};
@@ -10349,9 +10371,11 @@ function exportGroupStatementExcel(statementCode){
   // Header row
   const headerRow = [{v:'Account', s:S.header}, {v:`GROUP (${groupCurrency})`, s:S.header}];
   sortedEntities.forEach(e => headerRow.push({v:`${e.code} (${e.currency})`, s:S.header}));
+  jeColumns.forEach(col => headerRow.push({v:`JE ${col.je.number} — ${col.je.category}`, s:S.header}));
+  headerRow.push({v:'ADJUSTMENT', s:S.header}, {v:`FINAL (${groupCurrency})`, s:S.header});
   sheetRows.push(headerRow);
 
-  
+
   // helper to push an account line; GROUP cell is a live =SUM across entity columns
   function pushAccount(a){
     const rowArr = [{v:`    ${a.code}  ${a.name}`, s:S.normal}];
@@ -10362,12 +10386,15 @@ function exportGroupStatementExcel(statementCode){
       const v = rows.acct[a.code].byEntity[e.id];
       rowArr.push({v: Math.round(v), s:S.num});
     });
+    appendTrailingCols(rowArr, rows.acct[a.code], groupColL, S.num, S.num);
     sheetRows.push(rowArr);
     acctRow[a.code] = r;
   }
   function pushSection(label){
     const rowArr = [{v:label, s:S.section}, {v:'', s:S.section}];
     sortedEntities.forEach(()=> rowArr.push({v:'', s:S.section}));
+    jeColumns.forEach(()=> rowArr.push({v:'', s:S.section}));
+    rowArr.push({v:'', s:S.section}, {v:'', s:S.section});
     sheetRows.push(rowArr);
   }
   // total as SUM over a set of account rows (for each column independently)
@@ -10378,6 +10405,7 @@ function exportGroupStatementExcel(statementCode){
     const rowArr = [{v:label, s:labelStyle}];
     // For each column (GROUP + entities), SUM the account rows in THAT column
     const colIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i)];
+    let groupCellF = '';
     colIdxs.forEach(ci=>{
       const cl = colL(ci);
       if(accountCodes.length){
@@ -10386,7 +10414,9 @@ function exportGroupStatementExcel(statementCode){
       } else {
         rowArr.push({v:0, s:numStyle});
       }
+      if(ci === COL_GROUP) groupCellF = `${cl}`;
     });
+    appendTrailingCols(rowArr, rows.totals[key], groupCellF, numStyle, numStyle);
     sheetRows.push(rowArr);
     totalRowIdx[key] = r;
   }
@@ -10397,10 +10427,13 @@ function exportGroupStatementExcel(statementCode){
     const numStyle = strong ? S.gtNum : S.boldNum;
     const rowArr = [{v:label, s:labelStyle}];
     const colIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i)];
+    let groupCellF = '';
     colIdxs.forEach(ci=>{
       const cl = colL(ci);
       rowArr.push({f:formulaFn(cl), s:numStyle});
+      if(ci === COL_GROUP) groupCellF = `${cl}`;
     });
+    appendTrailingCols(rowArr, rows.totals[key], groupCellF, numStyle, numStyle);
     sheetRows.push(rowArr);
     totalRowIdx[key] = r;
   }
@@ -10412,6 +10445,7 @@ function exportGroupStatementExcel(statementCode){
     const rowArr = [{v:label, s:labelStyle}];
     rowArr.push({f:`SUM(${entFirstL}${r}:${entLastL}${r})`, s:numStyle}); // GROUP = sum of entities
     sortedEntities.forEach(e => rowArr.push({v: Math.round(rows.totals[key].byEntity[e.id]), s:numStyle}));
+    appendTrailingCols(rowArr, rows.totals[key], groupColL, numStyle, numStyle);
     sheetRows.push(rowArr);
     totalRowIdx[key] = r;
   }
@@ -10452,11 +10486,14 @@ function exportGroupStatementExcel(statementCode){
     // so the balance sheet ties exactly even after per-entity rounding. We reserve its row here
     // and fill the formula in below once Total assets / Total liabilities row numbers are known.
     const eqCodes0 = rows.accountsByCat['EQ'].map(a=>a.code);
+    // Reused below and in the CTA fill / balance-check blocks: every column this
+    // sheet has, including the JE/ADJUSTMENT/FINAL ones appended after entities.
+    const allColIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i),
+                        ...jeColumns.map((_,i)=>COL_JE0+i), COL_ADJ, COL_FINAL];
     const ctaRowNum = sheetRows.length + 1;
     {
       const rowArr = [{v:'Translation reserve (CTA)', s:S.bold}];
-      const colIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i)];
-      colIdxs.forEach(()=> rowArr.push({v:0, s:S.boldNum})); // filled in after liabilities
+      allColIdxs.forEach(()=> rowArr.push({v:0, s:S.boldNum})); // filled in after liabilities
       sheetRows.push(rowArr);
       totalRowIdx.translationReserve = ctaRowNum;
     }
@@ -10476,8 +10513,7 @@ function exportGroupStatementExcel(statementCode){
     // Now set the CTA formula: CTA = Total assets − equity-accounts − profit − OCI − total liabilities
     {
       const ctaRowArr = sheetRows[ctaRowNum - 1];
-      const colIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i)];
-      colIdxs.forEach((ci, k)=>{
+      allColIdxs.forEach((ci, k)=>{
         const cl = colL(ci);
         const eqSum = eqCodes0.length ? `SUM(${eqCodes0.map(c=>`${cl}${acctRow[c]}`).join(',')})` : '0';
         ctaRowArr[k+1] = {f:`${cl}${totalRowIdx.totalAssets}-${eqSum}-${cl}${totalRowIdx.profitForPeriod}-${cl}${totalRowIdx.totalOci}-${cl}${totalRowIdx.totalLiabilities}`, s:S.boldNum};
@@ -10489,8 +10525,7 @@ function exportGroupStatementExcel(statementCode){
     // Balance-tie check row (per column): =IF(ROUND(assets-tel,0)=0,"OK","OUT")
     sheetRows.push([]);
     const checkRowArr = [{v:'Balance check (Assets − Equity & Liabilities)', s:S.bold}];
-    const colIdxs = [COL_GROUP, ...sortedEntities.map((_,i)=>COL_ENT0+i)];
-    colIdxs.forEach(ci=>{
+    allColIdxs.forEach(ci=>{
       const cl = colL(ci);
       checkRowArr.push({f:`IF(ROUND(${cl}${totalRowIdx.totalAssets}-${cl}${totalRowIdx.totalEquityAndLiabilities},0)=0,"✓ OK","⚠ "&TEXT(${cl}${totalRowIdx.totalAssets}-${cl}${totalRowIdx.totalEquityAndLiabilities},"#,##0"))`, s:S.bold});
     });
@@ -10500,6 +10535,8 @@ function exportGroupStatementExcel(statementCode){
   // Column widths
   const cols = [42, 16];
   sortedEntities.forEach(()=> cols.push(13));
+  jeColumns.forEach(()=> cols.push(13));
+  cols.push(14, 16); // ADJUSTMENT, FINAL
 
   const sheetName = statementCode === 'BS' ? 'Group BS' : 'Group P&L';
   XLSX_W.download(
