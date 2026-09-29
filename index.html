@@ -19306,7 +19306,13 @@ function cxCollectDurableState(){
     soceOpening, soceSplits, soceOpeningFcy, soceSplitsFcy, nciAlloc,
     journalEntries, icSplits, cfIcSplits, financialsUploads,
     accounts, categories, cfAccounts,
-    activityLog, REQ_UPLOADS, OPENING_TB, PACK_CF
+    activityLog, REQ_UPLOADS, OPENING_TB, PACK_CF,
+    /* v39.39 FIX: both were missing from durable state entirely - financialsUploads
+       (metadata: filename, validation status) persisted, but the actual uploaded
+       trial-balance line data (TB_LINES) did not, so a validated-looking upload
+       could silently carry zero lines after any reload. groupCurrency reverted to
+       its 'USD' default on every reload for the same reason. */
+    TB_LINES, groupCurrency
   };
 }
 
@@ -19345,6 +19351,11 @@ function cxLoadDurableState(){
     REQ_UPLOADS = s.REQ_UPLOADS || {};
     OPENING_TB = s.OPENING_TB || {};
     PACK_CF = s.PACK_CF || {};
+    /* TB_LINES is `const` (an object, mutated in place elsewhere) - reassigning it
+       isn't possible, so clear its keys and copy the restored ones in instead. */
+    Object.keys(TB_LINES).forEach(k => delete TB_LINES[k]);
+    Object.assign(TB_LINES, s.TB_LINES || {});
+    groupCurrency = s.groupCurrency || 'USD';
 
     /* Every id in this app comes from a `next*Id++` counter. Those counters are
        plain in-memory variables, not part of the arrays above, so a naive restore
