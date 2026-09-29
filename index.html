@@ -7389,7 +7389,11 @@ function fpParseCsvTb(text){
     if(!accounts.some(a => a.code === code)){ out.push({ bad: code }); return; }
     const d = parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0;
     const c = parseFloat(String(cols[4] || '').replace(/,/g, '')) || 0;
-    if(d || c) out.push([code, d, c]);
+    /* Recognized account rows are kept even when both amounts are zero (e.g. a
+       genuinely empty opening balance sheet for a first-time consolidation) so
+       fpStoreRows' "no readable lines" check reflects whether the file had any
+       recognized accounts at all, not whether any of them happened to be non-zero. */
+    out.push([code, d, c]);
   });
   return out;
 }
