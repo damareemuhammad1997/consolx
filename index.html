@@ -19420,7 +19420,14 @@ renderStructureChart();
 
 populatePeriodSelect();
 renderPeriodsPage();
-renderFinancialsPage();
+/* Guarded: renderFinancialsPage() can reach into code declared further down
+   this same script (e.g. CXMV_LIVE) once a real group already exists at load
+   time. An uncaught error here previously aborted every remaining top-level
+   statement in the file - including the nav-rail/shell setup below - leaving
+   the sidebar empty. A later explicit navigation to the Financials page
+   re-renders it correctly on its own once the whole script has finished
+   initializing, so a failure here is safe to swallow. */
+try { renderFinancialsPage(); } catch(e) { console.error('Initial renderFinancialsPage() failed (non-fatal):', e); }
 
 // Default to the Admin view (login will re-apply per account on sign-in)
 
