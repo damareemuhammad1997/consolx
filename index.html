@@ -5987,7 +5987,11 @@ function wizStepGroups(p, cfg, locked){
     h += `<div style="padding:30px 14px; text-align:center; color:var(--text-tertiary); font-size:13px;">No groups yet. Click <strong>New group</strong> and pick a parent company — every entity it owns is pulled in automatically.</div>`;
   }
 
-  if(groups.length){
+  {
+    /* Unconditional (was `if(groups.length)`): the "+ New group" button below must
+       render even with zero groups so far - groups.map() on an empty array just
+       contributes nothing, but without this the button never appears at all, so
+       there is no way to create the very first group. */
     h += `<div class="cxg-grid">` + groups.map(g => {
       const memberIds = groupMemberIds(g.parentId, asOf);
       const parent = entities.find(e => e.id === g.parentId) || {};
