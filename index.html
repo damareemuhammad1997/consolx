@@ -923,6 +923,9 @@ body.cx-locked{ overflow:hidden; }
     stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   #cxUserPop .view-toggle button.active{ background:var(--accent-light, #e8f2fe);
     color:var(--accent-text, #155eef); border-color:transparent; }
+  #cxUserPop .cxp-reset{ width:100%; margin-top:12px; font:inherit; font-size:12px; font-weight:600; padding:7px 0;
+    border-radius:8px; border:1px solid var(--danger-border); background:var(--danger-bg);
+    color:var(--danger); cursor:pointer; display:flex; justify-content:center; }
 
   .cxrail{ width:212px; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto;
     display:flex; flex-direction:column; align-items:stretch; padding:16px 12px; gap:5px; background:#002147; }
@@ -1420,6 +1423,7 @@ body.cx-locked{ overflow:hidden; }
           Admin
         </button>
       </div>
+      <button type="button" class="cxp-reset" onclick="cxResetWorkspace()">Reset workspace data</button>
     </div>
   </div>
 </header>
@@ -20759,9 +20763,21 @@ function cxCollectDurableState(){
   };
 }
 
+/* Set once a reset is under way: the beforeunload save (and the 4s interval) would otherwise
+   write the in-memory state straight back after the storage was cleared. */
+let cxResetting = false;
+
 function cxSaveDurableState(){
+  if(cxResetting) return;
   try { localStorage.setItem(CX_SIM_KEY, JSON.stringify(cxCollectDurableState())); }
   catch(e){ /* storage full/unavailable — nothing else to do client-side */ }
+}
+
+function cxResetWorkspace(){
+  if(!confirm('Reset workspace data?\n\nThis permanently deletes every entity, shareholding, reporting period, chart of accounts entry, upload and journal entry saved in this browser. It cannot be undone.')) return;
+  cxResetting = true;
+  try { localStorage.removeItem(CX_SIM_KEY); } catch(e){}
+  location.reload();
 }
 
 function cxLoadDurableState(){
