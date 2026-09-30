@@ -3232,6 +3232,17 @@ function cxSignOut(){
 }
 
 
+/* ===== v39.15 structure movements: nodes, generator, option-C UI =====
+   Moved here (2026-09-30) from much further down in the script: the INIT block's
+   renderFinancialsPage() call can reach cxMvGen(), which reads CXMV_LIVE, before
+   that point — with real saved data (periods/entities/shareholdings restored from
+   localStorage) that call path is actually exercised, and accessing a later `const`
+   before its own declaration line throws (TDZ), aborting the rest of the script's
+   top-level execution — including the sidebar nav render near the end. Moving these
+   pure literal constants earlier changes nothing else; they don't depend on anything. */
+const CXMV_LIVE = { cons:1, jo:1, ea_assoc:1, ea_jv:1, jc:1 };
+const CXMV_TYPES = [['full','TB – Full'], ['bs','TB – BS'], ['pl','TB – PL']];
+
 /* ============== STATE ============== */
 let currentRole = 'admin'; // 'admin' | 'user'
 
@@ -21551,10 +21562,10 @@ function cxRetroValidate(){
 
 
 /* ===== v39.15 structure movements: nodes, generator, option-C UI ===== */
-const CXMV_LIVE = { cons:1, jo:1, ea_assoc:1, ea_jv:1, jc:1 };
+/* moved: was declared further down, after the INIT block's renderFinancialsPage() call could already reach it (TDZ ReferenceError with real saved data) */
 /* v39.35: brought in line by line — a subsidiary in full, a joint operation at the group's share */
 function cxLineCls(c){ return c === 'cons' || c === 'jo'; }
-const CXMV_TYPES = [['full','TB \u2013 Full'], ['bs','TB \u2013 BS'], ['pl','TB \u2013 PL']];
+/* moved: was declared further down (same TDZ issue as CXMV_LIVE) */
 
 function cxMvState(cfg){
   if(!cfg.cxmv) cfg.cxmv = { gi:0, g:{}, e:{}, sel:{} };
