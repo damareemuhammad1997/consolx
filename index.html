@@ -7698,7 +7698,7 @@ function fpPackParts(pid, eid, r){
     return {
       tb: !!(q && q.validation === 'validated' && q.rows && q.rows.length),
       cf: !!(q && q.cf),
-      op: (q && q.opening && q.opening.length) ? { kind:'uploaded', lines: q.opening, label:'Opening in pack' } : packOpeningSource(eid, r.from),
+      op: (q && q.opening && q.opening.length) ? { kind:'uploaded', lines: q.opening, label:'Opening in pack' } : (q && q.openingNil) ? { kind:'nil', lines:[], label:'Nil \u2014 newly incorporated' } : packOpeningSource(eid, r.from),
       up: q || null, window: true
     };
   }
@@ -7796,7 +7796,7 @@ function fpRenderPanelIn(){
       /* v39.33 (A1–A4): entity pack — TB, opening TB and cash flows in one workbook */
       const pp = fpPackParts(p.id, x.e.id, r);
       const tick = ok => ok ? '<span style="color:var(--cxp-ok-text); font-weight:700;">\u2713</span>' : '<span style="color:var(--warn); font-weight:700;">\u2022</span>';
-      const opTxt = pp.op ? (pp.op.kind === 'uploaded' ? 'Opening TB received' : 'Opening from ' + pp.op.label) : 'Opening TB needed';
+      const opTxt = pp.op ? (pp.op.kind === 'uploaded' ? 'Opening TB received' : pp.op.kind === 'nil' ? 'Nil opening (newly incorporated)' : 'Opening from ' + pp.op.label) : 'Opening TB needed';
       const errs = PACK_ERRORS[fpPackErrKey(p.id, x.e.id, r, p)];
       const fromArg = r.from ? `'${r.from}'` : 'null';
       /* v39.34: a window pack is addressed by its request key; the period-end pack by the entity */
@@ -8012,7 +8012,7 @@ function removeFinancialsUpload(entityId){
   const key = `${activePeriodId}-${entityId}`;
   delete financialsUploads[key];
   clearTbLines(entityId);
-  delete OPENING_TB[key]; delete PACK_CF[key]; delete PACK_ERRORS[key];
+  delete OPENING_TB[key]; delete OPENING_NIL[key]; delete PACK_CF[key]; delete PACK_ERRORS[key];
   delete CF_LINES[pek(entityId)];
   showToast('Upload removed', checkIcon());
   renderFinancialsPage();
@@ -8028,6 +8028,9 @@ function removeFinancialsUpload(entityId){
    nothing is imported.
    ============================================================================ */
 let OPENING_TB = {};   // `${periodId}-${entityId}` -> [[code, debit, credit], ...]
+/* `${periodId}-${entityId}` -> true: the entity declared it had no balances at the start (incorporated in the period).
+   Kept apart from OPENING_TB because an empty opening TB means 'not provided', never 'nil'. */
+let OPENING_NIL = {};
 let PACK_CF = {};      // `${periodId}-${entityId}` -> {manual, nonCash, cashComponents, tie}
 let PACK_ERRORS = {};  // `${periodId}-${entityId}` -> [messages]
 
@@ -8054,6 +8057,7 @@ function openingSourceFor(entityId){
   }
   const key = `${activePeriodId}-${entityId}`;
   if(OPENING_TB[key] && OPENING_TB[key].length) return { kind:'uploaded', lines: OPENING_TB[key], label:'Opening upload' };
+  if(OPENING_NIL[key]) return { kind:'nil', lines:[], label:'Nil \u2014 newly incorporated' };
   return null;
 }
 /* v39.33 (A2): opening balances for a pack window. A window starting on the period start opens on the prior
@@ -8066,6 +8070,7 @@ function packOpeningSource(entityId, from){
   if(snap && snap.validation === 'validated' && snap.rows && snap.rows.length) return { kind:'snapshot', lines: snap.rows, label: 'balance sheet as at ' + asAt };
   const key = `${p.id}-${entityId}`;
   if(OPENING_TB[key] && OPENING_TB[key].length) return { kind:'uploaded', lines: OPENING_TB[key], label:'Opening upload' };
+  if(OPENING_NIL[key]) return { kind:'nil', lines:[], label:'Nil \u2014 newly incorporated' };
   return null;
 }
 /* Excel sheet names: 31 characters, none of \ / ? * [ ] : or apostrophes (which break formula references) */
@@ -8131,6 +8136,10 @@ function buildEntityPackBytes(entityId, from, to){
   tbRows.push([{v:'Totals', s:2}, {v:'', s:1}, {f:`SUM(C2:C${last})`, s:2}, {f:`SUM(D2:D${last})`, s:2}]);
   tbRows.push([{v:'Difference (must be nil)', s:4}, {v:'', s:1}, {f:`C${last+1}-D${last+1}`, s:2}, {v:'', s:1}]);
   const openRows = tbRows.map(r => r.map(c => Object.assign({}, c)));
+  /* a company incorporated in the period has no opening balances: it says so here rather than leaving the sheet
+     blank, which the upload still rejects (a blank sheet is more often a forgotten one) */
+  openRows.push([{v:'', s:1}, {v:'', s:1}, {v:'', s:1}, {v:'', s:1}]);
+  openRows.push([{v:'Newly incorporated', s:2}, {v:`Type YES in column C if ${entity ? entity.code : 'the entity'} had no balances at ${opAsAt} (incorporated in the period) \u2014 leave the balances above blank`, s:4}, {v:'', s:1}, {v:'', s:1}]);
 
   const rows = [[{v:'Cash flow line', s:8}, {v:'Code', s:8}, {v:'Amount', s:8}]];
   let r = 1;
@@ -8207,7 +8216,8 @@ function buildEntityPackBytes(entityId, from, to){
   const checkStart = r;
   const codeOf = row => `IFERROR(TRIM(LEFT(A${row},FIND("\u00b7",A${row})-2)),"")`;
   const compAmt = row => `IF(B${row}="","",SUMIF('${tbName}'!$A:$A,B${row},'${tbName}'!$C:$C)-SUMIF('${tbName}'!$A:$A,B${row},'${tbName}'!$D:$D))`;
-  for(let i = 0; i < 4; i++){
+  /* one slot per cash component the entity has (at least four) */
+  for(let i = 0; i < Math.max(4, comps.length); i++){
     const label = comps[i] ? `${comps[i]} \u00b7 ${(accounts.find(a=>a.code===comps[i])||{}).name || ''}` : '';
     push([{v:label, s:1}, {f:codeOf(r + 1), s:3}, {f:compAmt(r + 1), s:1}]);
   }
@@ -8230,7 +8240,7 @@ function buildEntityPackBytes(entityId, from, to){
     ['The sheets', 11],
     [`${tbName} \u2014 every account component is pre-listed; type debit and credit balances only. The totals row must balance.`, 12],
     needsOpening
-      ? [`TB \u2014 Opening \u2014 balances as at ${opAsAt}. The system has no opening balances for this entity yet, so they are requested in the same pack.`, 12]
+      ? [`TB \u2014 Opening \u2014 balances as at ${opAsAt}. The system has no opening balances for this entity yet, so they are requested in the same pack. A company incorporated in the period types YES on the "Newly incorporated" row instead.`, 12]
       : [`Opening balances are already on file (${opSource.label}) \u2014 no opening sheet is needed.`, 12],
     ['Cash flows \u2014 profit before tax and the add-backs are formulas over the TB; watch them move as you type. Fill only the white input lines, the non-cash section and the closing check.', 12],
     ['', 0],
@@ -8280,7 +8290,7 @@ function packParseTb(table, sheetName, errs){
   let sd = 0, sc = 0;
   table.forEach((tr, i) => {
     const code = String(tr[0] || '').trim().toUpperCase();
-    if(!code || code === 'CODE' || code === 'TOTALS' || code.startsWith('DIFFERENCE')) return;
+    if(!code || code === 'CODE' || code === 'TOTALS' || code.startsWith('DIFFERENCE') || code.startsWith('NEWLY INCORPORATED')) return;
     if(!accounts.some(a => a.code === code)){ errs.push(`${sheetName} \u00b7 row ${i+1}: ${code} is not in the chart of accounts`); return; }
     const d = parseFloat(String(tr[2] || '').replace(/,/g, '')) || 0;
     const c = parseFloat(String(tr[3] || '').replace(/,/g, '')) || 0;
@@ -8306,8 +8316,11 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
   if(tbSheet) lines = packParseTb(tbSheet.table, tbSheet.name, errs);
   if(opSheet) opLines = packParseTb(opSheet.table, opSheet.name, errs);
   if(opLines && !opLines.length) opLines = null;   /* v39.33: a blank opening sheet is not a zero opening */
+  /* ...unless the entity declares it was incorporated in the period: then nil is the opening */
+  const opNil = !!opSheet && opSheet.table.some(tr => /^newly incorporated/i.test(String(tr[0] || '').trim()) && /^y(es)?$/i.test(String(tr[2] || '').trim()));
+  if(opNil && opLines) errs.push(`${opSheet.name}: "Newly incorporated" says YES but the sheet has opening balances \u2014 keep one or the other`);
   const opSource = packOpeningSource(entityId, from);
-  if(!opLines && !opSource) errs.push(opSheet ? `${opSheet.name}: the opening trial balance is empty` : 'Opening balances are not in the system and the pack has no TB \u2014 Opening sheet');
+  if(!opLines && !opSource && !opNil) errs.push(opSheet ? `${opSheet.name}: the opening trial balance is empty` : 'Opening balances are not in the system and the pack has no TB \u2014 Opening sheet');
 
   if(cfSheet){
     let mode = 'cf';
@@ -8329,7 +8342,7 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
         if(nA.startsWith('TOTAL') || (!A && !C)) return;
         if(A.includes('\u00b7')){
           const code = strip(A);
-          const known = cfAccounts.some(a => a.code === code) || accounts.some(a => a.code === code && a.cfAdj && a.cfAdj.on);
+          const known = cfAccounts.some(a => a.code === code) || accounts.some(a => a.code === code && a.cfAdj && a.cfAdj.on && a.category !== 'OCI');
           if(!known){ errs.push(`${cfSheet.name} \u00b7 row ${i+1}: "${code}" is not a cash flow item`); return; }
           const v = parseFloat(C.replace(/,/g, '')) || 0;
           nonCash.push({ code, amount: v });
@@ -8357,7 +8370,7 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
     const addbacks = packAdjAccounts().reduce((s, a) => s + tbAmount(lines, a.code), 0);
     const manualSum = Object.values(manual).reduce((s, v) => s + v, 0);
     const net = pbt + addbacks + manualSum;
-    const openLines = opLines || opSource.lines;
+    const openLines = opLines || (opNil ? [] : opSource.lines);
     const opening = comps.reduce((s, c) => s + tbAmount(openLines, c), 0);
     const closingPerTb = comps.reduce((s, c) => s + tbAmount(lines, c), 0);
     const diff = closingPerTb - (opening + net);
@@ -8366,7 +8379,7 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
     if(!errs.length && reqKey){
       PACK_ERRORS[key] = null;
       REQ_UPLOADS[key] = { rows: lines, fileName: fileName || 'entity pack', uploadedAt: todayDMY(), validation:'validated',
-        fileB64: __abToB64(arrayBuffer), opening: opLines || null,
+        fileB64: __abToB64(arrayBuffer), opening: opLines || null, openingNil: !opLines && opNil,
         cf: { manual, nonCash, cashComponents: comps, tie:{ opening, net, closing: opening + net } } };
       const entity = entities.find(e => e.id === entityId);
       logActivity('entity', 'Imported window pack', entity ? entity.code : String(entityId),
@@ -8383,13 +8396,14 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
         PACK_ERRORS[key] = structural;
         return { ok:false, errors: structural };
       }
-      if(opLines) OPENING_TB[key] = opLines;
+      if(opLines){ OPENING_TB[key] = opLines; delete OPENING_NIL[key]; }
+      else if(opNil){ delete OPENING_TB[key]; OPENING_NIL[key] = true; }
       PACK_CF[key] = { manual, nonCash, cashComponents: comps,
         tie:{ opening, net, closing: opening + net } };
       CF_LINES[pek(entityId)] = Object.assign({}, manual);
       const entity = entities.find(e => e.id === entityId);
       logActivity('entity', 'Imported entity pack', entity ? entity.code : String(entityId),
-        `${lines.length} TB lines${opLines ? ', opening TB' : ''}, ${Object.keys(manual).length} cash flow lines, ${nonCash.length} non-cash \u00b7 ${(activePeriod()||{}).label || ''}`);
+        `${lines.length} TB lines${opLines ? ', opening TB' : opNil ? ', nil opening (newly incorporated)' : ''}, ${Object.keys(manual).length} cash flow lines, ${nonCash.length} non-cash \u00b7 ${(activePeriod()||{}).label || ''}`);
       return { ok:true };
     }
   }
@@ -11735,6 +11749,7 @@ function cxGroupWindowsIn(p){
         w.tbEnd = q ? cxScaleLines(q.rows, f) : null;
         w.cf = q && q.cf ? cxScaleCf(q.cf, f) : null;
         if(q && q.opening && q.opening.length) w.openLines = cxScaleLines(q.opening, f);
+        else if(q && q.openingNil){ w.openLines = []; w.openLabel = 'Nil \u2014 newly incorporated'; }
       }
       w.plOnly = r.type === 'pl';
       if(!w.openLines){
@@ -11802,11 +11817,17 @@ function noteLcyMovements(comps, sgn, openLines, closeLines, cf){
   });
   const bal = (lines, code) => sgn * tbAmount(lines, code);
   const opening = zero(), closing = zero(), other = zero();
-  cols.forEach(c => {
-    opening[c] = bal(openLines, c);
-    closing[c] = bal(closeLines, c);
-    other[c] = closing[c] - opening[c] - rows.reduce((s, r) => s + (r.cells[c] || 0), 0);
-  });
+  cols.forEach(c => { opening[c] = bal(openLines, c); closing[c] = bal(closeLines, c); });
+  /* cash components move by the cash flow itself: the pack has already tied them, so their movement is the
+     period's net cash flow, never a balancing figure */
+  const cashSet = new Set((cf && cf.cashComponents && cf.cashComponents.length) ? cf.cashComponents : defaultCashComponents());
+  const cashCols = cols.filter(c => cashSet.has(c));
+  if(cashCols.length){
+    const r = { key:'cashnet', label:'Net cash flow for the period (statement of cash flows)', kind:'cash', cells: zero() };
+    cashCols.forEach(c => { r.cells[c] = closing[c] - opening[c] - rows.reduce((s, x) => s + (x.cells[c] || 0), 0); });
+    if(cashCols.some(c => Math.abs(r.cells[c]) >= 0.005)) rows.unshift(r);
+  }
+  cols.forEach(c => { other[c] = closing[c] - opening[c] - rows.reduce((s, r) => s + (r.cells[c] || 0), 0); });
   return { cols, opening, rows, other, closing };
 }
 function noteComps(caption){
@@ -11815,7 +11836,7 @@ function noteComps(caption){
 function noteSign(caption){ return ['NCA','CA'].includes(caption.category) ? 1 : -1; }
 /* canonical order of movement lines, shared by every entity, the group and the workbook */
 function noteLineOrder(){
-  const o = {}; let i = 10;
+  const o = { cashnet: 5 }; let i = 10;
   cfAccounts.forEach(a => { o['cash:' + a.code] = i++; });
   cfAccounts.forEach(a => { o['nc:' + a.code] = i++; });
   accounts.forEach(a => { if(a.cfAdj && a.cfAdj.on) o['adj:' + a.code] = i++; });
@@ -13208,6 +13229,14 @@ function buildDisclosureNoteHtml(entity, caption, p){
     const r = addRow(a.name, 'adj');
     r.cells[target] = sgn === 1 ? -amt : amt;   // expenses reduce assets / grow liabilities; gains the reverse
   });
+  // cash components move by the (tied) cash flow itself
+  const cashSet = new Set(cashComponentsFor(entity.id));
+  const cashCols = cols.filter(c => cashSet.has(c));
+  if(cashCols.length){
+    const r = { label:'Net cash flow for the period (statement of cash flows)', kind:'cash', cells: zero() };
+    cashCols.forEach(c => { r.cells[c] = bal(closingTb, c) - bal(openTb, c) - rows.reduce((s, x) => s + (x.cells[c] || 0), 0); });
+    if(cashCols.some(c => Math.round(r.cells[c]) !== 0)) rows.unshift(r);
+  }
 
   const opening = zero(), closing = zero(), other = zero();
   cols.forEach(c => {
@@ -18161,7 +18190,10 @@ async function parseCoaWorkbook(arrayBuffer){
           if(truthy(adj) && rel) row.bs_account = stripRef(rel).toUpperCase();
         }
       }
-      if(face === 'OCI'){ const res = cell(tr, L.res); if(res) row.equity_reserve = stripRef(res).toUpperCase(); }
+      if(face === 'OCI'){
+        const res = cell(tr, L.res); if(res) row.equity_reserve = stripRef(res).toUpperCase();
+        if(L.v2){ const lk = cell(tr, 7); if(lk){ row.cf_adjustment = lk; const rel = cell(tr, 8); if(truthy(lk) && rel) row.bs_account = stripRef(rel).toUpperCase(); } }
+      }
       if(face === 'CF'){
         const b = cell(tr, L.bscap);
         if(L.v2){ if(b) row.bs_account = stripRef(b).toUpperCase(); }
@@ -18520,13 +18552,14 @@ function processImportRows(rows, meta){
     }
 
     /* a cash flow adjustment must point at a balance sheet account */
-    if(!error && statement === 'PL' && category !== 'OCI' && cfAdjRaw){
+    if(!error && statement === 'PL' && cfAdjRaw){
       if(!bsAccountRaw){ status='error'; error='cf_adjustment=Yes needs a bs_account'; }
       else if(!willBeBsAccount(bsAccountRaw)){ status='error'; error=`Balance sheet account "${bsAccountRaw}" doesn't exist`; }
     }
-    if(!error && (statement !== 'PL' || category === 'OCI') && cfAdjRaw){
-      status='error'; error='cf_adjustment only applies to profit or loss rows';
+    if(!error && statement !== 'PL' && cfAdjRaw){
+      status='error'; error='cf_adjustment only applies to profit or loss and OCI rows';
     }
+    if(!error && category === 'OCI' && cfCaptionRaw){ status='error'; error='cf_caption does not apply to OCI rows \u2014 they are never added back in the cash flow'; }
     if(!error && cfCaptionRaw){
       if(!cfAdjRaw){ status='error'; error='cf_caption only applies when cf_adjustment=Yes'; }
       else if(!cfCatByCode(CF_OPERATING_CATEGORY)){ status='error'; error=`No "${CF_OPERATING_CATEGORY}" cash flow category exists`; }
@@ -18706,8 +18739,8 @@ function confirmImport(){
         const cap = a.captionId ? capById(a.captionId) : null;
         if(cap && cap.category === 'OCI' && !cap.ociReserveCode) cap.ociReserveCode = r.reserveRaw;
       }
-      if(r.statement === 'PL' && r.category !== 'OCI' && r.cfAdjRaw){
-        a.cfAdj = { on:true, bsAccountCode:r.bsAccountRaw, cfCaptionId: r.cfAdjCaptionId || null };
+      if(r.statement === 'PL' && r.cfAdjRaw){
+        a.cfAdj = { on:true, bsAccountCode:r.bsAccountRaw, cfCaptionId: r.category === 'OCI' ? null : (r.cfAdjCaptionId || null) };
       }
     }
   });
@@ -18749,12 +18782,12 @@ function buildCoaWorkbookBytes(){
   const HDRS = {
     BS:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with'],
     PL:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Add back in cash flow (Yes/No)','Related BS Account (if Yes)'],
-    OCI: ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Goes to reserves'],
+    OCI: ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Goes to reserves','Moves a BS account (Yes/No)','Related BS Account (if Yes)'],
     CF:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Related BS Account'],
   };
   const HDRSTYLE = { BS:5, PL:6, OCI:7, CF:8 };
   const TABCOLOR = { BS:'AFA9EC', PL:'5DCAA5', OCI:'F0997B', CF:'ED93B1' };
-  const COLS = { BS:[34,10,34,13,17,22], PL:[30,10,34,13,17,20,24,32], OCI:[40,10,40,13,17,20,30], CF:[32,10,36,13,17,20,34] };
+  const COLS = { BS:[34,10,34,13,17,22], PL:[30,10,34,13,17,20,24,32], OCI:[40,10,40,13,17,20,30,22,32], CF:[32,10,36,13,17,20,34] };
 
   const faceRows = face => {
     const width = HDRS[face].length;
@@ -18787,7 +18820,12 @@ function buildCoaWorkbookBytes(){
             cells[6] = {v: adj ? 'Yes' : 'No', s:1};
             cells[7] = {v: adj ? accLabel(accByCode(a.cfAdj.bsAccountCode)) : '', s:1};
           }
-          if(face === 'OCI') cells[6] = {v: a.ociReserveCode && a.ociReserveCode !== cap.ociReserveCode ? accLabel(accByCode(a.ociReserveCode)) : '', s:1};
+          if(face === 'OCI'){
+            cells[6] = {v: a.ociReserveCode && a.ociReserveCode !== cap.ociReserveCode ? accLabel(accByCode(a.ociReserveCode)) : '', s:1};
+            const lk = a.cfAdj && a.cfAdj.on;
+            cells[7] = {v: lk ? 'Yes' : 'No', s:1};
+            cells[8] = {v: lk ? accLabel(accByCode(a.cfAdj.bsAccountCode)) : '', s:1};
+          }
           if(face === 'CF'){
             const inh = cap.bsAccountCode || null;
             cells[6] = {v: a.bsAccountCode && a.bsAccountCode !== inh ? accLabel(accByCode(a.bsAccountCode)) : '', s:1};
@@ -18825,6 +18863,7 @@ function buildCoaWorkbookBytes(){
     ['Intercompany (Yes/No) — choose Yes and list the entity codes under "If yes, Intercompany with" (e.g. MU02, MU03).', 12],
     ['Add back in cash flow (Yes/No) — on the Profit or loss tab, choose Yes for non-cash items, then pick the Related BS Account. The line mirrors under "Adjustments for" in the cash flow automatically.', 12],
     ['Goes to reserves (OCI tab) — every OCI line accumulates in an equity reserve; accounts underneath inherit it. Non-controlling interests is never a valid reserve.', 12],
+    ['Moves a BS account (OCI tab) — choose Yes and pick the account the OCI item changes (e.g. a fair value gain on the investment it remeasures). The disclosure note then shows it as its own line; it is never added back in the cash flow.', 12],
     ['Related BS Account (Cash flows tab) — each cash account explains the movement of a balance sheet component. Set a default on the Statement line for accounts to inherit, or point each account at its own (e.g. Purchase of land → Land and buildings).', 12],
     ['', 0],
     ['Good to know', 11],
@@ -18850,8 +18889,9 @@ function buildCoaWorkbookBytes(){
       validations:[{sqref:'E2:E400', formula:'"Yes,No"'}, {sqref:'G2:G400', formula:'"Yes,No"'}]
         .concat(bsAccounts.length ? [{sqref:'H2:H400', formula:`Lists!$A$2:$A$${bsAccounts.length+1}`}] : []) },
     { name:'Other comprehensive income', tabColor:TABCOLOR.OCI, freeze:true, rows:faceRows('OCI'), cols:COLS.OCI,
-      validations:[{sqref:'E2:E400', formula:'"Yes,No"'}]
-        .concat(reserves.length ? [{sqref:'G2:G400', formula:`Lists!$B$2:$B$${reserves.length+1}`}] : []) },
+      validations:[{sqref:'E2:E400', formula:'"Yes,No"'}, {sqref:'H2:H400', formula:'"Yes,No"'}]
+        .concat(reserves.length ? [{sqref:'G2:G400', formula:`Lists!$B$2:$B$${reserves.length+1}`}] : [])
+        .concat(bsAccounts.length ? [{sqref:'I2:I400', formula:`Lists!$A$2:$A$${bsAccounts.length+1}`}] : []) },
     { name:'Cash flows', tabColor:TABCOLOR.CF, freeze:true, rows:faceRows('CF'), cols:COLS.CF,
       validations:[{sqref:'E2:E400', formula:'"Yes,No"'}]
         .concat(bsAccounts.length ? [{sqref:'G2:G400', formula:`Lists!$A$2:$A$${bsAccounts.length+1}`}] : []) },
@@ -20115,7 +20155,7 @@ function coaBackfill(){
 function finAccountsForFace(face){ return accounts.filter(a => faceOfAccount(a) === face); }
 function cfRowsAll(){
   const mirrored = accounts
-    .filter(a => a.cfAdj && a.cfAdj.on)
+    .filter(a => a.cfAdj && a.cfAdj.on && a.category !== 'OCI')   /* an OCI link explains a note, never a cash flow line */
     .map(a => ({ kind:'mirror', src:a, code:a.code, name:a.name, ic:a.ic,
                  category: (capById(cfAdjCaptionFor(a)) || {}).category || null,
                  cfCaptionId: cfAdjCaptionFor(a),
@@ -20498,12 +20538,13 @@ function compSteps(){
   const d = compDraft;
   if(d.stmt === 'CF')  return ['gate','caption','details','bs'];
   if(d.stmt === 'PL')  return ['caption','details','cashflow'];
-  if(d.stmt === 'OCI') return ['caption','details','reserve'];
+  if(d.stmt === 'OCI') return ['caption','details','reserve','cashflow'];
   return ['caption','details'];
 }
 const STEP_TITLE = { gate:'Profit or loss item?', caption:'Financial statement category',
                      details:'Account details', cashflow:'Cash flow adjustment',
                      reserve:'Equity reserve', bs:'Balance sheet category' };
+function cxStepTitle(step){ return step === 'cashflow' && compDraft && compDraft.stmt === 'OCI' ? 'Balance sheet link' : STEP_TITLE[step]; }
 
 function openCompForAccount(id){
   const a = accounts.find(x => x.id === id);
@@ -20776,8 +20817,8 @@ function cashflowHtml(){
   let h = `<div class="field" style="margin-bottom:4px;">
     <div class="cx-gate">
       <div>
-        <p style="font-size:13px; font-weight:500; margin:0;">Is this an operating cash flow adjustment?</p>
-        <p style="font-size:11px; color:var(--text-secondary); margin:2px 0 0;">Non-cash charges added back in operating activities</p>
+        <p style="font-size:13px; font-weight:500; margin:0;">${d.stmt === 'OCI' ? 'Does this item move a balance sheet account?' : 'Is this an operating cash flow adjustment?'}</p>
+        <p style="font-size:11px; color:var(--text-secondary); margin:2px 0 0;">${d.stmt === 'OCI' ? 'Shown as its own line in that account\'s disclosure note \u2014 never added back in the cash flow' : 'Non-cash charges added back in operating activities'}</p>
       </div>
       <label class="toggle"><input type="checkbox" ${d.cfOn?'checked':''} onchange="compToggle('cfOn')" /><span class="track"></span><span class="thumb"></span></label>
     </div>
@@ -20828,7 +20869,7 @@ function renderCompBody(){
 
   if(compMode === 'edit'){
     body.innerHTML = compSteps().filter(s => s !== 'gate').map(s =>
-      `<p class="cx-steplabel">${escapeHtml(STEP_TITLE[s])}</p>${stepBodyHtml(s)}`).join('');
+      `<p class="cx-steplabel">${escapeHtml(cxStepTitle(s))}</p>${stepBodyHtml(s)}`).join('');
     acts.innerHTML = `<button onclick="closeCompModal()">Cancel</button>
       <button class="primary" onclick="saveComponent()">
         <svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Save changes</button>`;
@@ -20843,7 +20884,7 @@ function renderCompBody(){
   if(step === 'gate' && d.cfIsPl){ body.innerHTML = gateHtml(); acts.innerHTML = ''; return; }
 
   let h = `<div class="cx-steps">${steps.map((s,i) => `<span class="cx-dot ${i<=compStep?'on':''}"></span>`).join('')}</div>`;
-  h += `<p class="cx-steplabel">Step ${compStep+1} of ${steps.length} &middot; ${escapeHtml(STEP_TITLE[step])}</p>`;
+  h += `<p class="cx-steplabel">Step ${compStep+1} of ${steps.length} &middot; ${escapeHtml(cxStepTitle(step))}</p>`;
   h += stepBodyHtml(step);
 
   if(compStep === steps.length - 1){
@@ -20942,14 +20983,14 @@ function saveComponent(){
       existing.fi = fiOn; existing.fiCat = fiOn ? d.fiCat : null;
       if(d.stmt === 'OCI') existing.ociReserveCode = d.ociReserve; else delete existing.ociReserveCode;
       const pin = (existing.cfAdj && existing.cfAdj.cfCaptionId) || null;
-      existing.cfAdj = (d.stmt === 'PL') ? { on:!!d.cfOn, bsAccountCode: d.cfOn ? d.cfBsAccount : null, cfCaptionId: d.cfOn ? pin : null }
+      existing.cfAdj = (d.stmt === 'PL' || d.stmt === 'OCI') ? { on:!!d.cfOn, bsAccountCode: d.cfOn ? d.cfBsAccount : null, cfCaptionId: d.cfOn && d.stmt === 'PL' ? pin : null }
                                          : { on:false, bsAccountCode:null, cfCaptionId:null };
       logActivity('account', 'Edited account', code, `${before}  →  ${existing.category} ${code} — ${name}`);
       showToast('Component updated', checkIcon());
     } else {
       const na = { id: nextId++, category: cap.category, code, name, ic: d.ic, captionId: cap.id, cps,
                    fi: fiOn, fiCat: fiOn ? d.fiCat : null,
-                   cfAdj: (d.stmt === 'PL') ? { on:!!d.cfOn, bsAccountCode: d.cfOn ? d.cfBsAccount : null, cfCaptionId:null }
+                   cfAdj: (d.stmt === 'PL' || d.stmt === 'OCI') ? { on:!!d.cfOn, bsAccountCode: d.cfOn ? d.cfBsAccount : null, cfCaptionId:null }
                                             : { on:false, bsAccountCode:null, cfCaptionId:null } };
       if(d.stmt === 'OCI') na.ociReserveCode = d.ociReserve;
       accounts.push(na);
@@ -21399,7 +21440,7 @@ function cxCollectDurableState(){
     soceOpening, soceSplits, soceOpeningFcy, soceSplitsFcy, nciAlloc,
     jeCategories, journalEntries, icSplits, cfIcSplits, financialsUploads,
     accounts, categories, cfCategories, cfAccounts,
-    activityLog, REQ_UPLOADS, OPENING_TB, PACK_CF,
+    activityLog, REQ_UPLOADS, OPENING_TB, OPENING_NIL, PACK_CF,
     fsCaptions, capSeq,
     TB_LINES, CF_LINES,
     CM_ROLE_OV
@@ -21464,6 +21505,7 @@ function cxLoadDurableState(){
     activityLog = s.activityLog || [];
     REQ_UPLOADS = s.REQ_UPLOADS || {};
     OPENING_TB = s.OPENING_TB || {};
+    OPENING_NIL = s.OPENING_NIL || {};
     PACK_CF = s.PACK_CF || {};
     if(s.fsCaptions && s.fsCaptions.length) fsCaptions = s.fsCaptions;
     CM_ROLE_OV = s.CM_ROLE_OV || {};
