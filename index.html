@@ -14,14 +14,14 @@
     --border-strong: #b4bed0;
     --text: #0e1726;
     --text-secondary: #4a5568;
-    --text-tertiary: #8898aa;
+    --text-tertiary: #5b697e;
     --accent: #0f3460;
     --accent-2: #16213e;
     --accent-light: #e6edf8;
     --accent-text: #0f3460;
-    --accent-vivid: #0ea5e9;
+    --accent-vivid: #026ea6;
     --accent-vivid-light: #e0f2fe;
-    --warn: #92650a;
+    --warn: #805a08;
     --warn-bg: #fef9ec;
     --warn-border: #f6d860;
     --danger: #b91c1c;
@@ -45,18 +45,47 @@
     --sidebar-text-dim: #6b7f99;
     --sidebar-active: #1a2d47;
     --sidebar-accent: #0ea5e9;
+    /* component palette (2026-10-01): the light values are the colours these components always used;
+       the dark block gives each one a dark-mode value */
+    --cxp-line:#B5D4F4; --cxp-link:#185FA5; --cxp-link-strong:#0C447C; --cxp-muted:#6B6A5E;
+    --cxp-paper-2:#F5F9FE; --cxp-sel:#E6F1FB; --cxp-ok-bg:#E1F5EE; --cxp-ok-text:#085041;
+    --cxp-warn-bg:#FAEEDA; --cxp-warn-text:#854F0B; --cxp-neutral-bg:#F1F0EA;
+    --on-vivid:#ffffff; --on-accent:#ffffff; --btn-a:var(--accent-vivid); --btn-b:#026ba3;
   }
+  /* Dark tokens: follow the OS unless the user picked Light; always on when they picked Dark (theme switch). */
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-theme="light"]){
       --bg:#080f1a; --surface:#0e1726; --surface-2:#162032; --border:#1e2d44;
-      --border-strong:#2a3f5e; --text:#e2eaf4; --text-secondary:#8898aa; --text-tertiary:#4a5568;
+      --border-strong:#2a3f5e; --text:#e2eaf4; --text-secondary:#8898aa; --text-tertiary:#7a8ba3;
       --accent:#0ea5e9; --accent-light:#0c2240; --accent-text:#7dd3fc;
       --accent-vivid:#0ea5e9; --accent-vivid-light:#0c2240;
       --warn:#fbbf24; --warn-bg:#1f1700; --warn-border:#92650a;
       --danger:#f87171; --danger-bg:#1f0000; --danger-border:#7f1d1d;
       --sidebar-bg:#060d17; --sidebar-bg-hover:#0c1a2c; --sidebar-active:#112238;
+      --success:#34d399; --success-bg:#082a20;
+      --cxp-line:#23466e; --cxp-link:#7dd3fc; --cxp-link-strong:#bae6fd; --cxp-muted:#9aa6b6;
+      --cxp-paper-2:#121e31; --cxp-sel:#0c2240; --cxp-ok-bg:#082a20; --cxp-ok-text:#6ee7b7;
+      --cxp-warn-bg:#2a1d05; --cxp-warn-text:#fbbf24; --cxp-neutral-bg:#1c2638;
+      --on-vivid:#04121f; --on-accent:#04121f; --btn-a:#0284c7; --btn-b:#0369a1;
     }
   }
+  :root[data-theme="dark"]{
+      --bg:#080f1a; --surface:#0e1726; --surface-2:#162032; --border:#1e2d44;
+      --border-strong:#2a3f5e; --text:#e2eaf4; --text-secondary:#8898aa; --text-tertiary:#7a8ba3;
+      --accent:#0ea5e9; --accent-light:#0c2240; --accent-text:#7dd3fc;
+      --accent-vivid:#0ea5e9; --accent-vivid-light:#0c2240;
+      --warn:#fbbf24; --warn-bg:#1f1700; --warn-border:#92650a;
+      --danger:#f87171; --danger-bg:#1f0000; --danger-border:#7f1d1d;
+      --sidebar-bg:#060d17; --sidebar-bg-hover:#0c1a2c; --sidebar-active:#112238;
+      --success:#34d399; --success-bg:#082a20;
+      --cxp-line:#23466e; --cxp-link:#7dd3fc; --cxp-link-strong:#bae6fd; --cxp-muted:#9aa6b6;
+      --cxp-paper-2:#121e31; --cxp-sel:#0c2240; --cxp-ok-bg:#082a20; --cxp-ok-text:#6ee7b7;
+      --cxp-warn-bg:#2a1d05; --cxp-warn-text:#fbbf24; --cxp-neutral-bg:#1c2638;
+      --on-vivid:#04121f; --on-accent:#04121f; --btn-a:#0284c7; --btn-b:#0369a1;
+  }
+  :root{ color-scheme: light dark; }
+  :root[data-theme="light"]{ color-scheme: light; }
+  :root[data-theme="dark"]{ color-scheme: dark; }
   *{box-sizing:border-box;}
   html, body{ height:100%; }
   body{
@@ -235,7 +264,7 @@
   }
   button:hover{ background:var(--surface-2); }
   button:active{ transform:scale(0.98); }
-  button.primary{ background:linear-gradient(135deg, var(--accent-vivid), #0284c7); border-color:var(--accent-vivid); color:#fff; font-weight:600; box-shadow:0 2px 8px rgba(14,165,233,0.25); }
+  button.primary{ background:linear-gradient(135deg, var(--btn-a), var(--btn-b)); border-color:var(--btn-a); color:#fff; font-weight:600; box-shadow:0 2px 8px rgba(14,165,233,0.25); }
   button.primary:hover{ background:linear-gradient(135deg, #0284c7, #0369a1); box-shadow:0 4px 12px rgba(14,165,233,0.35); }
   button.warn{ background:var(--warn-bg); border-color:var(--warn-border); color:var(--warn); }
 
@@ -249,9 +278,11 @@
   .badge-bs{ background:#e4eef6; color:#1b4f78; }
   .badge-pl{ background:#f3e9f6; color:#5c2d72; }
   @media (prefers-color-scheme: dark){
-    .badge-bs{ background:#16314a; color:#8cc3ef; }
-    .badge-pl{ background:#3a2342; color:#dba8ee; }
+    :root:not([data-theme="light"]) .badge-bs{ background:#16314a; color:#8cc3ef; }
+    :root:not([data-theme="light"]) .badge-pl{ background:#3a2342; color:#dba8ee; }
   }
+  :root[data-theme="dark"] .badge-bs{ background:#16314a; color:#8cc3ef; }
+  :root[data-theme="dark"] .badge-pl{ background:#3a2342; color:#dba8ee; }
   .badge-cat{ background:var(--accent-light); color:var(--accent-text); font-family:var(--mono); }
 
   .badge-none{ color:var(--text-tertiary); font-size:12px; }
@@ -527,11 +558,11 @@
   .je-pill{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:600; white-space:nowrap; }
   .je-pill.cat{ background:var(--surface-2); color:var(--text-secondary); }
   .je-pill.freq-oneoff{ background:#eef2ff; color:#4f5bd5; }
-  .je-pill.freq-recurring{ background:#e7f5ec; color:#1f8b4c; }
-  .je-pill.stmt-PL{ background:#fef3e7; color:#b5701a; }
+  .je-pill.freq-recurring{ background:#e7f5ec; color:#17703d; }
+  .je-pill.stmt-PL{ background:#fef3e7; color:#8a5309; }
   .je-pill.stmt-BS{ background:#e7f0fe; color:#1a5fb5; }
   .je-pill.stmt-MIX{ background:#f0e7fe; color:#7b1ab5; }
-  .je-pill.posted{ background:var(--accent); color:#fff; }
+  .je-pill.posted{ background:var(--accent); color:var(--on-accent); }
   .je-pill.draft{ background:var(--surface-2); color:var(--text-tertiary); border:1px solid var(--border-strong); }
 
   .je-amount{ font-family:var(--mono); text-align:right; font-weight:600; }
@@ -571,10 +602,10 @@
   /* Reporting period configuration wizard */
 
   /* local currency report tabs */
-  .lr-tab.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .lr-tab.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
 
   /* foreign currency reports */
-  .fc-tab.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .fc-tab.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
 
   /* currency exchange rates page */
   .fx-group-card{
@@ -583,7 +614,7 @@
     margin-bottom:16px;
   }
   .fx-group-icon{
-    width:44px; height:44px; border-radius:12px; background:var(--accent); color:#fff; flex-shrink:0;
+    width:44px; height:44px; border-radius:12px; background:var(--accent); color:var(--on-accent); flex-shrink:0;
     display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; font-family:var(--mono);
   }
   .fx-group-info{ flex:1; min-width:0; }
@@ -609,7 +640,7 @@
 #consolixLogin{
   --cx-navy:#0d2847; --cx-navy-2:#14304f; --cx-navy-deep:#091d35;
   --cx-cyan:#1ba3e0; --cx-cyan-bright:#29b6e8; --cx-teal:#2bb89a; --cx-teal-light:#3dd6a8;
-  --cx-ink:#0d2847; --cx-muted:#6b7d93; --cx-line:#e3e9f0; --cx-surface:#ffffff; --cx-bg:#f4f7fb;
+  --cx-ink:#0d2847; --cx-muted:#57697f; --cx-line:#e3e9f0; --cx-surface:#ffffff; --cx-bg:#f4f7fb;
   --cx-radius:14px; --cx-shadow:0 18px 50px rgba(13,40,71,0.12);
   --cx-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   position:fixed; inset:0; z-index:9999; font-family:var(--cx-font); color:var(--cx-ink);
@@ -634,7 +665,7 @@
 #consolixLogin .visual-copy{ position:relative; z-index:2; max-width:460px; }
 #consolixLogin .visual-copy h1{ font-size:42px; line-height:1.1; font-weight:800; letter-spacing:-1.2px; margin-bottom:16px; color:var(--cx-navy); }
 #consolixLogin .visual-copy .accentword{ background:linear-gradient(135deg,#2a7fe0,#2ab6e6); -webkit-background-clip:text; background-clip:text; color:transparent; }
-#consolixLogin .visual-copy p{ font-size:15px; line-height:1.6; color:#5b7a99; }
+#consolixLogin .visual-copy p{ font-size:15px; line-height:1.6; color:#4b6a88; }
 #consolixLogin .form-card{ width:100%; max-width:380px; }
 #consolixLogin .form-logo{ display:none; }
 #consolixLogin .form-card h2{ font-size:25px; font-weight:800; letter-spacing:-0.5px; margin-bottom:6px; }
@@ -653,7 +684,7 @@
 #consolixLogin .btn-signin:hover{ transform:translateY(-1px); box-shadow:0 14px 30px rgba(27,163,224,0.38); }
 #consolixLogin .btn-signin:active{ transform:translateY(0); }
 
-#consolixLogin .cx-hint{ margin-top:22px; padding:12px 14px; background:#f3f8fc; border:1px solid #e0ecf5; border-radius:10px; font-size:11.5px; color:#5a7a93; }
+#consolixLogin .cx-hint{ margin-top:22px; padding:12px 14px; background:#f3f8fc; border:1px solid #e0ecf5; border-radius:10px; font-size:11.5px; color:#4a6983; }
 #consolixLogin .cx-err{ color:#d23b3b; font-size:12.5px; margin-top:-8px; margin-bottom:14px; min-height:16px; font-weight:500; }
 @keyframes cxDraw{ to{ stroke-dashoffset:0; } }
 @keyframes cxArcFade{ 0%,100%{ stroke-opacity:0.55; } 50%{ stroke-opacity:1; } }
@@ -721,7 +752,7 @@ body.cx-locked{ overflow:hidden; }
 .wf-step:hover{ background:var(--surface-2); }
 .wf-step.active{ background:var(--accent-light); }
 .wf-step .wf-dot{ width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; background:var(--surface-2); color:var(--text-tertiary); border:1.5px solid var(--border-strong); }
-.wf-step.active .wf-dot{ background:var(--accent-vivid); color:#fff; border-color:var(--accent-vivid); }
+.wf-step.active .wf-dot{ background:var(--accent-vivid); color:var(--on-vivid); border-color:var(--accent-vivid); }
 .wf-step.done .wf-dot{ background:var(--success); color:#fff; border-color:var(--success); }
 .wf-step .wf-txt{ min-width:0; }
 .wf-step .wf-lbl{ font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -770,7 +801,7 @@ body.cx-locked{ overflow:hidden; }
 .coa-chips{ display:flex; gap:7px; margin-bottom:12px; }
 .coa-chip{ height:32px; padding:0 14px; border-radius:999px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-secondary); font-size:12.5px; font-weight:500; cursor:pointer; transition:background .12s, color .12s, border-color .12s; }
 .coa-chip:hover{ background:var(--surface-1); }
-.coa-chip.active{ background:var(--accent-vivid); border-color:var(--accent-vivid); color:#fff; }
+.coa-chip.active{ background:var(--accent-vivid); border-color:var(--accent-vivid); color:var(--on-vivid); }
 
 /* Import "how to fill this in" help */
 .help-link{ display:inline-flex; align-items:center; gap:5px; background:none; border:none; color:var(--accent-text); font-size:12px; cursor:pointer; padding:2px 0; font-weight:600; }
@@ -901,9 +932,13 @@ body.cx-locked{ overflow:hidden; }
   #cxTopbar .cxt-brand{ display:flex; align-items:center; gap:10px; }
 
   #cxTopbar h1{ font-size:16px; font-weight:800; letter-spacing:-0.4px; margin:0; color:var(--text); }
-  #cxTopbar h1 .x{ color:#2aa5f0; }
+  #cxTopbar h1 .x{ color:var(--accent-vivid); }
   #cxTopbar .header-actions{ margin-left:4px; }
-  #cxTopbar .cxt-right{ margin-left:auto; position:relative; }
+  #cxTopbar .cxt-right{ margin-left:auto; position:relative; display:flex; align-items:center; gap:8px; }
+  #cxThemeBtn{ width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  #cxThemeBtn:hover{ color:var(--text); border-color:var(--border-strong); }
+  #cxThemeBtn svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   #cxAvatarBtn{ width:32px; height:32px; border-radius:50%; border:1px solid var(--border);
     background:var(--surface-2, #f1f5fa); cursor:pointer; font:inherit; font-weight:700; font-size:11px;
     color:var(--text); display:flex; align-items:center; justify-content:center; }
@@ -1089,111 +1124,117 @@ body.cx-locked{ overflow:hidden; }
   .cxgo-opt{ display:flex; gap:10px; align-items:flex-start; border:1px solid var(--border);
     border-radius:11px; padding:12px 14px; cursor:pointer; }
   .cxgo-opt + .cxgo-opt{ margin-top:8px; }
-  .cxgo-opt.sel{ border:1.5px solid var(--accent); background:#EAF4F1; }
+  .cxgo-opt.sel{ border:1.5px solid var(--accent); background:var(--cxp-ok-bg); }
   .cxgo-t{ font-size:13px; font-weight:600; color:var(--text); }
   .cxgo-d{ font-size:11.5px; color:var(--text-secondary); margin-top:3px; line-height:1.45; }
   .cxgo-body{ font-size:12.5px; color:var(--text-secondary); line-height:1.5; margin:6px 0 14px; }
   .cxgo-foot{ display:flex; align-items:center; gap:8px; margin-top:16px; }
   .cxob{ display:flex; align-items:center; gap:8px; border-radius:10px; padding:8px 13px;
     margin:0 16px 4px; font-size:12px; color:var(--text); }
-  .cxob.link{ background:#EAF4F1; }
+  .cxob.link{ background:var(--cxp-ok-bg); }
   .cxob.first{ background:var(--bg); border:1px solid var(--border); }
-  .cxob.warn{ background:#FDF3E7; }
+  .cxob.warn{ background:var(--cxp-warn-bg); }
   .cxob .lnk{ margin-left:auto; font-size:11.5px; color:var(--accent); cursor:pointer; }
   .cxg-chip{ font-size:11px; background:rgba(255,255,255,0.65); padding:3px 9px;
     border-radius:8px; display:inline-flex; align-items:center; gap:4px; }
 
   /* ================= v39.15 STRUCTURE MOVEMENTS ================= */
-  .cxmv-sub{ font-size:12px; color:#6B6A5E; margin-top:3px; }
+  .cxmv-sub{ font-size:12px; color:var(--cxp-muted); margin-top:3px; }
   .cxmv-navrow{ display:flex; align-items:center; gap:10px; padding:12px 16px 0; }
-  .cxmv-navbtn{ font-size:12px; padding:4px 9px; background:#FFFFFF; border:1px solid #B5D4F4; border-radius:8px; color:#185FA5; cursor:pointer; }
+  .cxmv-navbtn{ font-size:12px; padding:4px 9px; background:var(--surface); border:1px solid var(--cxp-line); border-radius:8px; color:var(--cxp-link); cursor:pointer; }
   .cxmv-gmid{ flex:1; text-align:center; font-size:12.5px; }
   .cxmv-meterwrap{ padding:8px 16px 0; }
-  .cxmv-meter{ height:4px; background:#E6F1FB; border-radius:2px; overflow:hidden; }
+  .cxmv-meter{ height:4px; background:var(--cxp-sel); border-radius:2px; overflow:hidden; }
   .cxmv-meter > div{ height:100%; background:#1D9E75; }
-  .cxmv-metertxt{ font-size:11.5px; color:#6B6A5E; margin-top:5px; }
-  .cxmv-tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; padding:10px 16px 12px; border-bottom:1px solid #B5D4F4; }
-  .cxmv-tile{ background:#FFFFFF; border:1px solid #B5D4F4; border-radius:11px; padding:10px 8px; text-align:center; cursor:pointer; }
-  .cxmv-tile.sel{ background:#E6F1FB; border:1.5px solid #185FA5; }
-  .cxmv-tile .code{ font-size:11px; font-weight:500; color:#185FA5; }
-  .cxmv-tile .name{ font-size:12px; font-weight:600; color:#0C447C; margin-top:1px; }
+  .cxmv-metertxt{ font-size:11.5px; color:var(--cxp-muted); margin-top:5px; }
+  .cxmv-tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; padding:10px 16px 12px; border-bottom:1px solid var(--cxp-line); }
+  .cxmv-tile{ background:var(--surface); border:1px solid var(--cxp-line); border-radius:11px; padding:10px 8px; text-align:center; cursor:pointer; }
+  .cxmv-tile.sel{ background:var(--cxp-sel); border:1.5px solid var(--cxp-link); }
+  .cxmv-tile .code{ font-size:11px; font-weight:500; color:var(--cxp-link); }
+  .cxmv-tile .name{ font-size:12px; font-weight:600; color:var(--cxp-link-strong); margin-top:1px; }
   .cxmv-st{ font-size:10.5px; padding:2px 8px; border-radius:7px; display:inline-block; margin-top:5px; }
-  .cxmv-st.ok{ background:#E1F5EE; color:#085041; }
+  .cxmv-st.ok{ background:var(--cxp-ok-bg); color:var(--cxp-ok-text); }
   .cxmv-st.mv{ background:#FCEBEB; color:#A32D2D; }
   .cxmv-split{ display:grid; grid-template-columns:228px 1fr; }
-  .cxmv-left{ border-right:1px solid #B5D4F4; padding:14px 12px; background:#F9FBFE; display:flex; flex-direction:column; min-height:260px; }
+  .cxmv-left{ border-right:1px solid var(--cxp-line); padding:14px 12px; background:var(--cxp-paper-2); display:flex; flex-direction:column; min-height:260px; }
   .cxmv-node{ display:grid; grid-template-columns:18px 1fr; gap:0 8px; align-items:start; }
   .cxmv-dot{ width:11px; height:11px; border-radius:50%; justify-self:center; margin-top:8px; box-sizing:border-box; }
   .cxmv-dot.done{ background:#1D9E75; }
-  .cxmv-dot.sel{ width:12px; height:12px; background:#185FA5; }
-  .cxmv-dot.pend{ background:#FFFFFF; border:2px solid #185FA5; }
+  .cxmv-dot.sel{ width:12px; height:12px; background:var(--cxp-link); }
+  .cxmv-dot.pend{ background:var(--surface); border:2px solid var(--cxp-link); }
   .cxmv-rail{ display:grid; grid-template-columns:18px 1fr; gap:0 8px; }
   .cxmv-rail > div:first-child{ width:3px; justify-self:center; min-height:20px; }
   .cxmv-nlbl{ padding:5px 8px; border-radius:8px; cursor:pointer; }
-  .cxmv-nlbl.sel{ background:#E6F1FB; border:1px solid #185FA5; }
+  .cxmv-nlbl.sel{ background:var(--cxp-sel); border:1px solid var(--cxp-link); }
   .cxmv-nlbl .d{ font-size:11.5px; }
-  .cxmv-nlbl.sel .d{ font-weight:600; color:#0C447C; }
+  .cxmv-nlbl.sel .d{ font-weight:600; color:var(--cxp-link-strong); }
   .cxmv-chip{ font-size:10.5px; padding:2px 8px; border-radius:6px; display:inline-block; margin-top:3px; }
-  .cxmv-legend{ margin-top:auto; padding-top:12px; font-size:10.5px; color:#6B6A5E; line-height:1.9; }
+  .cxmv-legend{ margin-top:auto; padding-top:12px; font-size:10.5px; color:var(--cxp-muted); line-height:1.9; }
   .cxmv-ldot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; box-sizing:border-box; }
   .cxmv-right{ padding:14px 16px; }
-  .cxmv-req{ background:#F9FBFE; border:1px solid #B5D4F4; border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
-  .cxmv-req select, .cxmv-req input{ font-size:12px; height:30px; background:#FFFFFF; color:#26251F; border:1px solid #B5D4F4; border-radius:7px; font-family:inherit; }
+  .cxmv-req{ background:var(--cxp-paper-2); border:1px solid var(--cxp-line); border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .cxmv-req select, .cxmv-req input{ font-size:12px; height:30px; background:var(--surface); color:var(--text); border:1px solid var(--cxp-line); border-radius:7px; font-family:inherit; }
   .cxmv-req select{ width:150px; padding:0 6px; }
   .cxmv-req input{ width:98px; padding:0 8px; }
-  .cxmv-req .w{ font-size:12px; color:#6B6A5E; }
-  .cxmv-x{ margin-left:auto; font-size:13px; background:none; border:none; color:#6B6A5E; cursor:pointer; padding:2px 7px; }
-  .cxmv-addrow{ margin-top:2px; height:28px; border:1.5px dashed #B5D4F4; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-  .cxmv-addrow:hover{ background:#F5F9FE; }
+  .cxmv-req .w{ font-size:12px; color:var(--cxp-muted); }
+  .cxmv-x{ margin-left:auto; font-size:13px; background:none; border:none; color:var(--cxp-muted); cursor:pointer; padding:2px 7px; }
+  .cxmv-addrow{ margin-top:2px; height:28px; border:1.5px dashed var(--cxp-line); border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .cxmv-addrow:hover{ background:var(--cxp-paper-2); }
   .cxmv-foot{ display:flex; align-items:center; gap:10px; margin-top:10px; }
-  .cxmv-confirm{ display:flex; align-items:center; gap:8px; margin:8px 16px 0; background:#E1F5EE; border-radius:10px; padding:9px 13px; }
-  .cxmv-gfoot{ display:flex; align-items:center; gap:8px; padding:12px 16px 14px; border-top:1px solid #B5D4F4; margin-top:12px; }
-  .cxmv-quiet{ font-size:12px; color:#6B6A5E; }
+  .cxmv-confirm{ display:flex; align-items:center; gap:8px; margin:8px 16px 0; background:var(--cxp-ok-bg); border-radius:10px; padding:9px 13px; }
+  .cxmv-gfoot{ display:flex; align-items:center; gap:8px; padding:12px 16px 14px; border-top:1px solid var(--cxp-line); margin-top:12px; }
+  .cxmv-quiet{ font-size:12px; color:var(--cxp-muted); }
 
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .fxn-wrap{ --fxn-ink:#e2eaf4; --fxn-ink2:#a3b1c2; --fxn-ink3:#8a99ad; --fxn-line:rgba(226,234,244,.12); --fxn-soft:rgba(226,234,244,.07);
+      --fxn-acc:#58a6ff; --fxn-acci:#79b8ff; --fxn-accbg:rgba(88,166,255,.14); --fxn-ok:#34d399; --fxn-okbg:rgba(52,211,153,.13);
+      --fxn-warn:#fbbf24; --fxn-warnbg:rgba(251,191,36,.13); } }
+  :root[data-theme="dark"] .fxn-wrap{ --fxn-ink:#e2eaf4; --fxn-ink2:#a3b1c2; --fxn-ink3:#8a99ad; --fxn-line:rgba(226,234,244,.12); --fxn-soft:rgba(226,234,244,.07);
+      --fxn-acc:#58a6ff; --fxn-acci:#79b8ff; --fxn-accbg:rgba(88,166,255,.14); --fxn-ok:#34d399; --fxn-okbg:rgba(52,211,153,.13);
+      --fxn-warn:#fbbf24; --fxn-warnbg:rgba(251,191,36,.13); }
   /* ================= v39.22 FINANCIAL PACKS (information requested) ================= */
-  .fp-tbl{ background:#FFFFFF; border:1px solid #B5D4F4; border-radius:11px; overflow:hidden; }
+  .fp-tbl{ background:var(--surface); border:1px solid var(--cxp-line); border-radius:11px; overflow:hidden; }
   .fp-thead, .fp-row{ display:grid; grid-template-columns:90px 1fr 320px; align-items:center; }
-  .fp-thead{ background:#F9FBFE; border-bottom:1px solid #B5D4F4; font-size:10.5px; font-weight:700; letter-spacing:.03em; color:#6B6A5E; }
+  .fp-thead{ background:var(--cxp-paper-2); border-bottom:1px solid var(--cxp-line); font-size:10.5px; font-weight:700; letter-spacing:.03em; color:var(--cxp-muted); }
   .fp-thead > div{ padding:9px 14px; }
-  .fp-row{ border-bottom:1px solid #B5D4F4; }
+  .fp-row{ border-bottom:1px solid var(--cxp-line); }
   .fp-row:last-child{ border-bottom:none; }
-  .fp-row.sel{ background:#E6F1FB; }
+  .fp-row.sel{ background:var(--cxp-sel); }
   .fp-row > div{ padding:10px 14px; font-size:12.5px; }
-  .fp-code{ font-size:11px; font-weight:600; color:#185FA5; border:1px solid #B5D4F4; border-radius:7px; padding:2px 8px; display:inline-block; background:#FFFFFF; }
+  .fp-code{ font-size:11px; font-weight:600; color:var(--cxp-link); border:1px solid var(--cxp-line); border-radius:7px; padding:2px 8px; display:inline-block; background:var(--surface); }
   .fp-nm{ display:flex; align-items:center; gap:8px; min-width:0; }
   .fp-nm .n{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .fp-cur{ font-size:9.5px; font-weight:600; color:#6B6A5E; border:1px solid #B5D4F4; border-radius:20px; padding:1px 7px; flex-shrink:0; }
+  .fp-cur{ font-size:9.5px; font-weight:600; color:var(--cxp-muted); border:1px solid var(--cxp-line); border-radius:20px; padding:1px 7px; flex-shrink:0; }
   .fp-req{ display:flex; align-items:center; gap:9px; justify-content:flex-end; flex-wrap:wrap; }
-  .fp-btn{ font-size:12px; padding:6px 12px; background:#FFFFFF; border:1px solid #B5D4F4; border-radius:8px; color:#185FA5; font-weight:600; cursor:pointer; font-family:inherit; }
-  .fp-btn:hover{ background:#F5F9FE; }
+  .fp-btn{ font-size:12px; padding:6px 12px; background:var(--surface); border:1px solid var(--cxp-line); border-radius:8px; color:var(--cxp-link); font-weight:600; cursor:pointer; font-family:inherit; }
+  .fp-btn:hover{ background:var(--cxp-paper-2); }
   .fp-st{ font-size:10.5px; padding:2px 9px; border-radius:7px; font-weight:600; white-space:nowrap; }
-  .fp-st.ok{ background:#E1F5EE; color:#085041; }
-  .fp-st.part{ background:#FAEEDA; color:#854F0B; }
-  .fp-st.none{ background:#F1F0EA; color:#6B6A5E; }
+  .fp-st.ok{ background:var(--cxp-ok-bg); color:var(--cxp-ok-text); }
+  .fp-st.part{ background:var(--cxp-warn-bg); color:var(--cxp-warn-text); }
+  .fp-st.none{ background:var(--cxp-neutral-bg); color:var(--cxp-muted); }
   .fp-scrim{ position:fixed; inset:0; background:rgba(12,36,64,.28); z-index:900; }
   #tbViewModalOverlay{ z-index:1100; }
-  .fp-panel{ position:fixed; top:0; right:0; bottom:0; width:472px; max-width:94vw; background:#FFFFFF; border-left:1px solid #B5D4F4;
+  .fp-panel{ position:fixed; top:0; right:0; bottom:0; width:472px; max-width:94vw; background:var(--surface); border-left:1px solid var(--cxp-line);
              box-shadow:-14px 0 34px rgba(12,36,64,.14); padding:20px 22px; overflow-y:auto; z-index:901; }
   .fp-phead{ display:flex; align-items:center; gap:9px; }
   .fp-phead h3{ margin:0; font-size:15px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .fp-x{ margin-left:auto; font-size:16px; color:#6B6A5E; cursor:pointer; padding:2px 8px; }
-  .fp-prog{ font-size:11.5px; color:#6B6A5E; margin:4px 0 16px; }
-  .fp-prog b{ color:#0C447C; }
-  .fp-item{ border:1px solid #B5D4F4; border-radius:11px; padding:13px 14px; margin-bottom:12px; background:#FFFFFF; }
+  .fp-x{ margin-left:auto; font-size:16px; color:var(--cxp-muted); cursor:pointer; padding:2px 8px; }
+  .fp-prog{ font-size:11.5px; color:var(--cxp-muted); margin:4px 0 16px; }
+  .fp-prog b{ color:var(--cxp-link-strong); }
+  .fp-item{ border:1px solid var(--cxp-line); border-radius:11px; padding:13px 14px; margin-bottom:12px; background:var(--surface); }
   .fp-item .t{ font-size:13px; font-weight:600; }
   .fp-item .why{ font-size:11px; font-style:italic; color:var(--danger); margin:3px 0 10px; }
   .fp-item .acts{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .fp-ghost{ font-size:11.5px; padding:5px 10px; background:#FFFFFF; border:1px solid #B5D4F4; border-radius:8px; color:#185FA5; font-weight:600; cursor:pointer; font-family:inherit; }
-  .fp-ghost:hover{ background:#F5F9FE; }
-  .fp-drop{ margin-top:10px; border:1.5px dashed #B5D4F4; border-radius:9px; padding:13px; text-align:center; font-size:11.5px; color:#6B6A5E; cursor:pointer; }
-  .fp-drop b{ color:#0C447C; }
-  .fp-drop:hover{ background:#F5F9FE; }
-  .fp-got{ margin-top:10px; display:flex; align-items:center; gap:8px; background:#E1F5EE; border-radius:9px; padding:8px 11px; font-size:11.5px; color:#085041; flex-wrap:wrap; }
-  .fp-got .re{ margin-left:auto; font-size:11px; color:#185FA5; font-weight:600; cursor:pointer; }
-  .fp-foot{ font-size:10.5px; color:#6B6A5E; margin-top:4px; }
+  .fp-ghost{ font-size:11.5px; padding:5px 10px; background:var(--surface); border:1px solid var(--cxp-line); border-radius:8px; color:var(--cxp-link); font-weight:600; cursor:pointer; font-family:inherit; }
+  .fp-ghost:hover{ background:var(--cxp-paper-2); }
+  .fp-drop{ margin-top:10px; border:1.5px dashed var(--cxp-line); border-radius:9px; padding:13px; text-align:center; font-size:11.5px; color:var(--cxp-muted); cursor:pointer; }
+  .fp-drop b{ color:var(--cxp-link-strong); }
+  .fp-drop:hover{ background:var(--cxp-paper-2); }
+  .fp-got{ margin-top:10px; display:flex; align-items:center; gap:8px; background:var(--cxp-ok-bg); border-radius:9px; padding:8px 11px; font-size:11.5px; color:var(--cxp-ok-text); flex-wrap:wrap; }
+  .fp-got .re{ margin-left:auto; font-size:11px; color:var(--cxp-link); font-weight:600; cursor:pointer; }
+  .fp-foot{ font-size:10.5px; color:var(--cxp-muted); margin-top:4px; }
 
   /* ================= v39.18 FOREIGN CURRENCY (fetch-first) ================= */
-  .fxn-wrap{ --fxn-ink:#0B1220; --fxn-ink2:#57606C; --fxn-ink3:#98A1AC;
+  .fxn-wrap{ --fxn-ink:#0B1220; --fxn-ink2:#57606C; --fxn-ink3:#6B7480;
     --fxn-line:rgba(15,23,42,.08); --fxn-soft:rgba(15,23,42,.05);
     --fxn-acc:#1F6FEB; --fxn-acci:#1857C4; --fxn-accbg:rgba(31,111,235,.07);
     --fxn-ok:#0F9D6B; --fxn-okbg:rgba(15,157,107,.10);
@@ -1204,15 +1245,15 @@ body.cx-locked{ overflow:hidden; }
   .fxn-wrap button{ font:inherit; }
   .fxn-lead{ font-size:13px; color:var(--fxn-ink2); margin:0 0 18px; }
   .fxn-lead b{ color:var(--fxn-ink); }
-  .fxn-card{ border:1px solid var(--fxn-soft); border-radius:14px; padding:20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; background:#FFF; }
+  .fxn-card{ border:1px solid var(--fxn-soft); border-radius:14px; padding:20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; background:var(--surface); }
   .fxn-card .t{ font-size:15px; font-weight:800; letter-spacing:-.01em; }
   .fxn-card .s{ font-size:12.5px; color:var(--fxn-ink2); margin-top:3px; max-width:380px; }
   .fxn-card .src{ font-size:11px; color:var(--fxn-ink3); margin-top:8px; }
   .fxn-primary{ margin-left:auto; padding:11px 22px; border:none; border-radius:11px; background:var(--fxn-acc); color:#FFF; font-weight:800; font-size:14px; cursor:pointer; }
   .fxn-primary:hover{ background:var(--fxn-acci); }
-  .fxn-ghost{ padding:7px 14px; border:1px solid var(--fxn-line); border-radius:9px; background:#FFF; color:var(--fxn-ink2); font-weight:700; cursor:pointer; }
+  .fxn-ghost{ padding:7px 14px; border:1px solid var(--fxn-line); border-radius:9px; background:var(--surface); color:var(--fxn-ink2); font-weight:700; cursor:pointer; }
   .fxn-ghost:hover{ color:var(--fxn-ink); border-color:var(--fxn-ink3); }
-  .fxn-box{ border:1px solid var(--fxn-soft); border-radius:14px; overflow:hidden; background:#FFF; }
+  .fxn-box{ border:1px solid var(--fxn-soft); border-radius:14px; overflow:hidden; background:var(--surface); }
   .fxn-box .top{ padding:16px 18px; border-bottom:1px solid var(--fxn-soft); }
   .fxn-box .top.ok{ display:flex; align-items:center; gap:12px; background:var(--fxn-okbg); }
   .fxn-ck{ width:34px; height:34px; border-radius:50%; background:var(--fxn-ok); color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:800; flex:none; }
@@ -1243,12 +1284,18 @@ body.cx-locked{ overflow:hidden; }
     --cm-good:#047857; --cm-bad:#b91c1c; --cm-hero1:#0f3460; --cm-hero2:#16213e; --cm-hero-ink:#ffffff; --cm-hero-dim:#b9c9de;
   }
   @media (prefers-color-scheme: dark){
-    .cm-root{
+    :root:not([data-theme="light"]) .cm-root{
       --cm-cur:#3987e5; --cm-prior:#4a5d7a; --cm-up:#3987e5; --cm-down:#e66767; --cm-total:#c8d6e8;
       --cm-grid:#1a283d; --cm-axis:#2a3f5e;
       --cm-s1:#3987e5; --cm-s2:#d95926; --cm-s3:#199e70; --cm-s4:#c98500; --cm-s5:#d55181; --cm-other:#4a5d7a;
       --cm-good:#34d399; --cm-bad:#f87171; --cm-hero1:#0c2240; --cm-hero2:#060d17; --cm-hero-dim:#8fa6c4;
     }
+  }
+  :root[data-theme="dark"] .cm-root{
+      --cm-cur:#3987e5; --cm-prior:#4a5d7a; --cm-up:#3987e5; --cm-down:#e66767; --cm-total:#c8d6e8;
+      --cm-grid:#1a283d; --cm-axis:#2a3f5e;
+      --cm-s1:#3987e5; --cm-s2:#d95926; --cm-s3:#199e70; --cm-s4:#c98500; --cm-s5:#d55181; --cm-other:#4a5d7a;
+      --cm-good:#34d399; --cm-bad:#f87171; --cm-hero1:#0c2240; --cm-hero2:#060d17; --cm-hero-dim:#8fa6c4;
   }
   .cm-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
   .cm-top h2{ margin:0; font-size:19px; font-weight:700; letter-spacing:-0.02em; }
@@ -1441,7 +1488,43 @@ body.cx-locked{ overflow:hidden; }
     #cmPrintHost *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     @page{ size:A4 landscape; margin:12mm; }
   }
+  /* ===== structure chart (2026-10-01) ===== */
+  :root{ --chart-line:#7d8ca3; }
+  #structureChartSvg{ font-family:var(--sans); }
+  #structureChartSvg .cxs-line{ fill:none; stroke:var(--chart-line); stroke-width:1.4; transition:opacity .12s, stroke .12s; }
+  #structureChartSvg .cxs-line.rev{ stroke-dasharray:5 3; }
+  #structureChartSvg .cxs-head{ fill:var(--chart-line); }
+  #structureChartSvg .cxs-node rect{ fill:var(--surface); stroke:var(--accent); stroke-width:1.5; }
+  #structureChartSvg .cxs-node.ind rect{ fill:var(--warn-bg); stroke:var(--warn-border); }
+  #structureChartSvg .cxs-node.ext rect{ fill:var(--surface-2); stroke:var(--border-strong); stroke-dasharray:4 3; }
+  #structureChartSvg .cxs-node{ cursor:default; transition:opacity .12s; }
+  #structureChartSvg .cxs-node text{ text-anchor:middle; }
+  #structureChartSvg .cxs-node .code{ font-family:var(--mono); font-size:12px; font-weight:700; fill:var(--accent-text); }
+  #structureChartSvg .cxs-node .nm{ font-size:11px; fill:var(--text); }
+  #structureChartSvg .cxs-node .nm.strong{ font-weight:600; }
+  #structureChartSvg .cxs-node .kind{ font-size:9.5px; fill:var(--text-secondary); letter-spacing:.02em; }
+  #structureChartSvg .cxs-pct rect{ fill:var(--surface); stroke:var(--chart-line); stroke-width:1; }
+  #structureChartSvg .cxs-pct text{ font-size:10.5px; font-weight:700; fill:var(--text); }
+  #structureChartSvg.cxs-focus .cxs-line, #structureChartSvg.cxs-focus .cxs-node, #structureChartSvg.cxs-focus .cxs-pct{ opacity:.18; }
+  #structureChartSvg.cxs-focus .cxs-line.hl{ opacity:1; stroke:var(--accent); stroke-width:2.2; }
+  #structureChartSvg.cxs-focus .cxs-node.hl, #structureChartSvg.cxs-focus .cxs-pct.hl{ opacity:1; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --chart-line:#6d86a8; } }
+  :root[data-theme="dark"]{ --chart-line:#6d86a8; }
+  .cxs-zoom{ display:flex; align-items:center; gap:4px; margin-left:12px; }
+  .cxs-zoom button{ min-width:30px; justify-content:center; }
+  .cxs-zoom #structureZoomLbl{ font-size:12px; font-variant-numeric:tabular-nums; color:var(--text-secondary); min-width:40px; text-align:center; }
+  .cxs-legend{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; font-size:12px; color:var(--text-secondary); margin:0 0 10px 2px; }
+  .cxs-legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .cxs-legend i{ display:inline-block; width:22px; height:13px; border:1.5px solid var(--accent); background:var(--surface); border-radius:3px; }
+  .cxs-legend i.lg-ind{ border-color:var(--warn-border); background:var(--warn-bg); border-radius:7px; }
+  .cxs-legend i.lg-ext{ border:1.5px dashed var(--border-strong); background:var(--surface-2); border-radius:7px; }
+  .cxs-legend i.lg-rev{ border:0; border-top:2px dashed var(--chart-line); height:0; background:none; border-radius:0; }
+  .cxs-legend .lg-tip{ color:var(--text-tertiary); }
 </style>
+<script>
+/* Theme switch: apply the saved choice before first paint so the page never flashes the wrong theme. */
+(function(){ try { var t = localStorage.getItem('consolx_theme'); if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -1614,6 +1697,7 @@ body.cx-locked{ overflow:hidden; }
   </div>
   <div id="breadcrumb" style="display:none;"><span class="current">Dashboard</span></div>
   <div class="cxt-right">
+    <button type="button" id="cxThemeBtn" onclick="cxToggleTheme()" aria-label="Switch theme" title="Switch theme"></button>
     <button type="button" id="cxAvatarBtn" onclick="cxToggleUserPop(event)" aria-label="Account and view options"><span id="sbAvatar">AM</span></button>
     <div id="cxUserPop">
       <p class="cxp-name" id="sbUserName">Alex Martin</p>
@@ -1628,6 +1712,12 @@ body.cx-locked{ overflow:hidden; }
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Admin
         </button>
+      </div>
+      <div class="view-label" style="margin-top:12px;">Theme</div>
+      <div class="view-toggle" id="themeToggle">
+        <button type="button" data-theme-opt="light" onclick="cxSetTheme('light')">Light</button>
+        <button type="button" data-theme-opt="dark" onclick="cxSetTheme('dark')">Dark</button>
+        <button type="button" data-theme-opt="system" onclick="cxSetTheme('system')">Auto</button>
       </div>
       <button type="button" class="cxp-reset" onclick="cxResetWorkspace()">Reset workspace data</button>
     </div>
@@ -1783,11 +1873,26 @@ body.cx-locked{ overflow:hidden; }
             <button class="small" onclick="setStructureDateToday()">Today</button>
             <div class="spacer"></div>
             <span style="font-size:12px; color:var(--text-tertiary);" id="structureSummary"></span>
+            <div class="cxs-zoom">
+              <button class="small" onclick="cxStructZoomBy(1/1.25)" title="Zoom out" aria-label="Zoom out">&minus;</button>
+              <span id="structureZoomLbl">100%</span>
+              <button class="small" onclick="cxStructZoomBy(1.25)" title="Zoom in" aria-label="Zoom in">+</button>
+              <button class="small" onclick="cxStructZoomSet('fit')">Fit</button>
+              <button class="small" onclick="cxStructZoomSet(1)">100%</button>
+            </div>
           </div>
         </div>
 
+        <div class="cxs-legend">
+          <span><i class="lg-ent"></i>Group company</span>
+          <span><i class="lg-ind"></i>Individual</span>
+          <span><i class="lg-ext"></i>Outside shareholder &mdash; shown above each company it holds</span>
+          <span><i class="lg-rev"></i>Cross-holding</span>
+          <span class="lg-tip">Hover a box to trace its owners and holdings</span>
+        </div>
+
         <div class="map-card" id="structureChartCard" style="padding:20px; overflow:auto; min-height:320px; max-height:75vh;">
-          <svg id="structureChartSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="structureChartSvg" xmlns="http://www.w3.org/2000/svg" onmouseover="cxStructHover(event)" onmouseleave="cxStructHover(event)"></svg>
         </div>
       </div>
 
@@ -5844,7 +5949,7 @@ function renderNewGroupModalIn(){
     h += `<span class="cxng-title">${retroSrc ? 'Establish the opening' : 'New group'}</span>
       <select ${retroSrc ? 'disabled' : ''} onchange="wizNewGroupPickParent(this.value)">${opts}</select>`;
     if(retroSrc){
-      h += `<span class="cxng-chip" style="background:#FAEEDA; color:#633806;">Defining in ${escapeHtml(retroSrc.label)} · as at ${escapeHtml(retroSrc.endDate)}</span>`;
+      h += `<span class="cxng-chip" style="background:var(--cxp-warn-bg); color:var(--cxp-warn-text);">Defining in ${escapeHtml(retroSrc.label)} · as at ${escapeHtml(retroSrc.endDate)}</span>`;
     }
     if(parentId){
       const mids = groupMemberIds(parentId, asOf).filter(id => id !== parentId);
@@ -5901,7 +6006,7 @@ function renderNewGroupModalIn(){
     </div>`;
   }).join('');
 
-  if(pendingN) h += `<div style="display:flex; align-items:center; gap:10px; background:#FDEBD8; border:1px solid #F2CFA8; border-radius:10px; padding:9px 14px; margin:10px 26px 0; font-size:12px; color:#8a3b00;">
+  if(pendingN) h += `<div style="display:flex; align-items:center; gap:10px; background:var(--cxp-warn-bg); border:1px solid var(--warn-border); border-radius:10px; padding:9px 14px; margin:10px 26px 0; font-size:12px; color:var(--cxp-warn-text);">
     <span>⚠ ${pendingN} ${pendingN === 1 ? 'company needs' : 'companies need'} approval — the register alone does not settle ${pendingN === 1 ? 'its' : 'their'} treatment. Approve the proposed treatment, or set another classification with a reason.</span></div>`;
   h += `<div class="cxng-scroll">
     <div class="cxng-head" style="border-bottom:2px solid ${C.mid};"><span>Company</span><span style="text-align:right;">Direct %</span><span style="text-align:right;">Indirect %</span><span style="text-align:right;">Total %</span><span>Classification</span></div>
@@ -6321,7 +6426,7 @@ function cxgDecision(adj, root, id){
 function cxgDefaultCls(adj, root, id){ return cxgDecision(adj, root, id).cls; }
 function cxgFlagChips(flags){
   if(!flags || !flags.length) return '';
-  return flags.map(f => `<span style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:#854F0B; background:#FAEEDA; border:1px solid #EDDCB8; border-radius:20px; padding:1px 8px; margin:3px 6px 0 0;">\u2691 ${escapeHtml(f)}</span>`).join('');
+  return flags.map(f => `<span style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:var(--cxp-warn-text); background:var(--cxp-warn-bg); border:1px solid var(--warn-border); border-radius:20px; padding:1px 8px; margin:3px 6px 0 0;">\u2691 ${escapeHtml(f)}</span>`).join('');
 }
 function fmtPct(x){ return (Math.round(x*100)/100).toString(); }
 
@@ -6574,11 +6679,11 @@ function wizStepConsolSummaryV2In(p, cfg, locked){
     let src, tone;
     if(ov){
       const rs = (cfg.classificationReasons || {})[g.key + '-' + m.entityId];
-      src = 'Group screen' + (rs ? ' — ' + rs.reason + ' (' + rs.by + ', ' + rs.at + ')' : ''); tone = '#8a5a06';
+      src = 'Group screen' + (rs ? ' — ' + rs.reason + ' (' + rs.by + ', ' + rs.at + ')' : ''); tone = 'var(--cxp-warn-text)';
     } else if(dec.exceptions.length){
       const ap = cxgApprovalFor(cfg, g.key, m.entityId, dec);
       src = ap ? 'Group exception — approved by ' + ap.by + ', ' + ap.at : 'Group exception — awaiting approval';
-      tone = ap ? '#085041' : '#b45309';
+      tone = ap ? 'var(--cxp-ok-text)' : 'var(--cxp-warn-text)';
     } else {
       const lead = dec.parts.filter(e => e.rel !== 'none').sort((x, y) => y.vote - x.vote)[0];
       src = 'Register' + (lead ? ' — ' + REL_LABEL[lead.rel] + ' (' + entityCode(lead.from) + ')' : ''); tone = 'var(--text-tertiary)';
@@ -6614,7 +6719,7 @@ function wizStepConsolSummaryV2In(p, cfg, locked){
   const eqTag = it => `<span style="font-size:9.5px; font-weight:600; color:var(--text-tertiary); border:1px solid var(--border); border-radius:20px; padding:1px 7px; flex-shrink:0;">${it.cls === 'ea_jv' ? 'Joint venture' : it.cls === 'jc' ? 'Joint control' : 'Associate'}</span>`;
 
   const pend = items.filter(it => !cfg.classificationOverrides[g.key + '-' + it.id] && it.dec.exceptions.length && !cxgApprovalFor(cfg, g.key, it.id, it.dec));
-  if(pend.length) h += `<div style="background:#FDEBD8; border:1px solid #F2CFA8; border-radius:10px; padding:9px 14px; margin:0 0 14px; font-size:12px; color:#8a3b00;">⚠ ${pend.length} group ${pend.length === 1 ? 'exception is' : 'exceptions are'} awaiting approval (${pend.map(it => escapeHtml(entityCode(it.id))).join(', ')}). Approve on the Group structures step — open the group.</div>`;
+  if(pend.length) h += `<div style="background:var(--cxp-warn-bg); border:1px solid var(--warn-border); border-radius:10px; padding:9px 14px; margin:0 0 14px; font-size:12px; color:var(--cxp-warn-text);">⚠ ${pend.length} group ${pend.length === 1 ? 'exception is' : 'exceptions are'} awaiting approval (${pend.map(it => escapeHtml(entityCode(it.id))).join(', ')}). Approve on the Group structures step — open the group.</div>`;
 
   /* v39.33 (A7): subsidiaries show the controlling and non-controlling interest; Direct / Indirect are clickable */
   if(!cons.length){
@@ -7296,7 +7401,7 @@ function wizStepForeignCurrency(p, cfg, locked){
     const pct = prog.length ? Math.round(done / prog.length * 100) : 0;
     h += '<div class="fxn-box"><div class="top"><div style="flex:1; min-width:0;"><div class="t">Fetching exchange rates\u2026</div>'
       + '<div class="s">' + escapeHtml(p.startDate) + ' \u2192 ' + escapeHtml(p.endDate) + ' \u00b7 one request per base currency</div>'
-      + '<div style="height:5px; background:#E6F1FB; border-radius:3px; overflow:hidden; margin-top:9px;"><div style="height:100%; width:' + pct + '%; background:#185FA5; transition:width .3s ease;"></div></div>'
+      + '<div style="height:5px; background:var(--cxp-sel); border-radius:3px; overflow:hidden; margin-top:9px;"><div style="height:100%; width:' + pct + '%; background:var(--cxp-link); transition:width .3s ease;"></div></div>'
       + '</div></div>';
     prog.forEach(pr => {
       const cls = pr.state === 'done' ? 'done' : pr.state === 'busy' ? 'busy' : pr.state === 'fail' ? 'fail' : 'wait';
@@ -7690,7 +7795,7 @@ function fpRenderPanelIn(){
     if(fpIsPackRow(r, p)){
       /* v39.33 (A1–A4): entity pack — TB, opening TB and cash flows in one workbook */
       const pp = fpPackParts(p.id, x.e.id, r);
-      const tick = ok => ok ? '<span style="color:#085041; font-weight:700;">\u2713</span>' : '<span style="color:var(--warn); font-weight:700;">\u2022</span>';
+      const tick = ok => ok ? '<span style="color:var(--cxp-ok-text); font-weight:700;">\u2713</span>' : '<span style="color:var(--warn); font-weight:700;">\u2022</span>';
       const opTxt = pp.op ? (pp.op.kind === 'uploaded' ? 'Opening TB received' : 'Opening from ' + pp.op.label) : 'Opening TB needed';
       const errs = PACK_ERRORS[fpPackErrKey(p.id, x.e.id, r, p)];
       const fromArg = r.from ? `'${r.from}'` : 'null';
@@ -10117,7 +10222,7 @@ let icDetailEntityId = null;
 const IC_STATUS_META = {
   none:        { label:'No IC balances', color:'var(--text-tertiary)', bg:'var(--surface-2)' },
   not_started: { label:'Not started',    color:'var(--text-tertiary)', bg:'var(--surface-2)' },
-  partial:     { label:'In progress',    color:'#b5701a', bg:'#fef3e7' },
+  partial:     { label:'In progress',    color:'#8a5309', bg:'#fef3e7' },
   complete:    { label:'Complete',       color:'var(--accent-text)', bg:'var(--accent-light)' },
 };
 
@@ -10145,7 +10250,7 @@ function renderIcValidationPage(){
     <div class="je-stat-card"><div class="label">Entities with IC</div><div class="value">${withIc.length}</div><div class="sub">of ${entities.length} total</div></div>
     <div class="je-stat-card"><div class="label">Splits complete</div><div class="value" style="color:var(--accent);">${complete}</div><div class="sub">${partial} in progress · ${notStarted} not started</div></div>
     <div class="je-stat-card"><div class="label">Split lines matched</div><div class="value">${matched}</div><div class="sub">of ${pairs} with a counterparty amount</div></div>
-    <div class="je-stat-card"><div class="label">Reconciled</div><div class="value" style="color:${complete===withIc.length&&withIc.length>0?'var(--accent)':'#b5701a'};">${withIc.length?Math.round(complete/withIc.length*100):0}%</div><div class="sub">entities complete</div></div>`;
+    <div class="je-stat-card"><div class="label">Reconciled</div><div class="value" style="color:${complete===withIc.length&&withIc.length>0?'var(--accent)':'var(--cxp-warn-text)'};">${withIc.length?Math.round(complete/withIc.length*100):0}%</div><div class="sub">entities complete</div></div>`;
 
   document.getElementById('icEntityHead').innerHTML = `<tr>
     <th>Entity</th><th>Currency</th><th style="text-align:center;">IC codes</th>
@@ -10620,7 +10725,7 @@ function renderCfIcValidationPage(){
     <div class="je-stat-card"><div class="label">Entities with IC flows</div><div class="value">${withIc.length}</div><div class="sub">of ${entities.length} total</div></div>
     <div class="je-stat-card"><div class="label">Splits complete</div><div class="value" style="color:var(--accent);">${complete}</div><div class="sub">${partial} in progress · ${notStarted} not started</div></div>
     <div class="je-stat-card"><div class="label">Split lines matched</div><div class="value">${matched}</div><div class="sub">of ${pairs} with a counterparty amount</div></div>
-    <div class="je-stat-card"><div class="label">Reconciled</div><div class="value" style="color:${complete===withIc.length&&withIc.length>0?'var(--accent)':'#b5701a'};">${withIc.length?Math.round(complete/withIc.length*100):0}%</div><div class="sub">entities complete</div></div>`;
+    <div class="je-stat-card"><div class="label">Reconciled</div><div class="value" style="color:${complete===withIc.length&&withIc.length>0?'var(--accent)':'var(--cxp-warn-text)'};">${withIc.length?Math.round(complete/withIc.length*100):0}%</div><div class="sub">entities complete</div></div>`;
 
   document.getElementById('cfIcEntityHead').innerHTML = `<tr>
     <th>Entity</th><th>Currency</th><th style="text-align:center;">IC codes</th>
@@ -11009,7 +11114,7 @@ function renderJeLines(){
   body.innerHTML = jeEditing.lines.map((line, idx) => {
     const stmt = statementOfAccount(line.accountCode);
     const stmtBadge = stmt
-      ? `<span class="je-line-stmt stmt-${stmt}" style="background:${stmt==='PL'?'#fef3e7':'#e7f0fe'}; color:${stmt==='PL'?'#b5701a':'#1a5fb5'};">${stmt}</span>`
+      ? `<span class="je-line-stmt stmt-${stmt}" style="background:${stmt==='PL'?'#fef3e7':'#e7f0fe'}; color:${stmt==='PL'?'#8a5309':'#1a5fb5'};">${stmt}</span>`
       : '<span style="color:var(--text-tertiary); font-size:11px;">—</span>';
     return `<tr>
       <td><select onchange="updateJeLine(${idx}, 'accountCode', this.value)">${jeAccountOptions(line.accountCode)}</select></td>
@@ -12084,7 +12189,7 @@ function renderGroupDisclosuresIn(){
   const tot = cells => cols.reduce((s, c) => s + (cells[c] || 0), 0);
   const rowStyle = k => k === 'close' ? 'font-weight:700; border-top:1px solid var(--border-strong); border-bottom:3px double var(--border-strong);'
                     : k === 'trans' ? 'font-weight:600; color:var(--accent-text); background:var(--accent-light);'
-                    : k === 'open' ? 'font-weight:600;' : (k === 'acq' || k === 'disp' || k === 'jeadj' || k === 'jeopen') ? 'color:#633806;' : 'color:var(--text-secondary);';
+                    : k === 'open' ? 'font-weight:600;' : (k === 'acq' || k === 'disp' || k === 'jeadj' || k === 'jeopen') ? 'color:var(--cxp-warn-text);' : 'color:var(--text-secondary);';
   let h = `<div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
       <label style="font-size:12px; color:var(--text-secondary); font-weight:600;">Disclosure note</label>
       <select onchange="gdNoteId=this.value; renderGroupDisclosures();" style="min-width:320px;">${D.notes.map(n => `<option value="${n.caption.id}" ${n.caption.id === gdNoteId ? 'selected' : ''}>${escapeHtml(n.caption.name)}</option>`).join('')}</select></div>`;
@@ -16398,198 +16503,439 @@ function holdingsAsAtDate(asAt){
     return true;
   });
 }
+/* ============== STRUCTURE CHART LAYOUT (2026-10-01) ==============
+   Layered (Sugiyama-style) layout with orthogonal routing, the way legal-entity structure charts are drawn:
+   owners above what they own, each owner's lines leave through one trunk, every horizontal run gets its own
+   lane in the gap between two rows, and every line arrives at its own port on the owned box, so lines from
+   different owners can cross but never run on top of each other. Pure function — no DOM — so it can be tested.
+   nodes: [{id, w, h}]   edges: [{id, from, to}]   →   { nodes:{id:{x,y,w,h,layer}}, edges:{id:{points, rev, labelAt}}, width, height } */
+function cxStructLayout(nodeList, edgeList, opt){
+  opt = Object.assign({ nodeGap:26, dummyGap:14, trackGap:12, chTop:26, chBottom:48, margin:24, minTrackSpacing:10 }, opt || {});
+  const N = {}; nodeList.forEach(n => { N[n.id] = { id:n.id, w:n.w, h:n.h, real:true }; });
+  const ids = nodeList.map(n => n.id);
+  const E = edgeList.filter(e => N[e.from] && N[e.to] && e.from !== e.to).map(e => ({ id:e.id, from:e.from, to:e.to }));
+
+  /* 1. break cycles (cross-holdings): DFS from roots in a stable order; an edge back into the DFS stack is laid out
+        reversed (drawn from the owned entity's bottom with the arrow pointing back up into it) */
+  const outAll = {}; E.forEach(e => (outAll[e.from] = outAll[e.from] || []).push(e));
+  const inDeg0 = {}; E.forEach(e => { inDeg0[e.to] = (inDeg0[e.to] || 0) + 1; });
+  const state = {};
+  const visit = u => { state[u] = 1; (outAll[u] || []).forEach(e => { if(state[e.to] === 1) e.rev = true; else if(!state[e.to]) visit(e.to); }); state[u] = 2; };
+  ids.filter(i => !inDeg0[i]).forEach(i => { if(!state[i]) visit(i); });
+  ids.forEach(i => { if(!state[i]) visit(i); });
+  E.forEach(e => { e.u = e.rev ? e.to : e.from; e.v = e.rev ? e.from : e.to; });   /* layout direction u → v */
+
+  /* 2. layers: longest path from the top; then owners with no owner of their own (outside co-investors,
+        individuals) are pulled down to sit one row above the shallowest company they hold */
+  const outL = {}, inL = {}; ids.forEach(i => { outL[i] = []; inL[i] = []; });
+  E.forEach(e => { outL[e.u].push(e); inL[e.v].push(e); });
+  const layer = {}, temp = {};
+  const lp = v => { if(layer[v] != null) return layer[v]; if(temp[v]) return 0; temp[v] = 1;
+    layer[v] = inL[v].length ? Math.max(...inL[v].map(e => lp(e.u) + 1)) : 0; return layer[v]; };
+  ids.forEach(lp);
+  ids.forEach(i => { if(!inL[i].length && outL[i].length) layer[i] = Math.min(...outL[i].map(e => layer[e.v])) - 1; });
+  const minL = Math.min(...ids.map(i => layer[i])); ids.forEach(i => { layer[i] -= minL; });
+  const L = Math.max(...ids.map(i => layer[i])) + 1;
+
+  /* 3. long edges get one dummy node per row they pass through, so they run in their own vertical lane */
+  const layers = Array.from({ length:L }, () => []);
+  ids.forEach(i => { N[i].layer = layer[i]; });
+  const segs = [];   /* {eid, a, b} between consecutive rows, a above b */
+  E.forEach(e => {
+    let prev = e.u; e.chain = [e.u];
+    for(let l = layer[e.u] + 1; l < layer[e.v]; l++){
+      const d = '~' + e.id + '~' + l;
+      N[d] = { id:d, w:0, h:N[e.u].h, real:false, layer:l, edge:e.id };
+      segs.push({ eid:e.id, a:prev, b:d }); e.chain.push(d); prev = d;
+    }
+    segs.push({ eid:e.id, a:prev, b:e.v }); e.chain.push(e.v);
+  });
+  const up = {}, dn = {}; Object.keys(N).forEach(k => { up[k] = []; dn[k] = []; });
+  segs.forEach(s => { dn[s.a].push(s.b); up[s.b].push(s.a); });
+
+  /* 4. order within each row: start from a DFS from the top, then barycenter sweeps + adjacent swaps,
+        keeping the order with the fewest crossings */
+  /* each connected piece is ordered on its own and the pieces sit side by side, biggest first */
+  const allK = Object.keys(N), par = {};
+  allK.forEach(k => { par[k] = k; });
+  const fnd = k => par[k] === k ? k : (par[k] = fnd(par[k]));
+  segs.forEach(sg => { par[fnd(sg.a)] = fnd(sg.b); });
+  const pieces = {}; allK.forEach(k => (pieces[fnd(k)] = pieces[fnd(k)] || []).push(k));
+  const pieceList = Object.values(pieces).map(pc => pc.sort()).sort((a, b) => b.length - a.length || (a[0] < b[0] ? -1 : 1));
+  const crossBetween = (ord, l, p) => {
+    const sg = []; ord[l].forEach(a => dn[a].forEach(b => sg.push([p[a], p[b]])));
+    let c = 0; for(let i = 0; i < sg.length; i++) for(let j = i + 1; j < sg.length; j++)
+      if((sg[i][0] - sg[j][0]) * (sg[i][1] - sg[j][1]) < 0) c++;
+    return c;
+  };
+  /* crossings between u's and v's own lines when u sits left of v */
+  const pairCross = (u, v, p) => { let c = 0;
+    up[u].forEach(x => up[v].forEach(y => { if(p[x] > p[y]) c++; }));
+    dn[u].forEach(x => dn[v].forEach(y => { if(p[x] > p[y]) c++; }));
+    return c; };
+  const posOf = ord => { const p = {}; ord.forEach(r => r.forEach((k, i) => { p[k] = i; })); return p; };
+  const crossAll = ord => { const p = posOf(ord); let c = 0; for(let l = 0; l < L - 1; l++) c += crossBetween(ord, l, p); return c; };
+  const improve = ord => {
+    let best = ord.map(r => r.slice()), bestC = crossAll(ord);
+    for(let it = 0; it < 32 && bestC > 0; it++){
+      const down = it % 2 === 0, p = posOf(ord);
+      const rows = down ? [...Array(L).keys()].slice(1) : [...Array(L).keys()].reverse().slice(1);
+      rows.forEach(l => {
+        const bc = {};
+        ord[l].forEach((k, i) => { const nb = down ? up[k] : dn[k]; bc[k] = nb.length ? nb.reduce((t, x) => t + p[x], 0) / nb.length : i; });
+        ord[l].sort((a, b) => bc[a] - bc[b] || p[a] - p[b]);
+        ord[l].forEach((k, i) => { p[k] = i; });
+      });
+      /* transpose: swap neighbours while that removes crossings (only their own lines change) */
+      let improved = true, guard = 0;
+      while(improved && guard++ < 12){
+        improved = false;
+        for(let l = 0; l < L; l++) for(let i = 0; i + 1 < ord[l].length; i++){
+          const a = ord[l][i], b = ord[l][i + 1];
+          if(pairCross(b, a, p) < pairCross(a, b, p)){ ord[l][i] = b; ord[l][i + 1] = a; p[a] = i + 1; p[b] = i; improved = true; }
+        }
+      }
+      const c = crossAll(ord);
+      if(c < bestC){ bestC = c; best = ord.map(r => r.slice()); }
+    }
+    return { ord:best, c:bestC };
+  };
+  const order = Array.from({ length:L }, () => []);
+  let bestC = 0;
+  pieceList.forEach(piece => {
+    const inPiece = new Set(piece);
+    const tops = piece.filter(k => N[k].real && !up[k].length);
+    /* starting orders: depth-first from the top, visiting holdings first or co-owners first (so an outside
+       investor starts next to what it holds), plus a plain top-down pass; the best after improvement wins */
+    const starts = [
+      { roots: tops, nb: k => dn[k].concat(up[k]) },
+      { roots: tops, nb: k => up[k].concat(dn[k]) },
+      { roots: tops.slice().reverse(), nb: k => dn[k].concat(up[k]) },
+      { roots: tops, nb: k => dn[k] }
+    ];
+    /* plus a few shuffled starts from a fixed seed, so the chart is the same every time it is drawn */
+    let seed = 7 + piece.length;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    for(let r = 0; r < 8; r++){
+      const sh = tops.slice(); for(let i = sh.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+      starts.push({ roots: sh, nb: r % 2 ? (k => up[k].concat(dn[k])) : (k => dn[k].concat(up[k])) });
+    }
+    let win = null;
+    starts.forEach(st => {
+      const ord = Array.from({ length:L }, () => []), seen = {};
+      const go = k => { if(seen[k] || !inPiece.has(k)) return; seen[k] = 1; ord[N[k].layer].push(k); st.nb(k).forEach(go); };
+      st.roots.forEach(go); piece.forEach(go);
+      const r = improve(ord);
+      if(!win || r.c < win.c) win = r;
+    });
+    win.ord.forEach((r, l) => { order[l].push(...r); });
+    bestC += win.c;
+  });
+
+  /* 5. x positions: each box as close as it can get to everything it is linked to (owners and holdings), long-edge
+        lanes held straight. Each pass is, row by row, a weighted least-squares fit that keeps the row order and
+        the minimum gaps (pool-adjacent-violators). */
+  const X = {};
+  const sep = (a, b) => (N[a].w + N[b].w) / 2 + (N[a].real && N[b].real ? opt.nodeGap : (!N[a].real && !N[b].real ? opt.dummyGap : (opt.nodeGap + opt.dummyGap) / 2));
+  order.forEach(r => { let x = 0; r.forEach((k, i) => { x = i ? x + sep(r[i - 1], k) : N[k].w / 2; X[k] = x; });
+    const mid = x / 2; r.forEach(k => { X[k] -= mid; }); });
+  const fit = (r, want, wt) => {
+    const off = [0]; for(let i = 1; i < r.length; i++) off.push(off[i - 1] + sep(r[i - 1], r[i]));
+    const blocks = [];
+    r.forEach((k, i) => {
+      blocks.push({ v: want[k] - off[i], w: wt[k], n:1 });
+      while(blocks.length > 1 && blocks[blocks.length - 2].v > blocks[blocks.length - 1].v){
+        const b = blocks.pop(), a = blocks.pop();
+        blocks.push({ v:(a.v * a.w + b.v * b.w) / (a.w + b.w), w:a.w + b.w, n:a.n + b.n });
+      }
+    });
+    let i = 0; blocks.forEach(b => { for(let j = 0; j < b.n; j++, i++) X[r[i]] = b.v + off[i]; });
+  };
+  for(let it = 0; it < 60; it++){
+    for(let l = 0; l < L; l++){
+      const want = {}, wt = {};
+      order[l].forEach(k => {
+        const nb = up[k].concat(dn[k]);
+        if(nb.length){ want[k] = nb.reduce((s, x) => s + X[x], 0) / nb.length; wt[k] = N[k].real ? 1 : 6; }
+        else { want[k] = X[k]; wt[k] = 0.05; }
+      });
+      fit(order[l], want, wt);
+    }
+  }
+  /* unconnected pieces sit side by side with a clear gap, instead of drifting wherever the fit left them */
+  let cursor = 0;
+  pieceList.forEach(pc => {
+    const lo = Math.min(...pc.map(k => X[k] - N[k].w / 2)), hi = Math.max(...pc.map(k => X[k] + N[k].w / 2));
+    pc.forEach(k => { X[k] += cursor - lo; });
+    cursor += hi - lo + (opt.pieceGap || 70);
+  });
+  const minX = Math.min(...Object.keys(N).map(k => X[k] - N[k].w / 2));
+  Object.keys(X).forEach(k => { X[k] += opt.margin - minX; });
+
+  /* 6. ports: every line leaves an owner from its own bottom port (one shared trunk for its normal holdings,
+        a separate port per cross-holding) and arrives at its own port on the top of the box it reaches */
+  const srcPort = {}, dstPort = {};
+  const revOut = {}; E.filter(e => e.rev).forEach(e => (revOut[e.u] = revOut[e.u] || []).push(e));
+  Object.keys(revOut).forEach(u => revOut[u].forEach((e, i) => { srcPort[e.id] = X[u] + N[u].w / 2 - 16 - i * 14; }));
+  const bySegChannel = Array.from({ length:L }, () => []);
+  segs.forEach(s => {
+    const e = E.find(x => x.id === s.eid);
+    const sx = N[s.a].real ? (s.a === e.u && e.rev ? srcPort[e.id] : X[s.a]) : X[s.a];
+    bySegChannel[N[s.a].layer].push({ s, e, sx });
+  });
+  for(let l = 0; l < L - 1; l++){
+    const ch = bySegChannel[l];
+    const stubX = ch.map(c => ({ x:c.sx, owner: c.e.rev ? 'r' + c.e.id : (N[c.s.a].real ? c.s.a : 'd' + c.e.id) }));
+    const into = {};
+    ch.forEach(c => { if(N[c.s.b].real) (into[c.s.b] = into[c.s.b] || []).push(c); else c.tx = X[c.s.b]; });
+    Object.keys(into).forEach(v => {
+      const arr = into[v].sort((a, b) => a.sx - b.sx);
+      const n = arr.length, span = Math.min(N[v].w * 0.8, Math.max(0, n - 1) * 46);
+      arr.forEach((c, i) => {
+        let tx = n === 1 ? X[v] : X[v] - span / 2 + i * (span / (n - 1));
+        const mine = c.e.rev ? 'r' + c.e.id : (N[c.s.a].real ? c.s.a : 'd' + c.e.id);
+        for(let g = 0; g < 4 && stubX.some(sx => sx.owner !== mine && Math.abs(sx.x - tx) < 6); g++) tx += 7;
+        c.tx = tx;
+      });
+    });
+  }
+
+  /* 7. lanes: in each gap between two rows, every owner's horizontal run gets a lane; runs that overlap
+        sideways never share a lane, and lanes are stacked to keep crossings down */
+  const chY = [], layerY = [];
+  const H = Math.max(...ids.map(i => N[i].h));
+  const buses = [];
+  for(let l = 0; l < L - 1; l++){
+    const groups = {};
+    bySegChannel[l].forEach(c => {
+      const key = c.e.rev ? 'r' + c.e.id : (N[c.s.a].real ? 'n' + c.s.a : 'd' + c.e.id);
+      (groups[key] = groups[key] || { key, sx:c.sx, items:[] }).items.push(c);
+    });
+    const bs = Object.values(groups).map(g => {
+      const xs = [g.sx].concat(g.items.map(c => c.tx));
+      return Object.assign(g, { lo:Math.min(...xs), hi:Math.max(...xs), drops:g.items.map(c => c.tx) });
+    });
+    const horiz = bs.filter(b => b.hi - b.lo > 0.5);
+    const ov = (a, b) => a.lo <= b.hi + opt.minTrackSpacing && b.lo <= a.hi + opt.minTrackSpacing;
+    /* crossings if a sits above b: a's drops cut b's run, and b's trunk cuts a's run */
+    const cost = (a, b) => a.drops.filter(x => x > b.lo && x < b.hi).length + (b.sx > a.lo && b.sx < a.hi ? 1 : 0);
+    /* order: a bus goes above another when that costs fewer crossings; settle by adjacent swaps */
+    const seq = horiz.sort((a, b) => a.lo - b.lo);
+    for(let pass = 0; pass < seq.length; pass++){
+      let moved = false;
+      for(let i = 0; i + 1 < seq.length; i++){
+        const a = seq[i], b = seq[i + 1];
+        if(ov(a, b) && cost(b, a) < cost(a, b)){ seq[i] = b; seq[i + 1] = a; moved = true; }
+      }
+      if(!moved) break;
+    }
+    const placed = [];
+    seq.forEach(b => {
+      let t = 0; placed.forEach(p => { if(ov(p, b)) t = Math.max(t, p.track + 1); });
+      b.track = t; placed.push(b);
+    });
+    const T = placed.length ? Math.max(...placed.map(b => b.track)) + 1 : 0;
+    chY.push(T);
+    bs.forEach(b => { b.layer = l; buses.push(b); });
+  }
+  let y = opt.margin;
+  for(let l = 0; l < L; l++){
+    layerY[l] = y;
+    y += H;
+    if(l < L - 1) y += opt.chTop + Math.max(0, chY[l] - 1) * opt.trackGap + opt.chBottom;
+  }
+
+  /* 8. assemble each ownership line as one polyline through its rows */
+  const segPath = {};
+  buses.forEach(b => {
+    const top = layerY[b.layer] + H, bottom = layerY[b.layer + 1];
+    const ty = top + opt.chTop + (b.track || 0) * opt.trackGap;
+    b.items.forEach(c => { segPath[c.s.eid + '|' + c.s.a] = { sx:c.sx, tx:c.tx, ty, top, bottom, horiz:b.hi - b.lo > 0.5 }; });
+  });
+  const outN = {}, outE = {};
+  ids.forEach(i => { outN[i] = { x:X[i] - N[i].w / 2, y:layerY[N[i].layer], w:N[i].w, h:N[i].h, layer:N[i].layer }; });
+  E.forEach(e => {
+    const pts = [];
+    for(let k = 0; k + 1 < e.chain.length; k++){
+      const p = segPath[e.id + '|' + e.chain[k]];
+      if(k === 0) pts.push([p.sx, p.top - (N[e.chain[k]].real ? 0 : H)]);
+      if(p.horiz){ pts.push([p.sx, p.ty]); pts.push([p.tx, p.ty]); }
+      pts.push([p.tx, p.bottom]);
+    }
+    const clean = pts.filter((q, i) => i === 0 || i === pts.length - 1 || !((pts[i - 1][0] === q[0] && pts[i + 1][0] === q[0]) || (pts[i - 1][1] === q[1] && pts[i + 1][1] === q[1])));
+    outE[e.id] = { points:clean, rev:!!e.rev, from:e.from, to:e.to, owner: e.rev ? 'r' + e.id : e.u };
+  });
+  const width = Math.max(...Object.keys(N).map(k => X[k] + N[k].w / 2)) + opt.margin;
+  return { nodes:outN, edges:outE, width, height:y + opt.margin, crossings:bestC, layers:L };
+}
+
+/* Structure chart drawing. Shapes follow the usual structure-chart convention: group companies are rectangles,
+   individuals and outside shareholders are ovals. Every colour is a theme token, so the chart reads the same in
+   light and dark mode. Each ownership line is its own path (hover a box to trace its owners and holdings). */
+const CX_STRUCT_W = { entity:176, individual:164, nonrelated:164 };
+const CX_STRUCT_H = 60;
+function cxStructWrap(text, maxChars, maxLines){
+  const words = String(text || '').split(/\s+/).filter(Boolean), lines = [];
+  let cur = '';
+  words.forEach(w => {
+    if(!cur) cur = w;
+    else if((cur + ' ' + w).length <= maxChars) cur += ' ' + w;
+    else { lines.push(cur); cur = w; }
+  });
+  if(cur) lines.push(cur);
+  if(lines.length > maxLines){ lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].slice(0, maxChars - 1).replace(/\s+\S*$/, '') + '…'; }
+  return lines.map(l => l.length > maxChars ? l.slice(0, maxChars - 1) + '…' : l);
+}
+function cxStructPct(p){ const n = +p; if(!isFinite(n)) return ''; return (Math.round(n * 100) / 100) + '%'; }
+function cxStructSvg(lay, info){
+  /* info: { nodes:{id:{type, code, name}}, edges:{id:{pct, label}} } */
+  const esc = typeof escapeHtml === 'function' ? escapeHtml : (t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]));
+  let lines = '', labels = '', boxes = '';
+  const pill = (x, y, text, title, eid) => {
+    const w = Math.max(30, text.length * 6.4 + 12);
+    return `<g class="cxs-pct" data-e="${esc(eid)}"><title>${esc(title)}</title><rect x="${(x - w / 2).toFixed(1)}" y="${(y - 8).toFixed(1)}" width="${w.toFixed(1)}" height="16" rx="8"/>`
+      + `<text x="${x.toFixed(1)}" y="${(y + 3.6).toFixed(1)}" text-anchor="middle">${esc(text)}</text></g>`;
+  };
+  /* labels on the incoming ports of the same box alternate between two heights when they would touch */
+  const portLabels = {};
+  Object.keys(lay.edges).forEach(id => {
+    const e = lay.edges[id], owned = e.to, pts = e.points;
+    const at = e.rev ? pts[0] : pts[pts.length - 1];
+    (portLabels[owned + (e.rev ? '|b' : '|t')] = portLabels[owned + (e.rev ? '|b' : '|t')] || []).push({ id, x:at[0], y:at[1], rev:e.rev });
+  });
+  const labelPos = {};
+  Object.keys(portLabels).forEach(k => {
+    const arr = portLabels[k].sort((a, b) => a.x - b.x);
+    arr.forEach((p, i) => {
+      const tight = arr.length > 1 && (i > 0 && p.x - arr[i - 1].x < 44 || i < arr.length - 1 && arr[i + 1].x - p.x < 44);
+      const lift = tight && i % 2 ? 20 : 0;
+      labelPos[p.id] = p.rev ? [p.x, p.y + 15 + lift] : [p.x, p.y - 15 - lift];
+    });
+  });
+  Object.keys(lay.edges).forEach(id => {
+    const e = lay.edges[id], d = 'M' + e.points.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
+    const ei = info.edges[id] || {}, fromN = info.nodes[e.from] || {}, toN = info.nodes[e.to] || {};
+    const title = `${fromN.code ? fromN.code + ' ' : ''}${fromN.name || ''} → ${toN.code ? toN.code + ' ' : ''}${toN.name || ''}: ${ei.label || ''}${e.rev ? ' (cross-holding)' : ''}`;
+    lines += `<path class="cxs-line${e.rev ? ' rev' : ''}" data-e="${esc(id)}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${d}" ${e.rev ? 'marker-start="url(#cxsArrowUp)"' : 'marker-end="url(#cxsArrow)"'}><title>${esc(title)}</title></path>`;
+    const lp = labelPos[id];
+    if(ei.label) labels += pill(lp[0], lp[1], ei.label, title, id);
+  });
+  Object.keys(lay.nodes).forEach(id => {
+    const n = lay.nodes[id], ni = info.nodes[id] || {}, cx = n.x + n.w / 2;
+    const isEnt = ni.type === 'entity';
+    const cls = isEnt ? 'ent' : (ni.type === 'individual' ? 'ind' : 'ext');
+    const title = (ni.code ? ni.code + ' — ' : '') + (ni.name || '') + (isEnt ? '' : (ni.type === 'individual' ? ' (individual)' : ' (outside shareholder)'));
+    let t = '';
+    if(isEnt){
+      const nm = cxStructWrap(ni.name, 26, 2);
+      const y0 = nm.length === 1 ? 26 : 19;
+      t += `<text class="code" x="${cx}" y="${n.y + y0}">${esc(ni.code || '')}</text>`;
+      nm.forEach((l, i) => { t += `<text class="nm" x="${cx}" y="${n.y + y0 + 16 + i * 14}">${esc(l)}</text>`; });
+    } else {
+      const nm = cxStructWrap(ni.name, 23, 2);
+      const y0 = nm.length === 1 ? 27 : 20;
+      nm.forEach((l, i) => { t += `<text class="nm strong" x="${cx}" y="${n.y + y0 + i * 14}">${esc(l)}</text>`; });
+      t += `<text class="kind" x="${cx}" y="${n.y + y0 + nm.length * 14 + 1}">${ni.type === 'individual' ? 'Individual' : 'Outside shareholder'}</text>`;
+    }
+    boxes += `<g class="cxs-node ${cls}" data-id="${esc(id)}"><title>${esc(title)}</title>`
+      + `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${isEnt ? 6 : n.h / 2}"/>${t}</g>`;
+  });
+  const defs = `<defs>
+    <marker id="cxsArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9 Z" class="cxs-head"/></marker>
+    <marker id="cxsArrowUp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 Z" class="cxs-head"/></marker>
+  </defs>`;
+  return defs + `<g class="cxs-lines">${lines}</g><g class="cxs-nodes">${boxes}</g><g class="cxs-labels">${labels}</g>`;
+}
+/* Builds the chart for the "as at" date. Outside shareholders (non-related parties) are drawn above each company
+   they hold, as structure charts usually show public float / governments / funds; group companies and individuals
+   appear once, so a founder holding several companies stays one box. */
+let cxStructZoom = 1, cxStructLast = null;
 function renderStructureChart(){
   const dateInput = document.getElementById('structureAsAtDate');
   if(dateInput && !dateInput.value) dateInput.value = todayDMY();
   const asAt = parseDMY(dateInput ? dateInput.value : todayDMY()) || new Date();
   const active = holdingsAsAtDate(asAt);
-
   const svg = document.getElementById('structureChartSvg');
   if(!svg) return;
   svg.innerHTML = '';
-
   document.getElementById('structureSummary').textContent =
     `${active.length} active holding link${active.length===1?'':'s'} as at ${formatDMY(asAt)}`;
-
+  cxStructLast = null;
   if(active.length === 0){
+    delete svg.dataset.w; delete svg.dataset.h;
+    svg.removeAttribute('viewBox'); svg.setAttribute('width', 420); svg.setAttribute('height', 60);
     svg.innerHTML = `<text x="20" y="40" font-size="13" fill="var(--text-tertiary)">No active holding records as at this date.</text>`;
+    cxStructApplyZoom();
     return;
   }
-
-  // Build node list: every entity that appears as either the held entity or an entity-type shareholder
-  const nodeIds = new Set();
+  const info = { nodes:{}, edges:{} }, nodes = [], edgeMap = {};
+  const addNode = (id, type, code, name) => {
+    if(info.nodes[id]) return;
+    info.nodes[id] = { type, code, name };
+    nodes.push({ id, w: CX_STRUCT_W[type] || CX_STRUCT_W.entity, h: CX_STRUCT_H });
+  };
   active.forEach(r => {
-    nodeIds.add('entity-' + r.entityId);
-    if(r.shareholderRef.kind === 'entity') nodeIds.add('entity-' + r.shareholderRef.id);
-    else nodeIds.add(r.shareholderRef.kind + '-' + r.shareholderRef.id);
-  });
-
-  // Simple layered layout: shareholders with no incoming edge are "top" layer, resolved entities below
-  const childOf = {}; // nodeId -> [{parentNodeId, pct}]
-  active.forEach(r => {
-    const childId = 'entity-' + r.entityId;
-    const parentId = r.shareholderRef.kind === 'entity' ? 'entity-' + r.shareholderRef.id : r.shareholderRef.kind + '-' + r.shareholderRef.id;
-    if(!childOf[childId]) childOf[childId] = [];
-    childOf[childId].push({parentId, pct: r.percentage});
-  });
-
-  function nodeLabel(nodeId){
-    if(nodeId.startsWith('entity-')){
-      const id = parseInt(nodeId.slice(7), 10);
-      const e = entities.find(x => x.id === id);
-      return e ? `${e.code}\n${e.legalName}` : nodeId;
-    }
-    const [kind, id] = [nodeId.split('-')[0], nodeId.slice(nodeId.indexOf('-')+1)];
-    const ne = nonEntityShareholders.find(x => x.id === id);
-    return ne ? ne.name : nodeId;
-  }
-  function nodeType(nodeId){
-    if(nodeId.startsWith('entity-')) return 'entity';
-    if(nodeId.startsWith('individual')) return 'individual';
-    return 'nonrelated';
-  }
-
-  // Compute depth: nodes with no parent edge = depth 0
-  const allNodes = [...nodeIds];
-  const depth = {};
-  function computeDepth(nodeId, seen){
-    if(depth[nodeId] !== undefined) return depth[nodeId];
-    if(seen.has(nodeId)) return 0; // cycle guard
-    seen.add(nodeId);
-    const parents = childOf[nodeId];
-    if(!parents || parents.length === 0){ depth[nodeId] = 0; return 0; }
-    const d = 1 + Math.max(...parents.map(p => computeDepth(p.parentId, seen)));
-    depth[nodeId] = d;
-    return d;
-  }
-  allNodes.forEach(n => computeDepth(n, new Set()));
-
-  const maxDepth = Math.max(...allNodes.map(n => depth[n]));
-  const layers = [];
-  for(let i=0;i<=maxDepth;i++) layers.push(allNodes.filter(n => depth[n] === i));
-
-  // Build parent->children map (inverse of childOf) so we can order each layer by walking the tree from the top
-  const childrenOf = {};
-  allNodes.forEach(nodeId => {
-    const parents = childOf[nodeId];
-    if(!parents) return;
-    parents.forEach(p => {
-      if(!childrenOf[p.parentId]) childrenOf[p.parentId] = [];
-      childrenOf[p.parentId].push(nodeId);
-    });
-  });
-  // Order layer 0 (top) alphabetically by label for stability, then order every subsequent layer
-  // by walking each layer-0 node's descendants in order, so siblings cluster under their parent visually.
-  function nodeSortLabel(nodeId){ return nodeLabel(nodeId).split('\n')[0]; }
-  layers[0].sort((a,b) => nodeSortLabel(a).localeCompare(nodeSortLabel(b)));
-  for(let li = 1; li <= maxDepth; li++){
-    const ordered = [];
-    const seen = new Set();
-    layers[li-1].forEach(parentId => {
-      const kids = (childrenOf[parentId] || []).filter(k => depth[k] === li);
-      kids.sort((a,b) => nodeSortLabel(a).localeCompare(nodeSortLabel(b)));
-      kids.forEach(k => { if(!seen.has(k)){ ordered.push(k); seen.add(k); } });
-    });
-    // include any nodes in this layer not reachable from the ordering pass (shouldn't normally happen)
-    layers[li].forEach(n => { if(!seen.has(n)){ ordered.push(n); seen.add(n); } });
-    layers[li] = ordered;
-  }
-
-  const boxW = 168, boxH = 54, layerGapY = 110, nodeGapX = 20;
-  const layerWidths = layers.map(layer => layer.length * boxW + (layer.length-1) * nodeGapX);
-  const chartWidth = Math.max(...layerWidths, 400) + 60;
-  const chartHeight = (maxDepth+1) * layerGapY + boxH + 40;
-
-  svg.setAttribute('viewBox', `0 0 ${chartWidth} ${chartHeight}`);
-  svg.setAttribute('width', chartWidth);
-  svg.setAttribute('height', chartHeight);
-
-  // Layout pass: position the deepest layer first (evenly spaced), then position each
-  // parent layer so each node sits centered above the midpoint of its own children —
-  // this keeps connecting lines as close to vertical as possible, which is what makes
-  // straight lines readable instead of a tangle of long diagonals.
-  const positions = {};
-
-  // Step 1: lay out the bottom-most layer evenly spaced
-  const bottomLayer = layers[maxDepth];
-  {
-    const totalW = bottomLayer.length * boxW + (bottomLayer.length-1) * nodeGapX;
-    const startX = (chartWidth - totalW) / 2;
-    bottomLayer.forEach((nodeId, ni) => {
-      positions[nodeId] = { x: startX + ni*(boxW+nodeGapX), y: 20 + maxDepth*layerGapY };
-    });
-  }
-
-  // Step 2: walk upward layer by layer; each node's x = average x of its children (from childrenOf),
-  // then resolve any overlaps within the layer by enforcing minimum spacing left-to-right.
-  for(let li = maxDepth - 1; li >= 0; li--){
-    const layer = layers[li];
-    const rawX = {};
-    layer.forEach(nodeId => {
-      const kids = (childrenOf[nodeId] || []).filter(k => positions[k]);
-      if(kids.length > 0){
-        const avg = kids.reduce((s,k) => s + positions[k].x, 0) / kids.length;
-        rawX[nodeId] = avg;
-      } else {
-        rawX[nodeId] = 0; // placeholder, fixed in spacing pass below
-      }
-    });
-    // sort layer by desired x to keep left-to-right order sensible, then enforce min gap
-    const ordered = [...layer].sort((a,b) => rawX[a] - rawX[b]);
-    let lastX = -Infinity;
-    ordered.forEach(nodeId => {
-      let x = rawX[nodeId];
-      if(x < lastX + boxW + nodeGapX) x = lastX + boxW + nodeGapX;
-      positions[nodeId] = { x, y: 20 + li*layerGapY };
-      lastX = x;
-    });
-    // re-center this layer as a whole under the chart width so it doesn't drift to one side
-    const minX = Math.min(...ordered.map(n => positions[n].x));
-    const maxX = Math.max(...ordered.map(n => positions[n].x)) + boxW;
-    const layerCenter = (minX + maxX) / 2;
-    const chartCenter = chartWidth / 2;
-    const shift = chartCenter - layerCenter;
-    ordered.forEach(nodeId => { positions[nodeId].x += shift; });
-  }
-
-  let svgContent = '';
-  // edges first (so boxes sit on top)
-  allNodes.forEach(nodeId => {
-    const parents = childOf[nodeId];
-    if(!parents) return;
-    const childPos = positions[nodeId];
-    parents.forEach(p => {
-      const parentPos = positions[p.parentId];
-      if(!parentPos) return;
-      const x1 = parentPos.x + boxW/2, y1 = parentPos.y + boxH;
-      const x2 = childPos.x + boxW/2, y2 = childPos.y;
-      const midX = (x1+x2)/2, midY = (y1+y2)/2;
-      svgContent += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--border-strong)" stroke-width="1.5" marker-end="url(#arrowhead)"/>`;
-      svgContent += `<rect x="${midX - 22}" y="${midY-10}" width="44" height="18" rx="4" fill="var(--surface)" stroke="var(--border)" stroke-width="0.5"/>`;
-      svgContent += `<text x="${midX}" y="${midY+3}" font-size="11" font-weight="600" text-anchor="middle" fill="var(--accent-text)">${p.pct}%</text>`;
-    });
-  });
-
-  svgContent = `<defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--border-strong)"/></marker></defs>` + svgContent;
-
-  allNodes.forEach(nodeId => {
-    const pos = positions[nodeId];
-    const type = nodeType(nodeId);
-    const label = nodeLabel(nodeId);
-    const lines = label.split('\n');
-    const fill = type === 'entity' ? 'var(--accent-light)' : (type === 'individual' ? '#fbf0de' : '#f0eee8');
-    const stroke = type === 'entity' ? 'var(--accent)' : (type === 'individual' ? 'var(--warn-border)' : 'var(--border-strong)');
-    const textColor = type === 'entity' ? 'var(--accent-text)' : 'var(--text)';
-    svgContent += `<rect x="${pos.x}" y="${pos.y}" width="${boxW}" height="${boxH}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>`;
-    if(lines.length === 2){
-      svgContent += `<text x="${pos.x+boxW/2}" y="${pos.y+22}" font-size="11.5" font-weight="700" text-anchor="middle" fill="${textColor}" font-family="var(--mono)">${escapeHtml(lines[0])}</text>`;
-      svgContent += `<text x="${pos.x+boxW/2}" y="${pos.y+38}" font-size="11" text-anchor="middle" fill="${textColor}">${escapeHtml(lines[1].length > 22 ? lines[1].slice(0,20)+'…' : lines[1])}</text>`;
+    const e = entities.find(x => x.id === r.entityId); if(!e) return;
+    const to = 'entity-' + e.id; addNode(to, 'entity', e.code, e.legalName);
+    const ref = r.shareholderRef || {};
+    let from;
+    if(ref.kind === 'entity'){
+      const o = entities.find(x => x.id === ref.id); if(!o) return;
+      from = 'entity-' + o.id; addNode(from, 'entity', o.code, o.legalName);
     } else {
-      svgContent += `<text x="${pos.x+boxW/2}" y="${pos.y+31}" font-size="11.5" text-anchor="middle" fill="${textColor}">${escapeHtml(label.length > 24 ? label.slice(0,22)+'…' : label)}</text>`;
+      const ne = nonEntityShareholders.find(x => x.id === ref.id);
+      const type = ref.kind === 'individual' ? 'individual' : 'nonrelated';
+      from = type + ':' + ref.id + (type === 'nonrelated' ? '@' + e.id : '');
+      addNode(from, type, '', ne ? ne.name : String(ref.id));
     }
+    const k = from + '>' + to;
+    const ed = edgeMap[k] || (edgeMap[k] = { id:'h' + Object.keys(edgeMap).length, from, to, pct:0, recs:[] });
+    ed.pct += +r.percentage || 0; ed.recs.push(r);
   });
-
-  svg.innerHTML = svgContent;
+  const edges = Object.values(edgeMap);
+  edges.forEach(ed => {
+    const r0 = ed.recs[0];
+    info.edges[ed.id] = { label: (!(ed.pct > 0) && r0.rel && REL_LABEL[r0.rel]) ? REL_LABEL[r0.rel] : cxStructPct(ed.pct) };
+  });
+  const lay = cxStructLayout(nodes, edges.map(ed => ({ id:ed.id, from:ed.from, to:ed.to })));
+  cxStructLast = lay;
+  svg.setAttribute('viewBox', `0 0 ${lay.width.toFixed(0)} ${lay.height.toFixed(0)}`);
+  svg.dataset.w = lay.width.toFixed(0); svg.dataset.h = lay.height.toFixed(0);
+  svg.innerHTML = cxStructSvg(lay, info);
+  cxStructApplyZoom();
+}
+function cxStructApplyZoom(){
+  const svg = document.getElementById('structureChartSvg'), card = document.getElementById('structureChartCard');
+  const lbl = document.getElementById('structureZoomLbl');
+  if(!svg || !svg.dataset.w){ if(lbl) lbl.textContent = '100%'; return; }
+  const W = +svg.dataset.w, H = +svg.dataset.h;
+  const fitZ = Math.min(1, Math.max(0.1, ((card && card.clientWidth ? card.clientWidth : W) - 40) / W));
+  const z = cxStructZoom === 'fit' ? fitZ : cxStructZoom;
+  svg.setAttribute('width', Math.round(W * z)); svg.setAttribute('height', Math.round(H * z));
+  if(lbl) lbl.textContent = Math.round(z * 100) + '%';
+}
+function cxStructZoomBy(f){
+  const svg = document.getElementById('structureChartSvg');
+  const cur = svg && svg.dataset.w ? (+svg.getAttribute('width') / +svg.dataset.w) : 1;
+  cxStructZoom = Math.min(2, Math.max(0.1, cur * f));
+  cxStructApplyZoom();
+}
+function cxStructZoomSet(z){ cxStructZoom = z; cxStructApplyZoom(); }
+/* hovering a box highlights its owners, its holdings and the lines between them */
+function cxStructHover(ev){
+  const svg = document.getElementById('structureChartSvg'); if(!svg) return;
+  const g = ev && ev.type !== 'mouseleave' && ev.target.closest ? ev.target.closest('.cxs-node') : null;
+  svg.querySelectorAll('.hl').forEach(x => x.classList.remove('hl'));
+  if(!g){ svg.classList.remove('cxs-focus'); return; }
+  const id = g.getAttribute('data-id'), linked = new Set([id]);
+  svg.classList.add('cxs-focus');
+  svg.querySelectorAll('.cxs-line').forEach(p => {
+    const f = p.getAttribute('data-from'), t = p.getAttribute('data-to');
+    if(f !== id && t !== id) return;
+    p.classList.add('hl'); linked.add(f === id ? t : f);
+    svg.querySelectorAll('.cxs-pct').forEach(q => { if(q.getAttribute('data-e') === p.getAttribute('data-e')) q.classList.add('hl'); });
+  });
+  svg.querySelectorAll('.cxs-node').forEach(n => { if(linked.has(n.getAttribute('data-id'))) n.classList.add('hl'); });
 }
 
 function renderEntities(){
@@ -20982,6 +21328,44 @@ function deleteCaption(id){
   renderCoaPage();
 }
 
+/* ============== THEME SWITCH ==============
+   'light' / 'dark' set data-theme on <html> (the CSS dark tokens key off it); 'system' removes it so the
+   OS setting decides. Stored per browser like any viewer preference — not part of the workspace data. */
+const CX_THEME_KEY = 'consolx_theme';
+const CX_SUN_SVG  = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+const CX_MOON_SVG = '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+function cxThemePref(){
+  try { const t = localStorage.getItem(CX_THEME_KEY); return (t === 'light' || t === 'dark') ? t : 'system'; }
+  catch(e){ return 'system'; }
+}
+function cxIsDark(){
+  const p = cxThemePref();
+  return p === 'dark' || (p === 'system' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function cxSetTheme(pref){
+  const root = document.documentElement;
+  if(pref === 'light' || pref === 'dark') root.setAttribute('data-theme', pref); else root.removeAttribute('data-theme');
+  try { if(pref === 'light' || pref === 'dark') localStorage.setItem(CX_THEME_KEY, pref); else localStorage.removeItem(CX_THEME_KEY); } catch(e){}
+  cxSyncThemeUI();
+}
+function cxToggleTheme(){ cxSetTheme(cxIsDark() ? 'light' : 'dark'); }
+function cxSyncThemeUI(){
+  const dark = cxIsDark(), pref = cxThemePref();
+  const btn = document.getElementById('cxThemeBtn');
+  if(btn){
+    btn.innerHTML = dark ? CX_SUN_SVG : CX_MOON_SVG;
+    const lbl = dark ? 'Switch to light mode' : 'Switch to dark mode';
+    btn.setAttribute('aria-label', lbl); btn.title = lbl;
+  }
+  document.querySelectorAll('#themeToggle [data-theme-opt]').forEach(b => b.classList.toggle('active', b.getAttribute('data-theme-opt') === pref));
+}
+if(window.matchMedia){
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const onOs = () => { if(cxThemePref() === 'system') cxSyncThemeUI(); };
+  if(mq.addEventListener) mq.addEventListener('change', onOs); else if(mq.addListener) mq.addListener(onOs);
+}
+cxSyncThemeUI();
+
 /* ============== SIMULATED BACKEND (2026-09-30, ported from v39.38; carried onto v39.37) ==============
    v39.35 had no persistence layer at all — every reload wiped the app clean.
    Until a real backend exists, this persists the app's durable data to THIS
@@ -22066,7 +22450,7 @@ function cxMvStep(p, cfg, locked){
       : `First-time consolidation \u2014 movements are shown within ${escapeHtml(p.label)} only`}</div>
   </div></div>`;
   if(!groups.length){
-    return h + `<div style="padding:24px 16px; font-size:12.5px; color:#6B6A5E;">Define group structures first \u2014 movements are measured per group.</div>`;
+    return h + `<div style="padding:24px 16px; font-size:12.5px; color:var(--cxp-muted);">Define group structures first \u2014 movements are measured per group.</div>`;
   }
   st.gi = Math.max(0, Math.min(groups.length - 1, st.gi || 0));
   const g = groups[st.gi];
@@ -22075,8 +22459,8 @@ function cxMvStep(p, cfg, locked){
 
   h += `<div class="cxmv-navrow">
     <button type="button" class="cxmv-navbtn" ${st.gi === 0 ? 'disabled style="opacity:.4;"' : ''} onclick="cxMvGroupNav(-1)">\u2039</button>
-    <div class="cxmv-gmid"><span style="color:#6B6A5E;">Group ${st.gi + 1} of ${groups.length} \u00b7 </span>
-      <span id="cxmvGname" style="font-weight:500; color:#185FA5;">${escapeHtml(parent.code || '')}</span>
+    <div class="cxmv-gmid"><span style="color:var(--cxp-muted);">Group ${st.gi + 1} of ${groups.length} \u00b7 </span>
+      <span id="cxmvGname" style="font-weight:500; color:var(--cxp-link);">${escapeHtml(parent.code || '')}</span>
       <span style="font-weight:600; color:#0C447C;"> ${escapeHtml(g.name)}</span></div>
     <button type="button" class="cxmv-navbtn" ${st.gi === groups.length - 1 ? 'disabled style="opacity:.4;"' : ''} onclick="cxMvGroupNav(1)">\u203a</button>
   </div>
@@ -22093,7 +22477,7 @@ function cxMvStep(p, cfg, locked){
     </div>`;
   }
   if(!members.length){
-    h += `<div style="padding:18px 16px; font-size:12.5px; color:#6B6A5E;">No entities held within this group during the period.</div>`;
+    h += `<div style="padding:18px 16px; font-size:12.5px; color:var(--cxp-muted);">No entities held within this group during the period.</div>`;
     h += cxMvGroupFoot(cfg, g, 0, locked);
     return h;
   }
@@ -22160,8 +22544,8 @@ function cxMvEntityPanel(cfg, p, g, x, locked){
   });
   left += `<div class="cxmv-legend">
     <span class="cxmv-ldot" style="background:#1D9E75;"></span>settled<br>
-    <span class="cxmv-ldot" style="background:#185FA5;"></span>selected<br>
-    <span class="cxmv-ldot" style="background:#FFFFFF; border:1.5px solid #185FA5;"></span>pending
+    <span class="cxmv-ldot" style="background:var(--cxp-link);"></span>selected<br>
+    <span class="cxmv-ldot" style="background:var(--surface); border:1.5px solid var(--cxp-link);"></span>pending
   </div>`;
 
   const n = nodes[ni];
@@ -22173,7 +22557,7 @@ function cxMvEntityPanel(cfg, p, g, x, locked){
     : `<select id="cxmvClsSel" ${editable ? '' : 'disabled'} style="font-size:12px; height:28px; width:160px; background:${bSel[0]}; color:${bSel[1]}; border:1px solid ${editable ? bSel[1] + '55' : bSel[0]}; border-radius:7px; font-family:inherit; padding:0 6px;" onchange="cxMvSetCls('${n.date}', this.value)">
         ${clsOpts.map(o => `<option value="${o[0]}" ${o[0] === n.cls ? 'selected' : ''}>${o[1]}</option>`).join('')}
       </select>`;
-  const autoChip = n.kind !== 'move' ? `<span class="cxmv-chip" style="background:#F4F3EE; color:#6B6A5E;">Auto</span>` : '';
+  const autoChip = n.kind !== 'move' ? `<span class="cxmv-chip" style="background:var(--cxp-neutral-bg); color:var(--cxp-muted);">Auto</span>` : '';
 
   const anchored = rows.filter(r => r.anchor === ni);
   const rowHtml = r => {
@@ -22192,17 +22576,17 @@ function cxMvEntityPanel(cfg, p, g, x, locked){
       <span style="font-size:12.5px; font-weight:600;">${n.pct > 1e-9 ? fmtPct(n.pct) + '%' : '\u2014'}</span>
       ${clsCtl}${autoChip}
     </div>
-    <div style="font-size:11px; color:#6B6A5E; margin:12px 0 6px;">Requests at this event</div>`;
+    <div style="font-size:11px; color:var(--cxp-muted); margin:12px 0 6px;">Requests at this event</div>`;
   right += anchored.length ? anchored.map(rowHtml).join('') : `<div class="cxmv-quiet" style="margin-bottom:6px;">No requests at this event \u2014 covered by the preceding span.</div>`;
-  if(!locked) right += `<div class="cxmv-addrow" onclick="cxMvReqAdd(${ni})"><svg viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M12 5v14M5 12h14"/></svg></div>`;
-  right += `<div class="cxmv-foot"><span style="margin-left:auto; font-size:11.5px; color:#6B6A5E;">Generated by rule${locked ? '' : ` \u00b7 <span style="color:#185FA5; cursor:pointer;" onclick="cxMvReset()">Reset</span>`}</span></div>`;
+  if(!locked) right += `<div class="cxmv-addrow" onclick="cxMvReqAdd(${ni})"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cxp-link)" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M12 5v14M5 12h14"/></svg></div>`;
+  right += `<div class="cxmv-foot"><span style="margin-left:auto; font-size:11.5px; color:var(--cxp-muted);">Generated by rule${locked ? '' : ` \u00b7 <span style="color:var(--cxp-link); cursor:pointer;" onclick="cxMvReset()">Reset</span>`}</span></div>`;
 
   let h = `<div class="cxmv-split"><div class="cxmv-left">${left}</div><div class="cxmv-right">${right}</div></div>`;
   if(x.moved && !locked){
     h += `<div class="cxmv-confirm">
-      <span style="font-size:12px; color:#085041;">${rows.length} request${rows.length === 1 ? '' : 's'} \u00b7 picked up from the ownership structure</span>
+      <span style="font-size:12px; color:var(--cxp-ok-text);">${rows.length} request${rows.length === 1 ? '' : 's'} \u00b7 picked up from the ownership structure</span>
       ${es.confirmed
-        ? `<span style="margin-left:auto; font-size:12px; color:#085041; font-weight:600;">Confirmed</span>`
+        ? `<span style="margin-left:auto; font-size:12px; color:var(--cxp-ok-text); font-weight:600;">Confirmed</span>`
         : `<button type="button" id="cxmvConfirmBtn" style="margin-left:auto; font-size:12px; background:#0F6E56; color:#FFFFFF; border:none; border-radius:8px; padding:6px 14px; cursor:pointer; font-family:inherit;" onclick="cxMvConfirm()">Confirm ${escapeHtml(x.e.code || '')}</button>`}
     </div>`;
   }
