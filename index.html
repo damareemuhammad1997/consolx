@@ -538,6 +538,7 @@
     white-space:normal; box-shadow:1px 0 0 var(--border);
   }
   .gc-table thead .gc-col-account{ z-index:6; }
+  .gc-table td.gc-col-account{ white-space:normal; overflow-wrap:anywhere; }   /* long account names wrap inside the sticky column instead of running into the figures */
   .gc-entity-header{ text-align:right; min-width:130px; }
   .gc-entity-header .gc-eh-name{ font-size:11.5px; font-weight:600; color:var(--text); display:flex; align-items:center; justify-content:flex-end; gap:4px; }
   .gc-entity-header .gc-eh-currency{ font-size:10.5px; color:var(--text-tertiary); font-weight:500; font-family:var(--mono); }
@@ -7856,6 +7857,8 @@ function fpTemplate(eid, key){
   rows.push(['Request', fpItemTitle(r, p)]);
   if(r.type === 'bs') rows.push(['As at', r.asAt || '']);
   else { rows.push(['From', r.from || '']); rows.push(['To', r.to || '']); }
+  /* a company incorporated on that date has nothing to report: it says so, rather than sending a blank file */
+  if(r.type === 'bs') rows.push(['Newly incorporated', 'NO', `Type YES if ${x.e.code} had no balances at ${r.asAt || 'this date'} (incorporated that day) and leave the lines below blank`]);
   rows.push([]);
   rows.push(['account_code', 'account_name', 'category', 'debit', 'credit']);
   accs.forEach(a => rows.push([a.code, a.name, a.category, '', '']));
@@ -7875,6 +7878,7 @@ function fpParseTable(raw){
   const out = [];
   raw.forEach(cols => {
     const code = String(cols[0] || '').trim();
+    if(/^newly incorporated/i.test(code)){ if(/^y(es)?$/i.test(String(cols[1] || '').trim())) out.nil = true; return; }
     if(!code || code === 'account_code' || code === 'Company name' || code === 'Entity code' || code === 'Currency'
        || code === 'Reporting period' || code === 'Request' || code === 'As at' || code === 'From' || code === 'To') return;
     if(!accounts.some(a => a.code === code)){ out.push({ bad: code }); return; }
@@ -7892,7 +7896,9 @@ function fpStoreRows(eid, key, rows, fileName, fileB64){
   const bad = rows.find(l => l.bad);
   if(bad) return { ok:false, err: '"' + bad.bad + '" is not in the chart of accounts' };
   const clean = rows.filter(l => !l.bad);
-  if(!clean.length) return { ok:false, err:'No readable lines with amounts' };
+  const nil = !!rows.nil && r.type === 'bs';
+  if(nil && clean.length) return { ok:false, err:'"Newly incorporated" says YES but the file has balances \u2014 keep one or the other' };
+  if(!clean.length && !nil) return { ok:false, err:'No readable lines with amounts' };
   if(r.type !== 'pl'){
     const dr = clean.reduce((s, l) => s + l[1], 0), cr = clean.reduce((s, l) => s + l[2], 0);
     if(Math.abs(Math.round(dr - cr)) >= 1)
@@ -7903,9 +7909,9 @@ function fpStoreRows(eid, key, rows, fileName, fileB64){
     financialsUploads[p.id + '-' + eid] = { fileName: fileName || 'upload.csv', uploadedAt: todayDMY(), validation:'validated', errors:null, _entityId: eid, fileB64: fileB64 || '' };
   } else {
     /* v39.33 (A3): the received file is kept, so it can be downloaded again as an audit copy */
-    REQ_UPLOADS[p.id + '-' + eid + '-' + r.key] = { rows: clean, fileName: fileName || 'upload.csv', uploadedAt: todayDMY(), validation:'validated', fileB64: fileB64 || '' };
+    REQ_UPLOADS[p.id + '-' + eid + '-' + r.key] = { rows: clean, fileName: fileName || 'upload.csv', uploadedAt: todayDMY(), validation:'validated', fileB64: fileB64 || '', nil: nil || undefined };
   }
-  return { ok:true };
+  return { ok:true, nil };
 }
 async function fpFileChosen(ev){
   const f = ev.target.files && ev.target.files[0];
@@ -7921,7 +7927,7 @@ async function fpFileChosen(ev){
   } catch(e){ showToast('Could not read that file', warnIcon()); return; }
   const res = fpStoreRows(pend.eid, pend.key, rows, f.name, __abToB64(ab));
   if(!res.ok){ showToast(res.err, warnIcon()); return; }
-  showToast('Received \u2014 validated against the chart of accounts', checkIcon());
+  showToast(res.nil ? 'Received \u2014 nil balance sheet (newly incorporated)' : 'Received \u2014 validated against the chart of accounts', checkIcon());
   fpRenderPanel();
   renderFinancialsPage();
 }
@@ -10125,6 +10131,9 @@ function icMatchRow(entityId, splitRow){
     return { matched:false, groupA, groupB:null, diff:null, counterpartyReported:false };
   }
   const groupB = Math.abs(icToGroup(b.id, +splitRow.counterAmount||0));
+  /* without a rate both sides translate to 0 \u2014 that is not a match */
+  const noRate = [a, b].filter(x => fcGetRate(x.currency, 'closing') === null).map(x => x.currency);
+  if(noRate.length) return { matched:false, rateMissing:[...new Set(noRate)], groupA:null, groupB:null, diff:null, counterpartyReported:true };
   return { matched: Math.abs(groupA - groupB) < Math.max(1, groupA*0.01),
            groupA, groupB, diff: groupA - groupB, counterpartyReported:true };
 }
@@ -10240,12 +10249,14 @@ const IC_STATUS_META = {
   complete:    { label:'Complete',       color:'var(--accent-text)', bg:'var(--accent-light)' },
 };
 
-function renderIcValidationPage(){
+function renderIcValidationPage(){ return withPresentation(activePresentationCurrency(), renderIcValidationPageIn); }
+function renderIcValidationPageIn(){
   const noPeriod = document.getElementById('icNoPeriod');
   const content = document.getElementById('icContent');
   if(!activePeriodId){ noPeriod.style.display='flex'; content.style.display='none'; return; }
   noPeriod.style.display='none'; content.style.display='block';
   document.getElementById('icMatchCurLabel').textContent = groupCurrency;
+  { const sub = document.getElementById('icSubCurLabel'); if(sub) sub.textContent = groupCurrency; }
 
   const withIc = entities.filter(e => icSummary(e.id).length > 0);
   const statuses = withIc.map(e => icEntityStatus(e.id));
@@ -10328,13 +10339,14 @@ function renderIcMatchMatrix(withIc){
     const diffTxt = m.diff==null ? '—' : (Math.abs(m.diff)<1?'0':formatAmount(m.diff));
     const statusPill = !m.counterpartyReported
       ? '<span class="je-pill" style="background:var(--surface-2); color:var(--text-tertiary);">No CP amount</span>'
+      : m.rateMissing ? `<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);">No ${escapeHtml(m.rateMissing.join(', '))} rate</span>`
       : (m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
     return `<tr>
       <td><strong>${escapeHtml(e.code)}</strong></td>
       <td><span class="code-cell">${escapeHtml(sp.icCode)}</span></td>
       <td>${escapeHtml(sp.counterparty||'—')}</td>
       <td><span class="code-cell">${escapeHtml(sp.counterAccount||'—')}</span></td>
-      <td class="je-amount">${formatAmount(m.groupA)}</td>
+      <td class="je-amount">${m.groupA==null?'—':formatAmount(m.groupA)}</td>
       <td class="je-amount">${m.groupB==null?'—':formatAmount(m.groupB)}</td>
       <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':'var(--danger)')};">${diffTxt}</td>
       <td style="text-align:center;">${statusPill}</td>
@@ -10617,6 +10629,9 @@ function cfIcMatchRow(entityId, splitRow){
     return { matched:false, groupA, groupB:null, diff:null, counterpartyReported:false };
   }
   const groupB = Math.abs(cfIcToGroup(b.id, +splitRow.counterAmount||0));
+  /* without a rate both sides translate to 0 \u2014 that is not a match */
+  const noRate = [a, b].filter(x => fcGetRate(x.currency, 'average') === null).map(x => x.currency);
+  if(noRate.length) return { matched:false, rateMissing:[...new Set(noRate)], groupA:null, groupB:null, diff:null, counterpartyReported:true };
   return { matched: Math.abs(groupA - groupB) < Math.max(1, groupA*0.01),
            groupA, groupB, diff: groupA - groupB, counterpartyReported:true };
 }
@@ -10715,7 +10730,8 @@ function exportAllCfIcTemplates(){
    ============================================================ */
 let cfIcDetailEntityId = null;
 
-function renderCfIcValidationPage(){
+function renderCfIcValidationPage(){ return withPresentation(activePresentationCurrency(), renderCfIcValidationPageIn); }
+function renderCfIcValidationPageIn(){
   const noPeriod = document.getElementById('cfIcNoPeriod');
   const content = document.getElementById('cfIcContent');
   if(!activePeriodId){ noPeriod.style.display='flex'; content.style.display='none'; return; }
@@ -10804,13 +10820,14 @@ function renderCfIcMatchMatrix(withIc){
     const diffTxt = m.diff==null ? '—' : (Math.abs(m.diff)<1?'0':formatAmount(m.diff));
     const statusPill = !m.counterpartyReported
       ? '<span class="je-pill" style="background:var(--surface-2); color:var(--text-tertiary);">No CP amount</span>'
+      : m.rateMissing ? `<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);">No ${escapeHtml(m.rateMissing.join(', '))} rate</span>`
       : (m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
     return `<tr>
       <td><strong>${escapeHtml(e.code)}</strong></td>
       <td><span class="code-cell">${escapeHtml(sp.icCode)}</span></td>
       <td>${escapeHtml(sp.counterparty||'—')}</td>
       <td><span class="code-cell">${escapeHtml(sp.counterAccount||'—')}</span></td>
-      <td class="je-amount">${formatAmount(m.groupA)}</td>
+      <td class="je-amount">${m.groupA==null?'—':formatAmount(m.groupA)}</td>
       <td class="je-amount">${m.groupB==null?'—':formatAmount(m.groupB)}</td>
       <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':'var(--danger)')};">${diffTxt}</td>
       <td style="text-align:center;">${statusPill}</td>
