@@ -16083,7 +16083,7 @@ function commitShGroup(g){
     return {kind:l.type, id};
   };
   /* v39.35: the voting % and relationship go onto the record like the form's */
-  const withRel = (rec, l) => csApplyRel(rec, { votingPct: l.vote != null && !isNaN(l.vote) ? String(l.vote) : '', rel: l.rel || null, relReason: l.reason || '', relEvidence: '', origReason: null,
+  const withRel = (rec, l) => csApplyRel(rec, { percentage: String(rec.percentage), votingPct: l.vote != null && !isNaN(l.vote) ? String(l.vote) : '', rel: l.rel || null, relReason: l.reason || '', relEvidence: '', origReason: null,
     relConfirmed: (l.rel === 'jc' || l.rel === 'jo') ? { by: cxUserName() + ' (import)', at: todayDMY() } : null });
   if(mode === 'assign'){
     g.lines.forEach(l => {
@@ -21472,6 +21472,10 @@ function cxLoadDurableState(){
     entities = s.entities || [];
     nonEntityShareholders = s.nonEntityShareholders || [];
     shareholdings = s.shareholdings || [];
+    /* repair: imports before this fix read the stake as 0% and saved 'None' as an override with no reason. Every
+       real override carries a reason (the form and the import both demand one), so a reasonless one is that bug. */
+    shareholdings.forEach(r => { if(r && r.rel && r.rel !== relDefault(shVote(r)) && !String(r.relReason || '').trim()){
+      delete r.rel; delete r.relReason; delete r.relBy; delete r.relAt; delete r.relEvidence; } });
     reportingPeriods = s.reportingPeriods || [];
     periodConfig = s.periodConfig || {};
     activePeriodId = s.activePeriodId || null;
