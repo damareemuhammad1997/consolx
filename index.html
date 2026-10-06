@@ -7878,6 +7878,7 @@ function fpParseTable(raw){
   const out = [];
   raw.forEach(cols => {
     const code = String(cols[0] || '').trim();
+    if(code === 'Entity code'){ out.entityCode = String(cols[1] || '').trim(); return; }
     if(/^newly incorporated/i.test(code)){ if(/^y(es)?$/i.test(String(cols[1] || '').trim())) out.nil = true; return; }
     if(!code || code === 'account_code' || code === 'Company name' || code === 'Entity code' || code === 'Currency'
        || code === 'Reporting period' || code === 'Request' || code === 'As at' || code === 'From' || code === 'To') return;
@@ -7893,6 +7894,8 @@ function fpStoreRows(eid, key, rows, fileName, fileB64){
   const cfg = fpCfg(); const g = fpGroup(); if(!g) return { ok:false, err:'No group selected' };
   const x = fpList(cfg, p, g).find(i => i.e.id === eid); if(!x) return { ok:false, err:'Entity is not in this group' };
   const r = x.rows.find(q => String(q.key) === String(key)); if(!r) return { ok:false, err:'Unknown request' };
+  if(rows.entityCode && rows.entityCode.toUpperCase() !== String(x.e.code).toUpperCase())
+    return { ok:false, err:`This file was made for ${rows.entityCode}, not ${x.e.code} \u2014 upload it on ${rows.entityCode}'s row` };
   const bad = rows.find(l => l.bad);
   if(bad) return { ok:false, err: '"' + bad.bad + '" is not in the chart of accounts' };
   const clean = rows.filter(l => !l.bad);
@@ -8316,6 +8319,12 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
   const tbSheet = sheets.find(s => /^tb/i.test(s.name) && !/opening/i.test(s.name));
   const opSheet = sheets.find(s => /^tb/i.test(s.name) && /opening/i.test(s.name));
   const cfSheet = sheets.find(s => /cash/i.test(s.name));
+  /* a pack is made for one company: uploading it against another is refused, even when its figures tie */
+  { const entity0 = entities.find(e => e.id === entityId);
+    const start = sheets.find(s => /start here/i.test(s.name));
+    const m = start && start.table.length ? String(start.table[0][0] || '').match(/entity pack\s*\u00b7\s*([A-Za-z0-9_-]+)\s*\u00b7/i) : null;
+    if(m && entity0 && m[1].toUpperCase() !== String(entity0.code).toUpperCase())
+      errs.push(`This pack was made for ${m[1]}, not ${entity0.code} \u2014 upload it on ${m[1]}'s row`); }
   if(!tbSheet) errs.push('No TB sheet found in the pack');
   if(!cfSheet) errs.push('No Cash flows sheet found in the pack');
   let lines = [], opLines = null, manual = {}, nonCash = [], comps = [];
