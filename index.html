@@ -1476,6 +1476,41 @@ body.cx-locked{ overflow:hidden; }
   .cm-dots span{ width:8px; height:8px; border-radius:50%; background:var(--border-strong); cursor:pointer; transition:all .25s; }
   .cm-dots span.on{ width:24px; border-radius:4px; background:var(--accent-vivid); }
 
+  /* v39.38 group IFRS statements: the preview is a sheet of paper, like the PDF */
+  .gf-nav{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .gf-doc{ display:flex; flex-direction:column; gap:18px; }
+  .gf-page{ background:#fff; color:#1b2433; border:1px solid var(--border); border-radius:6px; padding:34px 40px 30px; max-width:980px; scroll-margin-top:80px; }
+  .gf-cover{ padding:56px 40px; }
+  .gf-cover-name{ font-size:24px; font-weight:700; color:#1F3864; }
+  .gf-cover-title{ font-size:18px; margin-top:10px; }
+  .gf-cover-sub{ font-size:14px; margin-top:4px; }
+  .gf-cover-cur{ font-size:12px; color:#595959; font-style:italic; margin-top:6px; }
+  .gf-toc{ margin:26px 0 0 18px; font-size:13px; line-height:1.8; }
+  .gf-h-group{ font-size:15px; font-weight:700; color:#1F3864; }
+  .gf-h-title{ font-size:14px; font-weight:700; margin-top:6px; }
+  .gf-h-sub{ font-size:12px; font-style:italic; color:#595959; margin:3px 0 16px; }
+  .gf-caption{ font-size:13px; font-weight:700; margin:18px 0 6px; color:#1F3864; }
+  .gf-scroll{ overflow-x:auto; }
+  .gf-t{ border-collapse:collapse; width:100%; font-size:12.5px; }
+  .gf-t th{ text-align:right; font-weight:700; padding:4px 8px 5px; border-bottom:1px solid #1F3864; vertical-align:bottom; font-size:11.5px; }
+  .gf-t th.gf-l{ text-align:left; }
+  .gf-t td{ padding:3px 8px; }
+  .gf-t th, .gf-t td{ color:#1b2433; background:none; border-left:0; border-right:0; text-transform:none; letter-spacing:0; }
+  .gf-t td{ border-top:0; border-bottom:0; }
+  .gf-t tbody tr:hover td{ background:none; }
+  .gf-t td.gf-l{ padding-left:16px; overflow-wrap:anywhere; }
+  .gf-t .gf-note{ text-align:center; width:44px; color:#595959; }
+  .gf-t td.gf-n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; width:130px; }
+  .gf-t.wide td.gf-n{ width:auto; min-width:92px; }
+  .gf-t tr.gf-head td{ font-weight:700; padding-top:10px; }
+  .gf-t tr.gf-sub td{ font-weight:700; font-style:italic; padding-top:8px; color:#404040; }
+  .gf-t tr.gf-total td, .gf-t tr.gf-grand td, .gf-t tr.gf-bold td{ font-weight:700; }
+  .gf-t tr.gf-total td.gf-l, .gf-t tr.gf-grand td.gf-l, .gf-t tr.gf-bold td.gf-l{ padding-left:0; }
+  .gf-t tr.gf-total td.gf-n{ border-top:1px solid #1b2433; }
+  .gf-t tr.gf-grand td.gf-n{ border-top:1px solid #1b2433; border-bottom:3px double #1b2433; }
+  .gf-t tr.gf-blank td{ height:8px; }
+  @media (max-width:700px){ .gf-page{ padding:20px 16px; } }
+
   /* print / PDF: the investors pack only, one section per page, final values */
   #cmPrintHost{ display:none; }
   @media print{
@@ -2493,6 +2528,31 @@ body.cx-locked{ overflow:hidden; }
             </div>
           </div>
           <div id="gdBody"></div>
+        </div>
+      </div>
+
+      <!-- ============ CONSOLIDATION: GROUP IFRS STATEMENTS PAGE (v39.38) ============ -->
+      <div class="page" id="page-group-ifrs">
+        <div style="margin-bottom:16px;">
+          <h2 class="panel-title" style="font-size:17px;">Group IFRS statements</h2>
+          <p class="panel-sub" style="margin-bottom:0;">The consolidated financial statements by caption: profit or loss and OCI, financial position, changes in equity, cash flows and the movement notes. FINAL figures, after the posted journal entries, in the group's presentation currency, with comparatives when the period is linked to a prior one.</p>
+        </div>
+        <div id="gfNoPeriod" class="coming-soon" style="display:none;">
+          <div class="cs-icon"><svg class="icon" viewBox="0 0 24 24" style="width:26px;height:26px;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <h3>No reporting period selected</h3>
+          <p>Choose or create a reporting period first.</p>
+          <button class="primary" onclick="goToPage('periods')" style="margin-top:6px;">Go to reporting periods</button>
+        </div>
+        <div id="gfContent">
+          <div class="table-wrap" style="margin-bottom:14px;">
+            <div class="table-toolbar" style="flex-wrap:wrap; gap:8px;">
+              <span style="font-size:12px; color:var(--text-tertiary);" id="gfSummary"></span>
+              <div class="spacer"></div>
+              <button class="small gf-dl" onclick="exportGroupIfrsExcel()" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h2l2 5 2-5h2"/></svg>Download Excel</button>
+              <button class="small gf-dl" onclick="exportGroupIfrsPdf()" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>Download PDF</button>
+            </div>
+          </div>
+          <div id="gfBody"></div>
         </div>
       </div>
 
@@ -4929,12 +4989,13 @@ const pageMeta = {
   'group-pl':            { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group P&amp;L</span>' },
   'group-cf':            { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group cash flow</span>' },
   'group-disc':          { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group disclosures</span>' },
+  'group-ifrs':          { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group IFRS statements</span>' },
   'group-je':            { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group journal entries</span>' },
   'comm-mgmt':           { crumb: 'Communication <span class="sep">/</span> <span class="current">Management</span>' },
   'comm-inv':            { crumb: 'Communication <span class="sep">/</span> <span class="current">Investors</span>' },
   'reports-soon':        { crumb: 'Workflow <span class="sep">/</span> <span class="current">Reports</span>', title: 'Reports (Soon)', desc: 'Generate the trial balance, balance sheet and profit & loss under an IFRS-aligned template.' },
 };
-const realPages = ['configuration', 'entities', 'dashboard', 'shareholders', 'structure', 'periods', 'sh-financials', 'sh-localreports', 'sh-ifrs', 'sh-fcreports', 'sh-cfreport', 'sh-fxrates', 'sh-icvalidation', 'sh-iccashflow', 'group-bs', 'group-pl', 'group-cf', 'group-disc', 'group-je', 'comm-mgmt', 'comm-inv'];
+const realPages = ['configuration', 'entities', 'dashboard', 'shareholders', 'structure', 'periods', 'sh-financials', 'sh-localreports', 'sh-ifrs', 'sh-fcreports', 'sh-cfreport', 'sh-fxrates', 'sh-icvalidation', 'sh-iccashflow', 'group-bs', 'group-pl', 'group-cf', 'group-disc', 'group-ifrs', 'group-je', 'comm-mgmt', 'comm-inv'];
 
 function goToPage(page){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4959,6 +5020,7 @@ function goToPage(page){
     if(page === 'group-pl') renderGroupPL();
     if(page === 'group-cf') renderGroupCF();
     if(page === 'group-disc') renderGroupDisclosures();
+    if(page === 'group-ifrs') renderGroupIfrs();
     if(page === 'group-je') renderJournalEntriesPage();
     if(page === 'comm-mgmt') renderCommMgmt();
     if(page === 'comm-inv') renderCommInv();
@@ -12863,6 +12925,715 @@ function gcfBuildWorkbook(D){
   return { sheets };
 }
 
+
+/* ============================================================
+   v39.38 GROUP IFRS FINANCIAL STATEMENTS — the consolidated statements by caption, FINAL (after the posted
+   journal entries), in the group's presentation currency, with the comparative year when the period is linked
+   to a prior one: profit or loss and OCI, financial position, changes in equity, cash flows and the movement
+   notes. One document model feeds the on-screen preview, the Excel workbook (live formulas) and the PDF file.
+   ============================================================ */
+
+/* one period's group figures by caption */
+function cxIfrsSnap(pid, gkey, cur){
+  const p = reportingPeriods.find(x => x.id === pid); if(!p) return null;
+  const cfg = getPeriodConfig(pid);
+  const g = (cfg.userGroups || []).find(x => x.key === gkey); if(!g) return null;
+  return cxOwnRead(() => withPeriodGroup(pid, gkey, () => withPresentation(cur, () => {
+    const pl = computeGroupStatement('PL'), bs = computeGroupStatement('BS');
+    if(!pl.sortedEntities.length && !bs.sortedEntities.length) return null;
+    const fin = (st, code) => { const r = st.rows.acct[code]; return r ? (r.final || 0) : 0; };
+    const tot = (st, k) => { const r = st.rows.totals[k]; return r ? ((r.final != null ? r.final : r.group) || 0) : 0; };
+    /* captions of one category: amounts on the category's normal side; what no caption holds is the rest */
+    const byCap = (st, cat, total) => {
+      const m = {}; let sum = 0;
+      Object.keys(st.rows.acct).forEach(code => {
+        const a = accountByCode(code); if(!a || a.category !== cat) return;
+        const c = capById(a.captionId); if(!c || c.category !== cat) return;
+        const v = fin(st, code); m[c.id] = (m[c.id] || 0) + v; sum += v;
+      });
+      return { m, rest: total - sum };
+    };
+    const P = { INC: byCap(pl, 'INC', tot(pl, 'totalIncome')), EXP: byCap(pl, 'EXP', tot(pl, 'totalExpenses')),
+                TAX: byCap(pl, 'TAX', tot(pl, 'totalTax')), OCI: byCap(pl, 'OCI', tot(pl, 'totalOci')) };
+    const B = { NCA: byCap(bs, 'NCA', tot(bs, 'totalNca')), CA: byCap(bs, 'CA', tot(bs, 'totalCa')),
+                NCL: byCap(bs, 'NCL', tot(bs, 'totalNcl')), CL: byCap(bs, 'CL', tot(bs, 'totalCl')) };
+
+    /* equity by caption: the equity accounts, profit into retained earnings, each OCI item into its reserve,
+       the translation reserve on its own; anything left is "other reserves" so the lines add to total equity */
+    const reAcct = accountByCode(JE_PL_TO_EQUITY_ACCOUNT);
+    const reCap = (reAcct && capById(reAcct.captionId)) || capById('cap-sys-re');
+    const reKey = reCap ? reCap.id : '_other';
+    const nciAcct = accountByCode(NCI_ACCOUNT_CODE);
+    const nciKey = (nciAcct && nciAcct.captionId) || 'cap-sys-nci';
+    const eq = {}; const add = (k, v) => { eq[k] = (eq[k] || 0) + v; };
+    Object.keys(bs.rows.acct).forEach(code => {
+      const a = accountByCode(code); if(!a || a.category !== 'EQ') return;
+      const c = capById(a.captionId);
+      add(code === NCI_ACCOUNT_CODE ? nciKey : (c && c.category === 'EQ' ? c.id : '_other'), fin(bs, code));
+    });
+    const profit = tot(bs, 'profitForPeriod');
+    add(reKey, profit);
+    const ociBy = {}; let ociRouted = 0;
+    Object.keys(pl.rows.acct).forEach(code => {
+      const a = accountByCode(code); if(!a || a.category !== 'OCI') return;
+      const c = capById(a.captionId);
+      const rc = a.ociReserveCode || (c && c.ociReserveCode) || JE_PL_TO_EQUITY_ACCOUNT;
+      const ra = accountByCode(rc), rcap = ra ? capById(ra.captionId) : null;
+      const k = rcap && rcap.category === 'EQ' ? rcap.id : reKey;
+      const v = fin(pl, code); ociBy[k] = (ociBy[k] || 0) + v; ociRouted += v;
+    });
+    const ociBs = tot(bs, 'totalOci');
+    if(Math.abs(ociBs - ociRouted) >= 0.005) ociBy[reKey] = (ociBy[reKey] || 0) + ociBs - ociRouted;
+    Object.keys(ociBy).forEach(k => add(k, ociBy[k]));
+    add('_cta', tot(bs, 'translationReserve'));
+    const teq = tot(bs, 'totalEquity');
+    const eqSum = Object.values(eq).reduce((s, v) => s + v, 0);
+    if(Math.abs(teq - eqSum) >= 0.005) add('_other', teq - eqSum);
+
+    /* profit and OCI attributable to non-controlling interests: each subsidiary's share the group does not own,
+       at the end of its consolidated window (as the Communication module) */
+    const p0 = activePeriod(), W = cxGroupWindows(p0), consol = groupConsolidationFor(p0);
+    const lastTo = {}; W.list.forEach(r => { const w = r.windows[r.windows.length - 1]; if(w && w.to) lastTo[r.e.id] = w.to; });
+    let nciProfit = 0, nciOci = 0;
+    withGroupOverrides(groupOverrideMap(cfg, gkey), () => pl.sortedEntities.forEach(e => {
+      if(e.id === g.parentId) return;
+      const c = consol.get(e.id), cls = c ? c.cls : 'cons';
+      const asOf = lastTo[e.id] ? parseDMY(lastTo[e.id]) : parseDMY(p.endDate);
+      const own = Math.max(0, Math.min(100, effectiveHoldingAdj(ownershipEdges(asOf), g.parentId, e.id).total));
+      const rec = W.list.find(r => r.e.id === e.id), lw = rec ? rec.windows[rec.windows.length - 1] : null;
+      const share = cls === 'jo' && lw && lw.share ? lw.share : 1;
+      const s = Math.max(0, 1 - (own / 100) / (share || 1)); if(s < 1e-9) return;
+      nciProfit += s * ((pl.rows.totals.profitForPeriod.byEntity || {})[e.id] || 0);
+      nciOci += s * ((pl.rows.totals.totalOci.byEntity || {})[e.id] || 0);
+    }));
+
+    /* cash flows (only when the packs carry them) and the owner transactions they evidence */
+    let cf = null;
+    const hasCf = W.list.some(r => r.windows.some(w => w.cf && w.cf.manual && Object.keys(w.cf.manual).length));
+    if(hasCf){
+      const c = computeGroupCashFlow();
+      const lines = {};
+      c.lines.forEach(l => { const r = c.line[l.key]; lines[l.key] = { key: l.key, label: l.label, sec: l.sec, sub: l.sub || '', v: r ? (r.final || 0) : 0 }; });
+      const T = k => (c.totals[k] ? c.totals[k].final : 0) || 0;
+      cf = { order: c.lines.map(l => l.key), lines, ope: T('ope'), inv: T('inv'), fin: T('fin'), net: T('net'), fx: T('fx'), diff: T('diff'), open: T('open'), close: T('close'), bsCash: c.bsCash };
+    }
+    const ownerTx = [];
+    if(cf) cfAccounts.forEach(a => {
+      if(a.category !== 'FIN' || a.ic) return;
+      const ba = a.bsAccountCode ? accountByCode(a.bsAccountCode) : null;
+      if(!ba || ba.category !== 'EQ') return;
+      const ln = cf.lines['cf:' + a.code]; if(!ln || Math.abs(ln.v) < 0.005) return;
+      const bc = capById(ba.captionId);
+      const k = ba.code === NCI_ACCOUNT_CODE ? nciKey : (bc && bc.category === 'EQ' ? bc.id : '_other');
+      ownerTx.push({ label: a.name, k, v: ln.v });
+    });
+
+    const D = gdData();
+    const notes = D && D.notes ? D.notes.map(N => ({
+      capId: N.caption.id, name: N.caption.name, comps: N.comps.map(c => c.name), cols: N.cols,
+      rows: N.rows.map(r => ({ key: r.key, label: r.label, vals: N.cols.map(c => r.fcy[c] || 0) }))
+    })) : [];
+
+    return {
+      p, g, cur, P, B, eq, reKey, nciKey, ociBy, nciProfit, nciOci, ownerTx, cf, notes,
+      T: { inc: tot(pl, 'totalIncome'), exp: tot(pl, 'totalExpenses'), pbt: tot(pl, 'profitBeforeTax'), tax: tot(pl, 'totalTax'),
+           profit: tot(pl, 'profitForPeriod'), oci: tot(pl, 'totalOci'), tci: tot(pl, 'totalComprehensiveIncome') },
+      S: { nca: tot(bs, 'totalNca'), ca: tot(bs, 'totalCa'), ta: tot(bs, 'totalAssets'), teq, ncl: tot(bs, 'totalNcl'), cl: tot(bs, 'totalCl'),
+           tl: tot(bs, 'totalLiabilities'), tel: tot(bs, 'totalEquityAndLiabilities') }
+    };
+  })));
+}
+
+function cxIfrsLongDate(dmy){
+  const d = parseDMY(dmy); if(!d) return dmy || '';
+  return d.getDate() + ' ' + ['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()] + ' ' + d.getFullYear();
+}
+function cxIfrsSpanWord(p){
+  const a = parseDMY(p.startDate), b = parseDMY(p.endDate); if(!a || !b) return 'period';
+  const m = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() + (b.getDate() >= a.getDate() - 1 ? 1 : 0);
+  return m === 12 ? 'year' : 'period';
+}
+function cxIfrsGroupIn(pp, gkey){ return !!(pp && (getPeriodConfig(pp.id).userGroups || []).some(x => x.key === gkey)); }
+
+/* the document: sheets → tables → rows. A row: {id, label, kind, vals[], f(R, c) → formula | null, note, xl}
+   kinds: head, sub, line, total, grand, blank, check (Excel only) */
+function cxIfrsDoc(){
+  const p = activePeriod(); if(!p) return { state:'noPeriod' };
+  const g = cmGroupFor(p); if(!g) return { state:'noGroup', p };
+  const cur = activePresentationCurrency();
+  const now = cxIfrsSnap(p.id, g.key, cur);
+  if(!now) return { state:'noData', p, g, cur };
+  const pp = cxLinkedPrior(p);
+  let prior = null;
+  if(cxIfrsGroupIn(pp, g.key)){ try { prior = cxIfrsSnap(pp.id, g.key, cur); } catch(err){ prior = null; } }
+  const ppp = prior ? cxLinkedPrior(pp) : null;
+  let prior2 = null;
+  if(cxIfrsGroupIn(ppp, g.key)){ try { prior2 = cxIfrsSnap(ppp.id, g.key, cur); } catch(err){ prior2 = null; } }
+  const snaps = prior ? [now, prior] : [now];
+  const yrs = snaps.map(s => s.p.label);
+  const nz = vals => vals.some(v => v != null && Math.abs(v) >= 0.5);
+  const sumF = ids => (R, c) => ids.length ? ids.map(id => R(id, c)).join('+') : '0';
+  const word = cxIfrsSpanWord(p);
+  const endLong = cxIfrsLongDate(p.endDate);
+  const sheets = [];
+
+  /* ---------- statement of profit or loss and other comprehensive income ---------- */
+  {
+    const rows = [], lineIds = [];
+    const lines = new Map();   /* by lower-case caption name: INC and EXP captions of the same name are one net line */
+    const rank = n => /^revenue|revenue from contracts|^turnover|^sales$/i.test(n) ? 0 : /cost of (sales|goods|revenue)|direct costs?/i.test(n) ? 1
+      : /share of (the )?(profit|results?|loss)/i.test(n) ? 9 : /finance (income|costs?)|interest (income|expense)/i.test(n) ? (/income/i.test(n) ? 7 : 8) : 2;
+    let seq = 0;
+    ['INC','EXP'].forEach(cat => fsCaptions.filter(c => c.category === cat).sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true })).forEach(c => {
+      const k = String(c.name).trim().toLowerCase();
+      if(!lines.has(k)) lines.set(k, { label: c.name, ids: [], rank: rank(c.name), seq: seq++ });
+      lines.get(k).ids.push({ id: c.id, sign: cat === 'INC' ? 1 : -1, cat });
+    }));
+    const L = [...lines.values()].sort((a, b) => a.rank - b.rank || a.seq - b.seq);
+    const valOf = (ln, s) => ln.ids.reduce((t, x) => t + x.sign * ((s.P[x.cat].m[x.id]) || 0), 0);
+    const shown = L.map(ln => ({ ln, vals: snaps.map(s => valOf(ln, s)) })).filter(x => nz(x.vals));
+    const hasRev = shown.some(x => x.ln.rank === 0), hasCos = shown.some(x => x.ln.rank === 1);
+    shown.forEach((x, i) => {
+      const id = 'pl' + i; rows.push({ id, label: x.ln.label, kind:'line', vals: x.vals }); lineIds.push(id);
+      if(hasRev && hasCos && x.ln.rank === 1 && !(shown[i + 1] && shown[i + 1].ln.rank === 1)){
+        const gpIds = lineIds.filter((_, j) => shown[j].ln.rank <= 1);
+        rows.push({ id:'gp', label:'Gross profit', kind:'total', vals: snaps.map((s, si) => shown.filter(y => y.ln.rank <= 1).reduce((t, y) => t + y.vals[si], 0)), f: sumF(gpIds) });
+      }
+    });
+    const restI = snaps.map(s => s.P.INC.rest), restE = snaps.map(s => -s.P.EXP.rest);
+    if(nz(restI)){ rows.push({ id:'plri', label:'Other income (accounts without a caption)', kind:'line', vals: restI }); lineIds.push('plri'); }
+    if(nz(restE)){ rows.push({ id:'plre', label:'Other expenses (accounts without a caption)', kind:'line', vals: restE }); lineIds.push('plre'); }
+    rows.push({ id:'pbt', label:'Profit before tax', kind:'total', vals: snaps.map(s => s.T.pbt), f: sumF(lineIds) });
+    const taxIds = [];
+    fsCaptions.filter(c => c.category === 'TAX').sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true })).forEach((c, i) => {
+      const vals = snaps.map(s => -(s.P.TAX.m[c.id] || 0)); if(!nz(vals)) return;
+      rows.push({ id:'tx' + i, label: c.name, kind:'line', vals }); taxIds.push('tx' + i);
+    });
+    const restT = snaps.map(s => -s.P.TAX.rest);
+    if(nz(restT) || !taxIds.length){ rows.push({ id:'txr', label: taxIds.length ? 'Other tax (accounts without a caption)' : 'Income tax expense', kind:'line', vals: taxIds.length ? restT : snaps.map(s => -s.T.tax) }); taxIds.push('txr'); }
+    rows.push({ id:'pfy', label:`Profit for the ${word}`, kind:'total', vals: snaps.map(s => s.T.profit), f: sumF(['pbt', ...taxIds]) });
+    rows.push({ kind:'blank' });
+    rows.push({ label:'Other comprehensive income', kind:'head' });
+    const ociIds = [];
+    fsCaptions.filter(c => c.category === 'OCI').sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true })).forEach((c, i) => {
+      const vals = snaps.map(s => s.P.OCI.m[c.id] || 0); if(!nz(vals)) return;
+      rows.push({ id:'oc' + i, label: c.name, kind:'line', vals }); ociIds.push('oc' + i);
+    });
+    const restO = snaps.map(s => s.P.OCI.rest);
+    if(nz(restO)){ rows.push({ id:'ocr', label:'Other comprehensive income (accounts without a caption)', kind:'line', vals: restO }); ociIds.push('ocr'); }
+    /* exchange differences on translating foreign operations: the movement in the translation reserve */
+    const ctaMv = snaps.map((s, si) => (s.eq._cta || 0) - ((si === 0 ? (prior ? prior.eq._cta : 0) : (prior2 ? prior2.eq._cta : 0)) || 0));
+    if(nz(ctaMv)){ rows.push({ id:'occ', label:'Exchange differences on translating foreign operations', kind:'line', vals: ctaMv }); ociIds.push('occ'); }
+    if(!ociIds.length){ rows.push({ id:'ocn', label:'Other comprehensive income', kind:'line', vals: snaps.map(() => 0) }); ociIds.push('ocn'); }
+    const ociVals = snaps.map((s, si) => s.T.oci + ctaMv[si]);
+    rows.push({ id:'oci', label:`Other comprehensive income for the ${word}`, kind:'total', vals: ociVals, f: sumF(ociIds) });
+    rows.push({ id:'tci', label:`Total comprehensive income for the ${word}`, kind:'grand', vals: snaps.map((s, si) => s.T.profit + ociVals[si]), f: (R, c) => `${R('pfy', c)}+${R('oci', c)}` });
+    rows.push({ kind:'blank' });
+    rows.push({ label:'Profit attributable to:', kind:'head' });
+    rows.push({ id:'pow', label:'Owners of the parent', kind:'line', vals: snaps.map(s => s.T.profit - s.nciProfit), f: (R, c) => `${R('pfy', c)}-${R('pnc', c)}` });
+    rows.push({ id:'pnc', label:'Non-controlling interests', kind:'line', vals: snaps.map(s => s.nciProfit) });
+    rows.push({ kind:'blank' });
+    rows.push({ label:'Total comprehensive income attributable to:', kind:'head' });
+    rows.push({ id:'cow', label:'Owners of the parent', kind:'line', vals: snaps.map((s, si) => s.T.profit + ociVals[si] - s.nciProfit - s.nciOci), f: (R, c) => `${R('tci', c)}-${R('cnc', c)}` });
+    rows.push({ id:'cnc', label:'Non-controlling interests', kind:'line', vals: snaps.map(s => s.nciProfit + s.nciOci) });
+    sheets.push({ key:'sopl', name:'SOPL and OCI', title:'Consolidated statement of profit or loss and other comprehensive income',
+      sub:`For the ${word} ended ${endLong}`, tables:[{ heads: yrs, rows }] });
+  }
+
+  /* ---------- statement of financial position ---------- */
+  /* notes: captions with a balance at the opening or the closing (a caption eliminated to nil is not on the face) */
+  const ends = n => n.rows.filter(r => r.key === 'open' || r.key === 'jeopen' || r.key === 'close');
+  now.notes = now.notes.filter(n => ends(n).some(r => r.vals.some(v => Math.abs(v) >= 0.5)));
+  const noteNo = {}; now.notes.forEach((n, i) => { noteNo[n.capId] = i + 1; });
+  const eqCols = [];   /* owners' equity components, in statement order, for the SOFP and the SOCE */
+  {
+    const rows = [];
+    const capsOf = cat => fsCaptions.filter(c => c.category === cat).sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true }));
+    const block = (cat, pre) => {
+      const ids = [];
+      capsOf(cat).forEach((c, i) => {
+        const vals = snaps.map(s => s.B[cat].m[c.id] || 0); if(!nz(vals)) return;
+        const id = pre + i; rows.push({ id, label: c.name, kind:'line', vals, note: noteNo[c.id] || null }); ids.push(id);
+      });
+      const rest = snaps.map(s => s.B[cat].rest);
+      if(nz(rest)){ rows.push({ id: pre + 'r', label:'Other (accounts without a caption)', kind:'line', vals: rest }); ids.push(pre + 'r'); }
+      return ids;
+    };
+    rows.push({ label:'ASSETS', kind:'head' });
+    rows.push({ label:'Non-current assets', kind:'sub' });
+    const nca = block('NCA', 'a');
+    rows.push({ id:'tnca', label:'Total non-current assets', kind:'total', vals: snaps.map(s => s.S.nca), f: sumF(nca) });
+    rows.push({ label:'Current assets', kind:'sub' });
+    const ca = block('CA', 'b');
+    rows.push({ id:'tca', label:'Total current assets', kind:'total', vals: snaps.map(s => s.S.ca), f: sumF(ca) });
+    rows.push({ id:'ta', label:'Total assets', kind:'grand', vals: snaps.map(s => s.S.ta), f: sumF(['tnca','tca']) });
+    rows.push({ kind:'blank' });
+    rows.push({ label:'EQUITY AND LIABILITIES', kind:'head' });
+    rows.push({ label:'Equity', kind:'sub' });
+    const eIds = [];
+    const eqKeys = capsOf('EQ').map(c => c.id).filter(k => k !== now.nciKey);
+    const eqLabel = { _cta:'Foreign currency translation reserve', _other:'Other reserves' };
+    /* retained earnings last among the owners' components, as is usual on the face of the statement */
+    const ordered = eqKeys.filter(k => k !== now.reKey).concat(eqKeys.includes(now.reKey) ? [now.reKey] : []);
+    ['_cta', '_other'].forEach(k => ordered.splice(ordered.indexOf(now.reKey) < 0 ? ordered.length : ordered.indexOf(now.reKey), 0, k));
+    ordered.forEach((k, i) => {
+      const vals = snaps.map(s => s.eq[k] || 0);
+      const seen = vals.concat([prior2 ? (prior2.eq[k] || 0) : 0]);
+      const used = nz(seen) || snaps.some(s => (s.ociBy[k] && Math.abs(s.ociBy[k]) >= 0.5) || s.ownerTx.some(t => t.k === k));
+      if(!used) return;
+      const c = capById(k);
+      eqCols.push({ k, label: c ? c.name : eqLabel[k] });
+      if(!nz(vals)) return;
+      rows.push({ id:'e' + i, label: c ? c.name : eqLabel[k], kind:'line', vals }); eIds.push('e' + i);
+    });
+    rows.push({ id:'eow', label:'Equity attributable to owners of the parent', kind:'total', vals: snaps.map(s => s.S.teq - (s.eq[s.nciKey] || 0)), f: sumF(eIds) });
+    rows.push({ id:'enc', label:'Non-controlling interests', kind:'line', vals: snaps.map(s => s.eq[s.nciKey] || 0) });
+    rows.push({ id:'teq', label:'Total equity', kind:'total', vals: snaps.map(s => s.S.teq), f: sumF(['eow','enc']) });
+    rows.push({ label:'Non-current liabilities', kind:'sub' });
+    const ncl = block('NCL', 'c');
+    rows.push({ id:'tncl', label:'Total non-current liabilities', kind:'total', vals: snaps.map(s => s.S.ncl), f: sumF(ncl) });
+    rows.push({ label:'Current liabilities', kind:'sub' });
+    const cl = block('CL', 'd');
+    rows.push({ id:'tcl', label:'Total current liabilities', kind:'total', vals: snaps.map(s => s.S.cl), f: sumF(cl) });
+    rows.push({ id:'tl', label:'Total liabilities', kind:'total', vals: snaps.map(s => s.S.tl), f: sumF(['tncl','tcl']) });
+    rows.push({ id:'tel', label:'Total equity and liabilities', kind:'grand', vals: snaps.map(s => s.S.tel), f: sumF(['teq','tl']) });
+    rows.push({ id:'chk', label:'Check: total assets less total equity and liabilities (should be nil)', kind:'check', vals: snaps.map(s => s.S.ta - s.S.tel), f: (R, c) => `${R('ta', c)}-${R('tel', c)}` });
+    sheets.push({ key:'sofp', name:'SOFP', title:'Consolidated statement of financial position', sub:`As at ${endLong}`, tables:[{ heads: yrs, rows, noteCol: true }] });
+  }
+
+  /* ---------- statement of changes in equity ---------- */
+  {
+    const hasNci = snaps.some(s => Math.abs(s.eq[s.nciKey] || 0) >= 0.5 || Math.abs(s.nciProfit) >= 0.5 || Math.abs(s.nciOci) >= 0.5)
+      || (prior2 && Math.abs(prior2.eq[prior2.nciKey] || 0) >= 0.5);
+    const ks = eqCols.map(x => x.k), nO = ks.length;
+    const heads = eqCols.map(x => x.label).concat(hasNci ? ['Attributable to owners of the parent', 'Non-controlling interests', 'Total equity'] : ['Total equity']);
+    const W = heads.length;
+    const colSum = hasNci ? [{ col: nO, of: [...Array(nO).keys()] }, { col: nO + 2, of: [nO, nO + 1] }] : [{ col: nO, of: [...Array(nO).keys()] }];
+    /* a full row from the owners' columns and the NCI amount */
+    const mk = (own, nci) => { const o = ks.map(k => own[k] || 0), t = o.reduce((a, b) => a + b, 0);
+      return hasNci ? o.concat([t, nci || 0, t + (nci || 0)]) : o.concat([t + (nci || 0)]); };
+    const closeOf = s => mk(Object.fromEntries(ks.map(k => [k, s.eq[k] || 0])), s.eq[s.nciKey] || 0);
+    const rows = [];
+    const years = prior ? [[prior, prior2], [now, prior]] : [[now, null]];
+    let prevClose = null;
+    years.forEach(([s, o], yi) => {
+      const y = 'y' + yi + '_';
+      const closeV = closeOf(s);
+      const pOwn = { [s.reKey]: s.T.profit - s.nciProfit };
+      const ociOwn = {}; Object.keys(s.ociBy).forEach(k => { if(k !== s.nciKey) ociOwn[k] = (ociOwn[k] || 0) + s.ociBy[k]; });
+      ociOwn[s.reKey] = (ociOwn[s.reKey] || 0) - s.nciOci;
+      ociOwn._cta = (ociOwn._cta || 0) + (s.eq._cta || 0) - (o ? (o.eq._cta || 0) : 0);
+      const profV = mk(pOwn, s.nciProfit), ociV = mk(ociOwn, s.nciOci);
+      const txs = new Map();
+      s.ownerTx.forEach(t => { const x = txs.get(t.label) || { own:{}, nci:0 }; if(t.k === s.nciKey) x.nci += t.v; else x.own[t.k] = (x.own[t.k] || 0) + t.v; txs.set(t.label, x); });
+      const txV = [...txs.entries()].map(([label, x]) => ({ label, vals: mk(x.own, x.nci) }));
+      const movesV = [profV, ociV, ...txV.map(t => t.vals)];
+      /* opening: the prior period's closing; for a first period, closing less the year's movements */
+      const openV = o ? closeOf(o) : closeV.map((v, j) => v - movesV.reduce((t, m) => t + m[j], 0));
+      const otherV = closeV.map((v, j) => v - openV[j] - movesV.reduce((t, m) => t + m[j], 0));
+      const startDate = s.p.startDate;
+      let openId;
+      if(yi === 0){ openId = y + 'op'; rows.push({ id: openId, label:`Balance at ${cxIfrsLongDate(startDate)}`, kind:'bold', vals: openV }); }
+      else { openId = prevClose; rows.push({ kind:'blank' }); }
+      const ids = [];
+      rows.push({ id: y + 'pf', label:`Profit for the ${cxIfrsSpanWord(s.p)}`, kind:'line', vals: profV }); ids.push(y + 'pf');
+      rows.push({ id: y + 'oc', label:'Other comprehensive income', kind:'line', vals: ociV }); ids.push(y + 'oc');
+      rows.push({ id: y + 'tc', label:`Total comprehensive income for the ${cxIfrsSpanWord(s.p)}`, kind:'total', vals: profV.map((v, j) => v + ociV[j]), f: sumF([y + 'pf', y + 'oc']) });
+      const mvIds = [y + 'tc'];
+      if(txV.length){
+        rows.push({ label:'Transactions with owners', kind:'sub' });
+        txV.forEach((t, i) => { rows.push({ id: y + 'tx' + i, label: t.label, kind:'line', vals: t.vals }); mvIds.push(y + 'tx' + i); });
+      }
+      if(nz(otherV)){ rows.push({ id: y + 'ot', label:'Other movements in equity', kind:'line', vals: otherV }); mvIds.push(y + 'ot'); }
+      rows.push({ id: y + 'cl', label:`Balance at ${cxIfrsLongDate(s.p.endDate)}`, kind:'grand', vals: closeV, f: sumF([openId, ...mvIds]) });
+      prevClose = y + 'cl';
+    });
+    /* tie each closing to the statement of financial position */
+    years.slice().reverse().forEach(([s], i) => {
+      const yi = years.length - 1 - i, cl = 'y' + yi + '_cl';
+      rows.push({ label:`Check: ${s.p.label} total equity less the statement of financial position (should be nil)`, kind:'check',
+        vals: heads.map((_, j) => j === W - 1 ? 0 : null), f: (R, c) => c === W - 1 ? `${R(cl, c)}-${R('sofp.teq', i)}` : null });
+    });
+    sheets.push({ key:'soce', name:'SOCE', title:'Consolidated statement of changes in equity', sub:`For the ${word} ended ${endLong}`, wide: true, tables:[{ heads, rows, colSum }] });
+  }
+
+  /* ---------- statement of cash flows ---------- */
+  {
+    const rows = [];
+    if(!now.cf){
+      rows.push({ label:'No cash flow information in the packs for this period.', kind:'sub' });
+    } else {
+      const cfs = snaps.map(s => s.cf);
+      const keys = [];
+      cfs.forEach(c => { if(c) c.order.forEach(k => { if(!keys.includes(k)) keys.push(k); }); });
+      const info = k => (now.cf.lines[k] || (prior && prior.cf && prior.cf.lines[k]));
+      const v = (c, k) => c && c.lines[k] ? c.lines[k].v : 0;
+      const sec = (code, head, totalLabel, totId, totKey) => {
+        rows.push({ label: head, kind:'head' });
+        const ids = [];
+        let adjHead = false;
+        keys.filter(k => info(k).sec === code).forEach((k, i) => {
+          const vals = cfs.map(c => v(c, k)); if(!nz(vals)) return;
+          const l = info(k);
+          if(l.sub === 'adj' && !adjHead){ rows.push({ label:'Adjustments for:', kind:'sub' }); adjHead = true; }
+          const id = code + i; rows.push({ id, label: l.label, kind:'line', vals }); ids.push(id);
+        });
+        rows.push({ id: totId, label: totalLabel, kind:'total', vals: cfs.map(c => c ? c[totKey] : 0), f: sumF(ids) });
+      };
+      sec('OPE', 'Cash flows from operating activities', 'Net cash from operating activities', 'ope', 'ope');
+      sec('INV', 'Cash flows from investing activities', 'Net cash used in investing activities', 'inv', 'inv');
+      sec('FIN', 'Cash flows from financing activities', 'Net cash from financing activities', 'fin', 'fin');
+      rows.push({ kind:'blank' });
+      rows.push({ id:'net', label:'Net increase/(decrease) in cash and cash equivalents', kind:'total', vals: cfs.map(c => c ? c.net : 0), f: sumF(['ope','inv','fin']) });
+      const endIds = ['net'];
+      rows.push({ id:'opn', label:`Cash and cash equivalents at the beginning of the ${word}`, kind:'line', vals: cfs.map(c => c ? c.open : 0) }); endIds.push('opn');
+      const fx = cfs.map(c => c ? c.fx : 0), df = cfs.map(c => c ? c.diff : 0);
+      if(nz(fx)){ rows.push({ id:'fx', label:'Effect of exchange rate changes on cash and cash equivalents', kind:'line', vals: fx }); endIds.push('fx'); }
+      if(nz(df)){ rows.push({ id:'dif', label:'Movement not explained by the cash flow packs', kind:'line', vals: df }); endIds.push('dif'); }
+      rows.push({ id:'cls', label:`Cash and cash equivalents at the end of the ${word}`, kind:'grand', vals: cfs.map(c => c ? c.close : 0), f: sumF(endIds) });
+      rows.push({ label:'Check: closing cash less cash per the group balance sheet (should be nil)', kind:'check', vals: cfs.map(c => c ? c.close - c.bsCash : null),
+        f: (R, c) => cfs[c] ? `${R('cls', c)}-${Math.round(cfs[c].bsCash * 100) / 100}` : null });
+    }
+    sheets.push({ key:'socf', name:'Cash flows', title:'Consolidated statement of cash flows', sub:`For the ${word} ended ${endLong}`, tables:[{ heads: yrs, rows }] });
+  }
+
+  /* ---------- notes: the movement of each asset and liability caption ---------- */
+  {
+    const tables = now.notes.map((n, i) => {
+      const rows = [];
+      const ids = [];
+      n.rows.forEach((r, j) => {
+        if(r.key === 'close') return;
+        if(r.key !== 'open' && !nz(r.vals)) return;
+        const id = 'r' + j; rows.push({ id, label: r.label, kind:'line', vals: r.vals.concat([r.vals.reduce((a, b) => a + b, 0)]) }); ids.push(id);
+      });
+      const cl = n.rows.find(r => r.key === 'close');
+      const cv = cl ? cl.vals : n.cols.map(() => 0);
+      rows.push({ id:'cl', label:'Closing balance', kind:'grand', vals: cv.concat([cv.reduce((a, b) => a + b, 0)]), f: sumF(ids) });
+      return { caption: `${i + 1}. ${n.name}`, heads: n.comps.concat(['Total']), rows, colSum: [{ col: n.comps.length, of: [...Array(n.comps.length).keys()] }] };
+    });
+    if(tables.length) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
+  }
+
+  return { state:'ok', p, g, cur, prior: prior ? pp : null, word, endLong, yrs, sheets,
+    ties: { bs: Math.abs(now.S.ta - now.S.tel) < 1, cf: !now.cf || Math.abs(now.cf.close - now.cf.bsCash) < 1 } };
+}
+
+/* ---------- number format shared by the preview and the PDF ---------- */
+function cxIfrsFmt(v){
+  if(v == null) return '';
+  const r = Math.round(v);
+  if(r === 0) return '–';
+  return r < 0 ? '(' + Math.abs(r).toLocaleString('en-US') + ')' : r.toLocaleString('en-US');
+}
+
+/* ---------- the page ---------- */
+function renderGroupIfrs(){
+  const noP = document.getElementById('gfNoPeriod'), content = document.getElementById('gfContent');
+  if(!content) return;
+  if(!activePeriodId){ noP.style.display = 'flex'; content.style.display = 'none'; return; }
+  noP.style.display = 'none'; content.style.display = 'block';
+  const sum = document.getElementById('gfSummary'), body = document.getElementById('gfBody');
+  let D;
+  try { D = cxIfrsDoc(); } catch(err){ console.error(err); D = { state:'error' }; }
+  const btns = document.querySelectorAll('#gfContent .gf-dl');
+  btns.forEach(b => { b.disabled = D.state !== 'ok'; });
+  if(D.state !== 'ok'){
+    sum.textContent = '';
+    body.innerHTML = `<div class="cx-empty">${D.state === 'noGroup' ? 'Define a group in the reporting period first.' : D.state === 'error' ? 'The statements could not be prepared — check the group statements for this period.' : 'No entity in the consolidation has financials for this period.'}</div>`;
+    return;
+  }
+  sum.innerHTML = `${escapeHtml(D.g.name)} · ${escapeHtml(D.p.label)}${D.prior ? ' with comparatives for ' + escapeHtml(D.prior.label) : ' · no linked prior period, so no comparatives'} · ${escapeHtml(D.cur)}`
+    + (D.ties.bs ? '' : ' · <span style="color:var(--danger); font-weight:600;">⚠ the balance sheet does not balance</span>')
+    + (D.ties.cf ? '' : ' · <span style="color:var(--warn); font-weight:600;">⚠ closing cash differs from the balance sheet</span>');
+  body.innerHTML = `<div class="gf-nav">${D.sheets.map(s => `<button class="small" onclick="document.getElementById('gf-${s.key}').scrollIntoView({behavior:'smooth', block:'start'})">${escapeHtml(s.name)}</button>`).join('')}</div>`
+    + `<div class="gf-doc">${cxIfrsHtml(D)}</div>`;
+}
+function cxIfrsHtml(D){
+  let h = `<div class="gf-page gf-cover"><div class="gf-cover-name">${escapeHtml(D.g.name)}</div>
+    <div class="gf-cover-title">Consolidated financial statements</div>
+    <div class="gf-cover-sub">for the ${D.word} ended ${escapeHtml(D.endLong)}</div>
+    <div class="gf-cover-cur">Presented in ${escapeHtml(D.cur)}</div>
+    <ol class="gf-toc">${D.sheets.map(s => `<li>${escapeHtml(s.title)}</li>`).join('')}</ol></div>`;
+  D.sheets.forEach(s => {
+    h += `<div class="gf-page" id="gf-${s.key}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
+      <div class="gf-h-sub">${escapeHtml(s.sub)} · all amounts in ${escapeHtml(D.cur)}</div>`;
+    s.tables.forEach(t => {
+      if(t.caption) h += `<div class="gf-caption">${escapeHtml(t.caption)}</div>`;
+      h += `<div class="gf-scroll"><table class="gf-t${s.wide ? ' wide' : ''}"><thead><tr><th class="gf-l"></th>${t.noteCol ? '<th class="gf-note">Note</th>' : ''}${t.heads.map(x => `<th>${escapeHtml(x)}</th>`).join('')}</tr></thead><tbody>`;
+      t.rows.forEach(r => {
+        if(r.kind === 'check') return;
+        if(r.kind === 'blank'){ h += `<tr class="gf-blank"><td colspan="${t.heads.length + 1 + (t.noteCol ? 1 : 0)}"></td></tr>`; return; }
+        if(r.kind === 'head' || r.kind === 'sub'){ h += `<tr class="gf-${r.kind}"><td colspan="${t.heads.length + 1 + (t.noteCol ? 1 : 0)}">${escapeHtml(r.label)}</td></tr>`; return; }
+        h += `<tr class="gf-${r.kind}"><td class="gf-l">${escapeHtml(r.label)}</td>${t.noteCol ? `<td class="gf-note">${r.note || ''}</td>` : ''}${t.heads.map((_, j) => `<td class="gf-n">${cxIfrsFmt(r.vals[j])}</td>`).join('')}</tr>`;
+      });
+      h += '</tbody></table></div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
+
+/* ---------- Excel: one sheet per statement, every subtotal a live formula, checks at the foot ---------- */
+const CXI_STYLES = {
+  group:  { b:1, sz:13, color:'1F3864' },
+  title:  { b:1, sz:12 },
+  sub:    { i:1, sz:10, color:'595959' },
+  hdr:    { b:1, sz:10, h:'right', wrap:1, v:'bottom', bottom:'thin', bcolor:'1F3864' },
+  hdrC:   { b:1, sz:10, h:'center', wrap:1, v:'bottom', bottom:'thin', bcolor:'1F3864' },
+  cap:    { b:1, sz:11, color:'1F3864' },
+  head:   { b:1, sz:10 },
+  subh:   { b:1, i:1, sz:10, color:'404040' },
+  lbl:    { sz:10, indent:1 },
+  lblT:   { b:1, sz:10 },
+  note:   { sz:10, h:'center', color:'595959' },
+  num:    { sz:10, num:'#,##0;(#,##0);"–"' },
+  numB:   { b:1, sz:10, num:'#,##0;(#,##0);"–"' },
+  numT:   { b:1, sz:10, top:'thin', bcolor:'000000', num:'#,##0;(#,##0);"–"' },
+  numG:   { b:1, sz:10, top:'thin', bottom:'double', bcolor:'000000', num:'#,##0;(#,##0);"–"' },
+  chkL:   { i:1, sz:9, color:'7F7F7F' },
+  chk:    { i:1, sz:9, color:'7F7F7F', num:'#,##0;(#,##0);"–"' },
+  toc:    { sz:10, u:1, color:'0563C1' },
+  plain:  { sz:10 }
+};
+function cxIfrsWorkbook(D){
+  const C = XLSX_W.colLetter;
+  const pos = {};   /* sheetKey.rowId → {sheet, row, c0} */
+  const out = [];
+  const used = new Set();
+  const plan = D.sheets.map(s => ({ s, name: xlUniqueName(s.name, used) }));
+  /* first pass: lay out row numbers so formulas can point across sheets */
+  plan.forEach(({ s, name }) => {
+    let r = 6;
+    s.tables.forEach(t => {
+      if(t.caption) r += 1;
+      r += 1;   /* header row */
+      const c0 = t.noteCol ? 2 : 1;
+      t.rows.forEach(row => { r += 1; if(row.id) pos[s.key + '.' + row.id] = { sheet: name, row: r, c0 }; });
+      r += 1;   /* gap after a table */
+    });
+  });
+  plan.forEach(({ s, name }) => {
+    const rows = [];
+    const put = (r, c, cell) => { while(rows.length < r) rows.push([]); const row = rows[r - 1]; while(row.length < c) row.push(null); row[c] = cell; };
+    put(1, 0, { v: D.g.name, s:'group' });
+    put(2, 0, { v: s.title, s:'title' });
+    put(3, 0, { v: s.sub, s:'sub' });
+    put(4, 0, { v: `All amounts in ${D.cur}`, s:'sub' });
+    let r = 6, maxCols = 1;
+    s.tables.forEach(t => {
+      const c0 = t.noteCol ? 2 : 1;
+      maxCols = Math.max(maxCols, c0 + t.heads.length);
+      if(t.caption){ r += 1; put(r, 0, { v: t.caption, s:'cap' }); }
+      r += 1;
+      put(r, 0, { v: t.labelHead || '', s:'hdr' });
+      if(t.noteCol) put(r, 1, { v:'Note', s:'hdrC' });
+      t.heads.forEach((x, j) => put(r, c0 + j, { v: x, s:'hdr' }));
+      const R = (id, c) => {
+        const own = pos[s.key + '.' + id], ext = pos[id];
+        const P = own || ext; if(!P) return '0';
+        const ref = C(P.c0 + c) + P.row;
+        return P.sheet === name ? ref : `'${P.sheet.replace(/'/g, "''")}'!${ref}`;
+      };
+      const sumCols = {}; (t.colSum || []).forEach(x => { sumCols[x.col] = x.of; });
+      t.rows.forEach(row => {
+        r += 1;
+        if(row.kind === 'blank') return;
+        const ls = row.kind === 'head' ? 'head' : row.kind === 'sub' ? 'subh' : row.kind === 'check' ? 'chkL' : (row.kind === 'total' || row.kind === 'grand' || row.kind === 'bold') ? 'lblT' : 'lbl';
+        put(r, 0, { v: row.label, s: ls });
+        if(t.noteCol && row.note) put(r, 1, { v: row.note, s:'note' });
+        if(row.kind === 'head' || row.kind === 'sub') return;
+        const ns = row.kind === 'grand' ? 'numG' : row.kind === 'total' ? 'numT' : row.kind === 'check' ? 'chk' : row.kind === 'bold' ? 'numB' : 'num';
+        t.heads.forEach((_, j) => {
+          const v = row.vals ? row.vals[j] : null;
+          let cell;
+          if(sumCols[j] && row.kind !== 'check') cell = { f: `SUM(${sumCols[j].map(k => C(c0 + k) + r).join(',')})`, s: ns };
+          else if(row.f){ const f = row.f(R, j); cell = f == null ? (v == null ? null : { v: Math.round(v * 100) / 100, s: ns }) : { f, s: ns }; }
+          else cell = v == null ? null : { v: Math.round(v * 100) / 100, s: ns };
+          if(cell) put(r, c0 + j, cell);
+        });
+      });
+      r += 1;
+    });
+    const numW = s.wide ? 15 : 17;
+    const cols = [s.wide ? 46 : 58].concat(s.tables.some(t => t.noteCol) ? [7] : []);
+    while(cols.length < maxCols) cols.push(numW);
+    out.push({ name, rows, cols, grid: false });
+  });
+  /* contents first */
+  const toc = [[{ v: D.g.name, s:'group' }], [{ v:'Consolidated financial statements', s:'title' }], [{ v:`For the ${D.word} ended ${D.endLong} · presented in ${D.cur}`, s:'sub' }], []];
+  plan.forEach(({ s, name }) => toc.push([{ f:`HYPERLINK("#'${name.replace(/'/g, "''")}'!A1","${s.title.replace(/"/g, "'")}")`, s:'toc' }]));
+  toc.push([]);
+  toc.push([{ v:'FINAL figures from the group statements, after the posted consolidation journal entries. Subtotals are live formulas; the grey check rows should all be nil.', s:'sub' }]);
+  return [{ name:'Contents', rows: toc, cols:[100], grid: false }].concat(out);
+}
+function cxIfrsFileBase(D){
+  return `IFRS_Statements_${String(D.g.name || 'Group').replace(/[^A-Za-z0-9]+/g, '_')}_${D.cur}_${String(D.p.label).replace(/\s+/g, '_')}`;
+}
+function exportGroupIfrsExcel(){
+  const D = cxIfrsDoc();
+  if(D.state !== 'ok'){ showToast('No group statements to export for this period', warnIcon()); return null; }
+  return xlsxRichDownload(cxIfrsFileBase(D) + '.xlsx', cxIfrsWorkbook(D), CXI_STYLES).then(bytes => {
+    showToast('IFRS statements exported to Excel — subtotals are live formulas', checkIcon());
+    return bytes;
+  });
+}
+
+/* ---------- PDF: written directly (standard Helvetica, A4), no library and no print dialog ---------- */
+const CXI_HELV = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const CXI_HELVB = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const CXI_WIN = { 0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84, 0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88, 0x2030:0x89, 0x0160:0x8A, 0x2039:0x8B, 0x0152:0x8C, 0x017D:0x8E,
+  0x2018:0x91, 0x2019:0x92, 0x201C:0x93, 0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97, 0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B, 0x0153:0x9C, 0x017E:0x9E, 0x0178:0x9F, 0x2192:0x3E };
+function cxPdfWin(s){
+  let o = '';
+  for(const ch of String(s)){
+    const u = ch.codePointAt(0);
+    const b = u < 0x80 || (u >= 0xA0 && u <= 0xFF) ? u : (CXI_WIN[u] || 0x3F);
+    const c = String.fromCharCode(b);
+    o += c === '(' || c === ')' || c === '\\' ? '\\' + c : c;
+  }
+  return o;
+}
+function cxPdfWidth(s, size, bold){
+  const t = bold ? CXI_HELVB : CXI_HELV; let w = 0;
+  for(const ch of String(s)){ const u = ch.codePointAt(0); w += u >= 32 && u <= 126 ? t[u - 32] : (u === 0x2014 ? 1000 : 556); }
+  return w * size / 1000;
+}
+function cxPdfWrap(s, size, bold, width){
+  const words = String(s).split(/\s+/); const lines = []; let cur = '';
+  words.forEach(w => {
+    const t = cur ? cur + ' ' + w : w;
+    if(cxPdfWidth(t, size, bold) <= width || !cur) cur = t; else { lines.push(cur); cur = w; }
+  });
+  if(cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
+function cxIfrsPdf(D){
+  const pages = [];   /* {w, h, ops: []} */
+  let pg = null, y = 0;
+  const M = 42, FOOT = 34;
+  const n2 = v => (Math.round(v * 100) / 100).toString();
+  const text = (x, yy, s, size, font) => pg.ops.push(`BT /${font || 'F1'} ${size} Tf ${n2(x)} ${n2(yy)} Td (${cxPdfWin(s)}) Tj ET`);
+  const textR = (xr, yy, s, size, bold) => text(xr - cxPdfWidth(s, size, bold), yy, s, size, bold ? 'F2' : 'F1');
+  const line = (x1, y1, x2, y2, w) => pg.ops.push(`${w || 0.5} w ${n2(x1)} ${n2(y1)} m ${n2(x2)} ${n2(y2)} l S`);
+  const newPage = (land) => { pg = land ? { w: 842, h: 595, ops: [] } : { w: 595, h: 842, ops: [] }; pages.push(pg); y = pg.h - M; };
+  const color = (r, g, b) => pg.ops.push(`${r} ${g} ${b} rg`);
+  const head = (s, cont) => {
+    color(0.12, 0.22, 0.39); text(M, y - 12, D.g.name, 13, 'F2'); color(0, 0, 0); y -= 30;
+    text(M, y, s.title + (cont ? ' (continued)' : ''), 11, 'F2'); y -= 15;
+    color(0.35, 0.35, 0.35); text(M, y, s.sub + ' · all amounts in ' + D.cur, 9, 'F3'); color(0, 0, 0); y -= 22;
+  };
+
+  /* cover */
+  newPage(false);
+  y = 560;
+  color(0.12, 0.22, 0.39); text(M, y, D.g.name, 22, 'F2'); y -= 34;
+  color(0, 0, 0); text(M, y, 'Consolidated financial statements', 16, 'F1'); y -= 22;
+  text(M, y, `for the ${D.word} ended ${D.endLong}`, 12, 'F1'); y -= 18;
+  color(0.35, 0.35, 0.35); text(M, y, 'Presented in ' + D.cur, 10, 'F3'); y -= 40;
+  color(0, 0, 0); text(M, y, 'Contents', 11, 'F2'); y -= 18;
+  D.sheets.forEach((s, i) => { text(M, y, `${i + 1}.  ${s.title}`, 10, 'F1'); y -= 15; });
+
+  D.sheets.forEach(s => {
+    const maxHeads = Math.max(...s.tables.map(t => t.heads.length));
+    const land = !!s.wide && maxHeads > 3;
+    newPage(land); head(s, false);
+    s.tables.forEach((t, ti) => {
+      const avail = pg.w - 2 * M;
+      const noteW = t.noteCol ? 34 : 0;
+      const nC = t.heads.length;
+      let numW = s.wide ? Math.min(78, Math.max(52, (avail - 170 - noteW) / nC)) : 82;
+      const fs = numW < 64 ? 7 : 8.5;
+      const labW = avail - noteW - numW * nC;
+      const colR = j => M + labW + noteW + numW * (j + 1) - 2;
+      const drawHeads = () => {
+        const hl = t.heads.map(x => cxPdfWrap(x, fs, true, numW - 6));
+        const nl = Math.max(1, ...hl.map(l => l.length));
+        const lh = fs + 2;
+        if(t.labelHead) text(M, y - nl * lh + 2, t.labelHead, fs, 'F3');
+        if(t.noteCol) textR(M + labW + noteW - 6, y - nl * lh + 2, 'Note', fs, true);
+        hl.forEach((ls, j) => ls.forEach((l, k) => textR(colR(j), y - (nl - ls.length + k + 1) * lh + 2, l, fs, true)));
+        y -= nl * lh + 3;
+        line(M, y, M + avail, y, 0.6);
+        y -= 4;
+      };
+      let started = false;
+      const need = h => { if(y - h < M + FOOT){ newPage(land); head(s, true); if(started){ if(t.caption){ text(M, y, t.caption + ' (continued)', 10, 'F2'); y -= 16; } drawHeads(); } } };
+      if(ti > 0) y -= 16;
+      need(90);
+      if(t.caption){ text(M, y, t.caption, 10, 'F2'); y -= 16; }
+      drawHeads();
+      started = true;
+      t.rows.forEach(r => {
+        if(r.kind === 'check') return;
+        if(r.kind === 'blank'){ y -= 6; return; }
+        const bold = r.kind !== 'line';   /* head, sub, bold, total, grand */
+        const ind = r.kind === 'line' ? 8 : 0;
+        const ls = cxPdfWrap(r.label, fs, bold, labW - ind - 6);
+        const lh = fs + 4;
+        const hgt = ls.length * lh + (r.kind === 'head' ? 6 : r.kind === 'grand' ? 4 : 0);
+        need(hgt + (r.kind === 'head' || r.kind === 'sub' ? lh * 2 : 0));
+        if(r.kind === 'head') y -= 6;
+        ls.forEach((l, k) => { text(M + ind, y - (k + 1) * lh + 3, l, fs, r.kind === 'sub' ? 'F4' : bold ? 'F2' : 'F1'); });
+        const by = y - ls.length * lh + 3;
+        if(r.kind !== 'head' && r.kind !== 'sub'){
+          if(t.noteCol && r.note) textR(M + labW + noteW - 10, by, String(r.note), fs, false);
+          t.heads.forEach((_, j) => {
+            const v = r.vals ? r.vals[j] : null; if(v == null) return;
+            if(r.kind === 'total' || r.kind === 'grand') line(colR(j) - numW + 10, y - 1, colR(j) + 2, y - 1, 0.5);
+            textR(colR(j), by, cxIfrsFmt(v), fs, bold);
+            if(r.kind === 'grand'){ line(colR(j) - numW + 10, by - 3, colR(j) + 2, by - 3, 0.5); line(colR(j) - numW + 10, by - 5, colR(j) + 2, by - 5, 0.5); }
+          });
+        }
+        y -= ls.length * lh + (r.kind === 'grand' ? 4 : 0);
+      });
+    });
+  });
+
+  /* footers */
+  pages.forEach((p, i) => {
+    pg = p;
+    color(0.45, 0.45, 0.45);
+    text(M, 22, `${D.g.name} · consolidated financial statements · ${D.p.label}`, 7.5, 'F1');
+    textR(p.w - M, 22, `Page ${i + 1} of ${pages.length}`, 7.5, false);
+    color(0, 0, 0);
+  });
+
+  /* assemble: catalog, pages, 4 fonts, then page + content per page */
+  const objs = [];
+  const fontObj = n => `<< /Type /Font /Subtype /Type1 /BaseFont /${n} /Encoding /WinAnsiEncoding >>`;
+  objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objs[3] = fontObj('Helvetica'); objs[4] = fontObj('Helvetica-Bold'); objs[5] = fontObj('Helvetica-Oblique'); objs[6] = fontObj('Helvetica-BoldOblique');
+  objs[7] = `<< /Title (${cxPdfWin(D.g.name + ' - consolidated financial statements ' + D.p.label)}) /Producer (ConsolX) /Creator (ConsolX) >>`;
+  const kids = [];
+  pages.forEach((p, i) => {
+    const po = 8 + i * 2, co = po + 1;
+    const content = p.ops.join('\n');
+    objs[po] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${p.w} ${p.h}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents ${co} 0 R >>`;
+    objs[co] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+    kids.push(po + ' 0 R');
+  });
+  objs[2] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`;
+  let out = '%PDF-1.4\n%âãÏÓ\n';
+  const offs = [];
+  for(let i = 1; i < objs.length; i++){ offs[i] = out.length; out += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
+  const xref = out.length;
+  out += `xref\n0 ${objs.length}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('');
+  out += `trailer\n<< /Size ${objs.length} /Root 1 0 R /Info 7 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const bytes = new Uint8Array(out.length);
+  for(let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xFF;
+  return bytes;
+}
+function exportGroupIfrsPdf(){
+  const D = cxIfrsDoc();
+  if(D.state !== 'ok'){ showToast('No group statements to export for this period', warnIcon()); return null; }
+  const bytes = cxIfrsPdf(D);
+  const blob = new Blob([bytes], { type:'application/pdf' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = cxIfrsFileBase(D) + '.pdf';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast('IFRS statements exported to PDF', checkIcon());
+  return bytes;
+}
 
 /* ============================================================
    IFRS FINANCIAL STATEMENTS — entity-level, caption-aggregated
@@ -21664,7 +22435,7 @@ const CX_NAV_TREE = {
     { kind:'group', key:'rep', label:'Reports', icon: CX_ICONS.reports,
       children: [['sh-localreports','Financial reports'], ['sh-ifrs','IFRS Financial Statements']] },
     { kind:'group', key:'grp', label:'Consolidation', icon: CX_ICONS.consolidation,
-      children: [['group-bs','Group balance sheet'], ['group-pl','Group P&L'], ['group-cf','Group cash flow'], ['group-disc','Group disclosures'], ['group-je','Group journal entries']] },
+      children: [['group-bs','Group balance sheet'], ['group-pl','Group P&L'], ['group-cf','Group cash flow'], ['group-disc','Group disclosures'], ['group-ifrs','Group IFRS statements'], ['group-je','Group journal entries']] },
     { kind:'group', key:'comm', label:'Communication', icon: CX_ICONS.communication,
       children: [['comm-mgmt','Management'], ['comm-inv','Investors']] }
   ]
