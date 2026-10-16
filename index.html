@@ -13357,12 +13357,17 @@ function cxIfrsHtml(D){
     <div class="gf-cover-sub">for the ${D.word} ended ${escapeHtml(D.endLong)}</div>
     <div class="gf-cover-cur">Presented in ${escapeHtml(D.cur)}</div>
     <ol class="gf-toc">${D.sheets.map(s => `<li>${escapeHtml(s.title)}</li>`).join('')}</ol></div>`;
+  /* on screen each note is its own page, landscape only when it has more than four amount columns
+     (the PDF and Excel keep the notes running on together) */
+  const pages = [];
   D.sheets.forEach(s => {
-    /* landscape in the PDF → a landscape-width sheet here too */
-    const land = !!s.wide && Math.max(...s.tables.map(t => t.heads.length)) > 3;
-    h += `<div class="gf-page${land ? ' gf-land' : ''}" id="gf-${s.key}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
+    if(s.key === 'notes') s.tables.forEach((t, i) => pages.push({ s, id: i ? 'gf-notes-' + (i + 1) : 'gf-notes', tables:[t], land: t.heads.length > 4 }));
+    else pages.push({ s, id: 'gf-' + s.key, tables: s.tables, land: !!s.wide && Math.max(...s.tables.map(t => t.heads.length)) > 3 });
+  });
+  pages.forEach(({ s, id, tables, land }) => {
+    h += `<div class="gf-page${land ? ' gf-land' : ''}" id="${id}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
       <div class="gf-h-sub">${escapeHtml(s.sub)} · all amounts in ${escapeHtml(D.cur)}</div>`;
-    s.tables.forEach(t => {
+    tables.forEach(t => {
       if(t.caption) h += `<div class="gf-caption">${escapeHtml(t.caption)}</div>`;
       h += `<div class="gf-scroll"><table class="gf-t${s.wide ? ' wide' : ''}"><thead><tr><th class="gf-l"></th>${t.noteCol ? '<th class="gf-note">Note</th>' : ''}${t.heads.map(x => `<th>${escapeHtml(x)}</th>`).join('')}</tr></thead><tbody>`;
       t.rows.forEach(r => {
