@@ -1486,7 +1486,6 @@ body.cx-locked{ overflow:hidden; }
   .gf-cover-sub{ font-size:14px; margin-top:4px; }
   .gf-cover-cur{ font-size:12px; color:#595959; font-style:italic; margin-top:6px; }
   .gf-toc{ margin:26px 0 0 18px; font-size:13px; line-height:1.8; }
-  .gf-toc-n{ margin:0 0 0 18px; font-size:12px; line-height:1.6; color:#404040; }
   .gf-h-group{ font-size:15px; font-weight:700; color:#1F3864; }
   .gf-h-title{ font-size:14px; font-weight:700; margin-top:6px; }
   .gf-h-sub{ font-size:12px; font-style:italic; color:#595959; margin:3px 0 16px; }
@@ -11674,7 +11673,7 @@ function xlsxRichFiles(sheets, styles){
     });
     x += '</sheetData>';
     if(sh.merges && sh.merges.length) x += `<mergeCells count="${sh.merges.length}">${sh.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`;
-    x += '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup orientation="' + (sh.orientation || 'landscape') + '" fitToWidth="1" fitToHeight="0"/>';
+    x += '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>';
     return x + '</worksheet>';
   });
   const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -13315,22 +13314,13 @@ function cxIfrsDoc(){
       rows.push({ id:'cl', label:'Closing balance', kind:'grand', vals: cv.concat([cv.reduce((a, b) => a + b, 0)]), f: sumF(ids) });
       return { caption: `${i + 1}. ${n.name}`, heads: n.comps.concat(['Total']), rows, colSum: [{ col: n.comps.length, of: [...Array(n.comps.length).keys()] }] };
     });
-    /* one page (and one Excel sheet) per note, each in the orientation its columns need */
-    tables.forEach((t, i) => sheets.push({ key:'note' + (i + 1), name: t.caption, title:'Notes to the consolidated financial statements',
-      sub:`Movements for the ${word} ended ${endLong}`, wide: true, note: true, tables:[t] }));
+    if(tables.length) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
   }
 
   return { state:'ok', p, g, cur, prior: prior ? pp : null, word, endLong, yrs, sheets,
     ties: { bs: Math.abs(now.S.ta - now.S.tel) < 1, cf: !now.cf || Math.abs(now.cf.close - now.cf.bsCash) < 1 } };
 }
 
-/* landscape when a page has more than four amount columns (preview, PDF and Excel print setup alike) */
-function cxIfrsLand(s){ return !!s.wide && Math.max(...s.tables.map(t => t.heads.length)) > 4; }
-/* contents: the statements, then the notes as one entry with each note beneath it */
-function cxIfrsToc(D){
-  const st = D.sheets.filter(s => !s.note), nt = D.sheets.filter(s => s.note);
-  return st.map(s => ({ s, title: s.title, notes: null })).concat(nt.length ? [{ s: nt[0], title:'Notes to the consolidated financial statements', notes: nt }] : []);
-}
 /* ---------- number format shared by the preview and the PDF ---------- */
 function cxIfrsFmt(v){
   if(v == null) return '';
@@ -13358,7 +13348,7 @@ function renderGroupIfrs(){
   sum.innerHTML = `${escapeHtml(D.g.name)} · ${escapeHtml(D.p.label)}${D.prior ? ' with comparatives for ' + escapeHtml(D.prior.label) : ' · no linked prior period, so no comparatives'} · ${escapeHtml(D.cur)}`
     + (D.ties.bs ? '' : ' · <span style="color:var(--danger); font-weight:600;">⚠ the balance sheet does not balance</span>')
     + (D.ties.cf ? '' : ' · <span style="color:var(--warn); font-weight:600;">⚠ closing cash differs from the balance sheet</span>');
-  body.innerHTML = `<div class="gf-nav">${cxIfrsToc(D).map(x => `<button class="small" onclick="document.getElementById('gf-${x.s.key}').scrollIntoView({behavior:'smooth', block:'start'})">${escapeHtml(x.notes ? 'Notes' : x.s.name)}</button>`).join('')}</div>`
+  body.innerHTML = `<div class="gf-nav">${D.sheets.map(s => `<button class="small" onclick="document.getElementById('gf-${s.key}').scrollIntoView({behavior:'smooth', block:'start'})">${escapeHtml(s.name)}</button>`).join('')}</div>`
     + `<div class="gf-doc">${cxIfrsHtml(D)}</div>`;
 }
 function cxIfrsHtml(D){
@@ -13366,10 +13356,10 @@ function cxIfrsHtml(D){
     <div class="gf-cover-title">Consolidated financial statements</div>
     <div class="gf-cover-sub">for the ${D.word} ended ${escapeHtml(D.endLong)}</div>
     <div class="gf-cover-cur">Presented in ${escapeHtml(D.cur)}</div>
-    <ol class="gf-toc">${cxIfrsToc(D).map(x => `<li>${escapeHtml(x.title)}${x.notes ? `<ol class="gf-toc-n">${x.notes.map(n => `<li>${escapeHtml(n.tables[0].caption.replace(/^\d+\.\s*/, ''))}</li>`).join('')}</ol>` : ''}</li>`).join('')}</ol></div>`;
+    <ol class="gf-toc">${D.sheets.map(s => `<li>${escapeHtml(s.title)}</li>`).join('')}</ol></div>`;
   D.sheets.forEach(s => {
     /* landscape in the PDF → a landscape-width sheet here too */
-    const land = cxIfrsLand(s);
+    const land = !!s.wide && Math.max(...s.tables.map(t => t.heads.length)) > 3;
     h += `<div class="gf-page${land ? ' gf-land' : ''}" id="gf-${s.key}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
       <div class="gf-h-sub">${escapeHtml(s.sub)} · all amounts in ${escapeHtml(D.cur)}</div>`;
     s.tables.forEach(t => {
@@ -13408,7 +13398,6 @@ const CXI_STYLES = {
   chkL:   { i:1, sz:9, color:'7F7F7F' },
   chk:    { i:1, sz:9, color:'7F7F7F', num:'#,##0;(#,##0);"–"' },
   toc:    { sz:10, u:1, color:'0563C1' },
-  tocN:   { sz:9.5, u:1, color:'0563C1', indent:2 },
   plain:  { sz:10 }
 };
 function cxIfrsWorkbook(D){
@@ -13473,19 +13462,14 @@ function cxIfrsWorkbook(D){
     const numW = s.wide ? 15 : 17;
     const cols = [s.wide ? 46 : 58].concat(s.tables.some(t => t.noteCol) ? [7] : []);
     while(cols.length < maxCols) cols.push(numW);
-    out.push({ name, rows, cols, grid: false, orientation: cxIfrsLand(s) ? 'landscape' : 'portrait' });
+    out.push({ name, rows, cols, grid: false });
   });
   /* contents first */
   const toc = [[{ v: D.g.name, s:'group' }], [{ v:'Consolidated financial statements', s:'title' }], [{ v:`For the ${D.word} ended ${D.endLong} · presented in ${D.cur}`, s:'sub' }], []];
-  const link = (name, label) => ({ f:`HYPERLINK("#'${name.replace(/'/g, "''")}'!A1","${String(label).replace(/"/g, "'")}")`, s:'toc' });
-  const nameOf = s => plan.find(x => x.s === s).name;
-  cxIfrsToc(D).forEach(x => {
-    toc.push([link(nameOf(x.s), x.title)]);
-    if(x.notes) x.notes.forEach(n => toc.push([{ ...link(nameOf(n), '    ' + n.tables[0].caption), s:'tocN' }]));
-  });
+  plan.forEach(({ s, name }) => toc.push([{ f:`HYPERLINK("#'${name.replace(/'/g, "''")}'!A1","${s.title.replace(/"/g, "'")}")`, s:'toc' }]));
   toc.push([]);
   toc.push([{ v:'FINAL figures from the group statements, after the posted consolidation journal entries. Subtotals are live formulas; the grey check rows should all be nil.', s:'sub' }]);
-  return [{ name:'Contents', rows: toc, cols:[100], grid: false, orientation:'portrait' }].concat(out);
+  return [{ name:'Contents', rows: toc, cols:[100], grid: false }].concat(out);
 }
 function cxIfrsFileBase(D){
   return `IFRS_Statements_${String(D.g.name || 'Group').replace(/[^A-Za-z0-9]+/g, '_')}_${D.cur}_${String(D.p.label).replace(/\s+/g, '_')}`;
@@ -13552,13 +13536,11 @@ function cxIfrsPdf(D){
   text(M, y, `for the ${D.word} ended ${D.endLong}`, 12, 'F1'); y -= 18;
   color(0.35, 0.35, 0.35); text(M, y, 'Presented in ' + D.cur, 10, 'F3'); y -= 40;
   color(0, 0, 0); text(M, y, 'Contents', 11, 'F2'); y -= 18;
-  cxIfrsToc(D).forEach((x, i) => {
-    text(M, y, `${i + 1}.  ${x.title}`, 10, 'F1'); y -= 15;
-    if(x.notes) x.notes.forEach(n => { text(M + 18, y, n.tables[0].caption, 8.5, 'F1'); y -= 12; });
-  });
+  D.sheets.forEach((s, i) => { text(M, y, `${i + 1}.  ${s.title}`, 10, 'F1'); y -= 15; });
 
   D.sheets.forEach(s => {
-    const land = cxIfrsLand(s);
+    const maxHeads = Math.max(...s.tables.map(t => t.heads.length));
+    const land = !!s.wide && maxHeads > 3;
     newPage(land); head(s, false);
     s.tables.forEach((t, ti) => {
       const avail = pg.w - 2 * M;
