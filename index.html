@@ -1492,16 +1492,18 @@ body.cx-locked{ overflow:hidden; }
   .gf-caption{ font-size:13px; font-weight:700; margin:18px 0 6px; color:#1F3864; }
   .gf-scroll{ overflow-x:auto; }
   .gf-t{ border-collapse:collapse; width:100%; font-size:12.5px; }
-  .gf-t th{ text-align:right; font-weight:700; padding:4px 8px 5px; border-bottom:1px solid #1F3864; vertical-align:bottom; font-size:11.5px; }
+  .gf-t th{ text-align:right; font-weight:700; padding:4px 8px 5px; border-bottom:1px solid #1F3864; vertical-align:bottom; font-size:11.5px; white-space:normal; }
+  .gf-page.gf-land{ max-width:1400px; }
   .gf-t th.gf-l{ text-align:left; }
   .gf-t td{ padding:3px 8px; }
   .gf-t th, .gf-t td{ color:#1b2433; background:none; border-left:0; border-right:0; text-transform:none; letter-spacing:0; }
   .gf-t td{ border-top:0; border-bottom:0; }
-  .gf-t tbody tr:hover td{ background:none; }
-  .gf-t td.gf-l{ padding-left:16px; overflow-wrap:anywhere; }
+  .gf-t tbody tr, .gf-t tbody tr:hover, .gf-t tbody tr:hover td{ background:none !important; }
+  .gf-t td.gf-l{ padding-left:16px; min-width:240px; overflow-wrap:break-word; }
   .gf-t .gf-note{ text-align:center; width:44px; color:#595959; }
   .gf-t td.gf-n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; width:130px; }
   .gf-t.wide td.gf-n{ width:auto; min-width:92px; }
+  .gf-t.wide th:not(.gf-l){ min-width:92px; max-width:140px; }
   .gf-t tr.gf-head td{ font-weight:700; padding-top:10px; }
   .gf-t tr.gf-sub td{ font-weight:700; font-style:italic; padding-top:8px; color:#404040; }
   .gf-t tr.gf-total td, .gf-t tr.gf-grand td, .gf-t tr.gf-bold td{ font-weight:700; }
@@ -13356,7 +13358,9 @@ function cxIfrsHtml(D){
     <div class="gf-cover-cur">Presented in ${escapeHtml(D.cur)}</div>
     <ol class="gf-toc">${D.sheets.map(s => `<li>${escapeHtml(s.title)}</li>`).join('')}</ol></div>`;
   D.sheets.forEach(s => {
-    h += `<div class="gf-page" id="gf-${s.key}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
+    /* landscape in the PDF → a landscape-width sheet here too */
+    const land = !!s.wide && Math.max(...s.tables.map(t => t.heads.length)) > 3;
+    h += `<div class="gf-page${land ? ' gf-land' : ''}" id="gf-${s.key}"><div class="gf-h-group">${escapeHtml(D.g.name)}</div><div class="gf-h-title">${escapeHtml(s.title)}</div>
       <div class="gf-h-sub">${escapeHtml(s.sub)} · all amounts in ${escapeHtml(D.cur)}</div>`;
     s.tables.forEach(t => {
       if(t.caption) h += `<div class="gf-caption">${escapeHtml(t.caption)}</div>`;
