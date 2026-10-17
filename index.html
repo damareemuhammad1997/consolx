@@ -5763,7 +5763,8 @@ function renderPeriodsPageIn(){
     body.innerHTML = sorted.map(p => {
       const pct = wizCompletionPct(p.id);
       const cfg = getPeriodConfig(p.id);
-      const started = cfg.confirmedEntities != null;
+      /* v39.38: a period whose groups were brought forward from the prior one never confirms step 1 explicitly */
+      const started = cfg.confirmedEntities != null || pct > 0 || (cfg.userGroups || []).length > 0;
       const cfgState = !started
         ? '<span style="color:var(--text-tertiary); font-size:12px;">Not started</span>'
         : `<div class="cfg-meter ${pct===100?'done':''}">
