@@ -8138,10 +8138,12 @@ function openingSourceFor(entityId){
    period (or an uploaded opening TB); a later window opens on its balance-sheet snapshot as at the day before. */
 function packOpeningSource(entityId, from){
   const p = activePeriod();
-  if(!p || !from || from === p.startDate) return openingSourceFor(entityId);
-  const asAt = cxDayBefore(from);
-  const snap = REQ_UPLOADS[`${p.id}-${entityId}-n:${asAt}`];
+  /* v39.38: the balance sheet requested the day before a window (an acquisition, a stake change) is its opening —
+     also when the window starts on the period's first day (control obtained on 1 January), as the engine reads it */
+  const asAt = p && from ? cxDayBefore(from) : null;
+  const snap = asAt ? REQ_UPLOADS[`${p.id}-${entityId}-n:${asAt}`] : null;
   if(snap && snap.validation === 'validated' && snap.rows && snap.rows.length) return { kind:'snapshot', lines: snap.rows, label: 'balance sheet as at ' + asAt };
+  if(!p || !from || from === p.startDate) return openingSourceFor(entityId);
   const key = `${p.id}-${entityId}`;
   if(OPENING_TB[key] && OPENING_TB[key].length) return { kind:'uploaded', lines: OPENING_TB[key], label:'Opening upload' };
   if(OPENING_NIL[key]) return { kind:'nil', lines:[], label:'Nil \u2014 newly incorporated' };
@@ -10623,9 +10625,15 @@ function cfIcAccounts(){ return cfAccounts.filter(a => a.ic); }
 /* An entity's cash-flow movement (LCY, inflow + / outflow −) for a given CF account code. */
 function cfIcAmount(entityId, accountCode){
   const lines = CF_LINES[pek(entityId)];
-  if(!lines) return 0;
-  const v = lines[accountCode];
-  return (typeof v === 'number') ? v : 0;
+  let v = lines && typeof lines[accountCode] === 'number' ? lines[accountCode] : 0;
+  /* v39.38: a part-year window pack (an acquisition, a stake change) carries that window's own cash flows */
+  const pre = activePeriodId + '-' + entityId + '-';
+  Object.keys(REQ_UPLOADS).forEach(k => {
+    if(!k.startsWith(pre)) return;
+    const q = REQ_UPLOADS[k];
+    if(q && q.validation === 'validated' && q.cf && q.cf.manual && typeof q.cf.manual[accountCode] === 'number') v += q.cf.manual[accountCode];
+  });
+  return v;
 }
 
 /* IC cash-flow accounts an entity actually reports a (non-zero) movement on. */
@@ -12187,7 +12195,15 @@ function computeGroupCashFlow(){
   if(priorJes.length){
     const pc = gcfJeImpacts(priorJes, cashSet, line, dirOf);
     const imp = {}; let cash = 0;
-    pc.forEach(c => { cash += c.cash; Object.keys(c.imp).forEach(k => { imp[k] = (imp[k] || 0) - c.imp[k]; }); });
+    /* v39.38: only entries whose cash-flow lines are cumulative are reversed — those with explicit cash-flow lines
+       or that move cash. A prior-year profit or loss entry is posted again to retained earnings this year (no
+       cash flow); reversing its prior-year profit lines would put last year's adjustments into this year's. */
+    const cfCodes = new Set(cfAccounts.map(a => a.code));
+    pc.forEach(c => {
+      cash += c.cash;
+      if(Math.abs(c.cash) < 0.005 && !c.je.lines.some(l => cfCodes.has(l.accountCode))) return;
+      Object.keys(c.imp).forEach(k => { imp[k] = (imp[k] || 0) - c.imp[k]; });
+    });
     jeCols.push({ je: { id: null, number: 'b/f', category: 'Prior-period entries' }, imp, cash: 0, openCash: cash, prior: true });
   }
   L.forEach(l => {
@@ -12935,6 +12951,36 @@ function gcfBuildWorkbook(D){
    notes. One document model feeds the on-screen preview, the Excel workbook (live formulas) and the PDF file.
    ============================================================ */
 
+/* v39.38: non-controlling interests, window by window (an acquisition or a stake change splits the year): each
+   window's profit and OCI at the share the group did not own in that window; the NCI recognised on an acquisition
+   (its share of the net assets acquired); and the change in NCI when the stake moves without a change of control.
+   Run in the period's context (withPeriodGroup + withPresentation); amounts in the presentation currency. */
+function cxNciByWindow(p, g, cfg){
+  const W = cxGroupWindows(p), consol = groupConsolidationFor(p);
+  const out = { byEnt: {}, profit: 0, oci: 0, acq: 0, stake: 0, stakeChange: false };
+  const netAssets = lines => { const b = computeIfrsBS(cxTbMap(lines)); return b.totalAssets - b.totalLiabilities; };
+  withGroupOverrides(groupOverrideMap(cfg, g.key), () => W.list.forEach(rec => {
+    const e = rec.e; if(e.id === g.parentId) return;
+    const c = consol.get(e.id), cls = c ? c.cls : 'cons';
+    const x = { profit: 0, oci: 0, acq: 0, stake: 0 };
+    let prev = null;
+    rec.windows.forEach(w => {
+      const own = Math.max(0, Math.min(100, effectiveHoldingAdj(ownershipEdges(parseDMY(w.to || p.endDate)), g.parentId, e.id).total));
+      const share = cls === 'jo' && w.share ? w.share : 1;
+      const s = Math.max(0, 1 - (own / 100) / (share || 1));
+      if(w.tbEnd){ const r = computeIfrsPL(cxTbMap(w.tbEnd)); x.profit += s * r.profitForPeriod * (w.rA || 0); x.oci += s * r.totalOci * (w.rA || 0); }
+      if(w.entry === 'acq' && w.openLines) x.acq += s * netAssets(w.openLines) * (w.spotIn || w.rA || 0);
+      if(w.entry === 'cont' && prev != null && Math.abs(s - prev) > 1e-9 && w.openLines){
+        x.stake += (s - prev) * netAssets(w.openLines) * (e.currency === groupCurrency ? 1 : (w.rO || w.rA || 0)); out.stakeChange = true;
+      }
+      prev = s;
+    });
+    out.byEnt[e.id] = x;
+    out.profit += x.profit; out.oci += x.oci; out.acq += x.acq; out.stake += x.stake;
+  }));
+  return out;
+}
+
 /* one period's group figures by caption */
 function cxIfrsSnap(pid, gkey, cur){
   const p = reportingPeriods.find(x => x.id === pid); if(!p) return null;
@@ -12992,22 +13038,9 @@ function cxIfrsSnap(pid, gkey, cur){
     const eqSum = Object.values(eq).reduce((s, v) => s + v, 0);
     if(Math.abs(teq - eqSum) >= 0.005) add('_other', teq - eqSum);
 
-    /* profit and OCI attributable to non-controlling interests: each subsidiary's share the group does not own,
-       at the end of its consolidated window (as the Communication module) */
-    const p0 = activePeriod(), W = cxGroupWindows(p0), consol = groupConsolidationFor(p0);
-    const lastTo = {}; W.list.forEach(r => { const w = r.windows[r.windows.length - 1]; if(w && w.to) lastTo[r.e.id] = w.to; });
-    let nciProfit = 0, nciOci = 0;
-    withGroupOverrides(groupOverrideMap(cfg, gkey), () => pl.sortedEntities.forEach(e => {
-      if(e.id === g.parentId) return;
-      const c = consol.get(e.id), cls = c ? c.cls : 'cons';
-      const asOf = lastTo[e.id] ? parseDMY(lastTo[e.id]) : parseDMY(p.endDate);
-      const own = Math.max(0, Math.min(100, effectiveHoldingAdj(ownershipEdges(asOf), g.parentId, e.id).total));
-      const rec = W.list.find(r => r.e.id === e.id), lw = rec ? rec.windows[rec.windows.length - 1] : null;
-      const share = cls === 'jo' && lw && lw.share ? lw.share : 1;
-      const s = Math.max(0, 1 - (own / 100) / (share || 1)); if(s < 1e-9) return;
-      nciProfit += s * ((pl.rows.totals.profitForPeriod.byEntity || {})[e.id] || 0);
-      nciOci += s * ((pl.rows.totals.totalOci.byEntity || {})[e.id] || 0);
-    }));
+    const p0 = activePeriod(), W = cxGroupWindows(p0);
+    const N = cxNciByWindow(p0, g, cfg);
+    const nciProfit = N.profit, nciOci = N.oci, nciAcq = N.acq, nciStake = N.stake, stakeChange = N.stakeChange;
 
     /* cash flows (only when the packs carry them) and the owner transactions they evidence */
     let cf = null;
@@ -13015,19 +13048,24 @@ function cxIfrsSnap(pid, gkey, cur){
     if(hasCf){
       const c = computeGroupCashFlow();
       const lines = {};
-      c.lines.forEach(l => { const r = c.line[l.key]; lines[l.key] = { key: l.key, label: l.label, sec: l.sec, sub: l.sub || '', v: r ? (r.final || 0) : 0 }; });
+      c.lines.forEach(l => { const r = c.line[l.key]; lines[l.key] = { key: l.key, label: l.label, sec: l.sec, sub: l.sub || '', v: r ? (r.final || 0) : 0,
+        parent: r && r.byEntity ? (r.byEntity[g.parentId] || 0) : 0 }; });
       const T = k => (c.totals[k] ? c.totals[k].final : 0) || 0;
       cf = { order: c.lines.map(l => l.key), lines, ope: T('ope'), inv: T('inv'), fin: T('fin'), net: T('net'), fx: T('fx'), diff: T('diff'), open: T('open'), close: T('close'), bsCash: c.bsCash };
     }
+    /* transactions with owners from the financing cash flows linked to equity: the parent's own (its shareholders)
+       to that equity component; a subsidiary's with outsiders (dividends to, shares issued to the NCI) to the NCI.
+       Flows on the NCI account itself are part of the change in ownership interests, measured from the register. */
     const ownerTx = [];
     if(cf) cfAccounts.forEach(a => {
       if(a.category !== 'FIN' || a.ic) return;
       const ba = a.bsAccountCode ? accountByCode(a.bsAccountCode) : null;
-      if(!ba || ba.category !== 'EQ') return;
+      if(!ba || ba.category !== 'EQ' || ba.code === NCI_ACCOUNT_CODE) return;
       const ln = cf.lines['cf:' + a.code]; if(!ln || Math.abs(ln.v) < 0.005) return;
       const bc = capById(ba.captionId);
-      const k = ba.code === NCI_ACCOUNT_CODE ? nciKey : (bc && bc.category === 'EQ' ? bc.id : '_other');
-      ownerTx.push({ label: a.name, k, v: ln.v });
+      const k = bc && bc.category === 'EQ' ? bc.id : '_other';
+      if(Math.abs(ln.parent) >= 0.005) ownerTx.push({ label: a.name, k, v: ln.parent });
+      if(Math.abs(ln.v - ln.parent) >= 0.005) ownerTx.push({ label: a.name, k: nciKey, v: ln.v - ln.parent });
     });
 
     const D = gdData();
@@ -13037,7 +13075,7 @@ function cxIfrsSnap(pid, gkey, cur){
     })) : [];
 
     return {
-      p, g, cur, P, B, eq, reKey, nciKey, ociBy, nciProfit, nciOci, ownerTx, cf, notes,
+      p, g, cur, P, B, eq, reKey, nciKey, ociBy, nciProfit, nciOci, nciAcq, nciStake, stakeChange, ownerTx, cf, notes,
       T: { inc: tot(pl, 'totalIncome'), exp: tot(pl, 'totalExpenses'), pbt: tot(pl, 'profitBeforeTax'), tax: tot(pl, 'totalTax'),
            profit: tot(pl, 'profitForPeriod'), oci: tot(pl, 'totalOci'), tci: tot(pl, 'totalComprehensiveIncome') },
       S: { nca: tot(bs, 'totalNca'), ca: tot(bs, 'totalCa'), ta: tot(bs, 'totalAssets'), teq, ncl: tot(bs, 'totalNcl'), cl: tot(bs, 'totalCl'),
@@ -13205,7 +13243,7 @@ function cxIfrsDoc(){
 
   /* ---------- statement of changes in equity ---------- */
   {
-    const hasNci = snaps.some(s => Math.abs(s.eq[s.nciKey] || 0) >= 0.5 || Math.abs(s.nciProfit) >= 0.5 || Math.abs(s.nciOci) >= 0.5)
+    const hasNci = snaps.some(s => Math.abs(s.eq[s.nciKey] || 0) >= 0.5 || Math.abs(s.nciProfit) >= 0.5 || Math.abs(s.nciOci) >= 0.5 || Math.abs(s.nciAcq) >= 0.5)
       || (prior2 && Math.abs(prior2.eq[prior2.nciKey] || 0) >= 0.5);
     const ks = eqCols.map(x => x.k), nO = ks.length;
     const heads = eqCols.map(x => x.label).concat(hasNci ? ['Attributable to owners of the parent', 'Non-controlling interests', 'Total equity'] : ['Total equity']);
@@ -13229,10 +13267,21 @@ function cxIfrsDoc(){
       const txs = new Map();
       s.ownerTx.forEach(t => { const x = txs.get(t.label) || { own:{}, nci:0 }; if(t.k === s.nciKey) x.nci += t.v; else x.own[t.k] = (x.own[t.k] || 0) + t.v; txs.set(t.label, x); });
       const txV = [...txs.entries()].map(([label, x]) => ({ label, vals: mk(x.own, x.nci) }));
+      /* NCI recognised on acquiring a subsidiary (its share of the net assets acquired) */
+      if(Math.abs(s.nciAcq) >= 0.5) txV.push({ label:'Acquisition of a subsidiary', vals: mk({}, s.nciAcq) });
       const movesV = [profV, ociV, ...txV.map(t => t.vals)];
       /* opening: the prior period's closing; for a first period, closing less the year's movements */
-      const openV = o ? closeOf(o) : closeV.map((v, j) => v - movesV.reduce((t, m) => t + m[j], 0));
-      const otherV = closeV.map((v, j) => v - openV[j] - movesV.reduce((t, m) => t + m[j], 0));
+      const nciStakeV = s.stakeChange ? mk({}, s.nciStake) : null;
+      const openV = o ? closeOf(o) : closeV.map((v, j) => v - movesV.reduce((t, m) => t + m[j], 0) - (nciStakeV ? nciStakeV[j] : 0));
+      let otherV = closeV.map((v, j) => v - openV[j] - movesV.reduce((t, m) => t + m[j], 0));
+      /* a stake change without loss of control: the NCI moves by its new share of the net assets; what the owners
+         received over that is theirs, in the components the journals booked it to (IFRS 10.23) */
+      if(nciStakeV){
+        const ownerPart = Object.fromEntries(ks.map((k, j) => [k, otherV[j]]));
+        const row = mk(ownerPart, s.nciStake);
+        txV.push({ label:'Changes in ownership interests in subsidiaries (no loss of control)', vals: row });
+        otherV = otherV.map((v, j) => v - row[j]);
+      }
       const startDate = s.p.startDate;
       let openId;
       if(yi === 0){ openId = y + 'op'; rows.push({ id: openId, label:`Balance at ${cxIfrsLongDate(startDate)}`, kind:'bold', vals: openV }); }
@@ -23777,6 +23826,7 @@ function cmSnapshot(pid, gkey, cur){
     });
 
     const byEnt = {};
+    const nciW = cxNciByWindow(p, g, cfg);   /* v39.38: window by window, as the IFRS statements */
     ents.forEach(e => {
       const id = e.id, rv = k => R[k].byEntity[id] || 0;
       const pbt = TE(pl, 'profitBeforeTax', id), profit = TE(pl, 'profitForPeriod', id);
@@ -23784,7 +23834,7 @@ function cmSnapshot(pid, gkey, cur){
       const na = TE(bs, 'totalAssets', id) - TE(bs, 'totalLiabilities', id);
       const inf = info[id];
       const nciShare = inf.cls === 'parent' ? 0 : Math.max(0, 1 - (inf.own / 100) / (inf.share || 1));
-      byEnt[id] = { rev: rv('rev'), ebitda, pbt, profit, netAssets: na, nciProfit: profit * nciShare };
+      byEnt[id] = { rev: rv('rev'), ebitda, pbt, profit, netAssets: na, nciProfit: nciW.byEnt[id] ? nciW.byEnt[id].profit : profit * nciShare };
     });
 
     const inc = T('totalIncome'), exp = T('totalExpenses'), tax = T('totalTax');
