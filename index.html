@@ -10417,7 +10417,8 @@ function renderIcMatchMatrix(withIc){
     const statusPill = !m.counterpartyReported
       ? '<span class="je-pill" style="background:var(--surface-2); color:var(--text-tertiary);">No CP amount</span>'
       : m.rateMissing ? `<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);">No ${escapeHtml(m.rateMissing.join(', '))} rate</span>`
-      : (m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
+      : (m.matched && Math.abs(m.diff || 0) >= 1 ? '<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);" title="Differs by less than 1% of the balance \u2014 accepted as matched; post a journal for the difference">Within 1%</span>'
+      : m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
     return `<tr>
       <td><strong>${escapeHtml(e.code)}</strong></td>
       <td><span class="code-cell">${escapeHtml(sp.icCode)}</span></td>
@@ -10425,7 +10426,7 @@ function renderIcMatchMatrix(withIc){
       <td><span class="code-cell">${escapeHtml(sp.counterAccount||'—')}</span></td>
       <td class="je-amount">${m.groupA==null?'—':formatAmount(m.groupA)}</td>
       <td class="je-amount">${m.groupB==null?'—':formatAmount(m.groupB)}</td>
-      <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':'var(--danger)')};">${diffTxt}</td>
+      <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':m.matched?'var(--cxp-warn-text)':'var(--danger)')};">${diffTxt}</td>
       <td style="text-align:center;">${statusPill}</td>
     </tr>`;
   }).join('');
@@ -10904,7 +10905,8 @@ function renderCfIcMatchMatrix(withIc){
     const statusPill = !m.counterpartyReported
       ? '<span class="je-pill" style="background:var(--surface-2); color:var(--text-tertiary);">No CP amount</span>'
       : m.rateMissing ? `<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);">No ${escapeHtml(m.rateMissing.join(', '))} rate</span>`
-      : (m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
+      : (m.matched && Math.abs(m.diff || 0) >= 1 ? '<span class="je-pill" style="background:var(--warn-bg); color:var(--cxp-warn-text);" title="Differs by less than 1% of the balance \u2014 accepted as matched; post a journal for the difference">Within 1%</span>'
+      : m.matched ? '<span class="je-pill posted">Matched</span>' : '<span class="je-pill" style="background:var(--danger-bg); color:var(--danger);">Mismatch</span>');
     return `<tr>
       <td><strong>${escapeHtml(e.code)}</strong></td>
       <td><span class="code-cell">${escapeHtml(sp.icCode)}</span></td>
@@ -10912,7 +10914,7 @@ function renderCfIcMatchMatrix(withIc){
       <td><span class="code-cell">${escapeHtml(sp.counterAccount||'—')}</span></td>
       <td class="je-amount">${m.groupA==null?'—':formatAmount(m.groupA)}</td>
       <td class="je-amount">${m.groupB==null?'—':formatAmount(m.groupB)}</td>
-      <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':'var(--danger)')};">${diffTxt}</td>
+      <td class="je-amount" style="color:${m.diff==null?'var(--text-tertiary)':(Math.abs(m.diff)<1?'var(--accent-text)':m.matched?'var(--cxp-warn-text)':'var(--danger)')};">${diffTxt}</td>
       <td style="text-align:center;">${statusPill}</td>
     </tr>`;
   }).join('');
