@@ -13466,11 +13466,13 @@ function cxIfrsWorkbook(D){
   /* first pass: lay out row numbers so formulas can point across sheets */
   plan.forEach(({ s, name }) => {
     let r = 6;
-    s.tables.forEach(t => {
+    s.tables.forEach((t, ti) => {
       if(t.caption) r += 1;
       r += 1;   /* header row */
       const c0 = t.noteCol ? 2 : 1;
-      t.rows.forEach(row => { r += 1; if(row.id) pos[s.key + '.' + row.id] = { sheet: name, row: r, c0 }; });
+      /* row ids are local to a table (several notes share a sheet); a statement's first table is also reachable
+         from other sheets as sheet.id (e.g. sofp.teq) */
+      t.rows.forEach(row => { r += 1; if(row.id){ const P = { sheet: name, row: r, c0 }; pos[s.key + '.' + ti + '.' + row.id] = P; if(ti === 0) pos[s.key + '.' + row.id] = P; } });
       r += 1;   /* gap after a table */
     });
   });
@@ -13482,7 +13484,7 @@ function cxIfrsWorkbook(D){
     put(3, 0, { v: s.sub, s:'sub' });
     put(4, 0, { v: `All amounts in ${D.cur}`, s:'sub' });
     let r = 6, maxCols = 1;
-    s.tables.forEach(t => {
+    s.tables.forEach((t, ti) => {
       const c0 = t.noteCol ? 2 : 1;
       maxCols = Math.max(maxCols, c0 + t.heads.length);
       if(t.caption){ r += 1; put(r, 0, { v: t.caption, s:'cap' }); }
@@ -13491,7 +13493,7 @@ function cxIfrsWorkbook(D){
       if(t.noteCol) put(r, 1, { v:'Note', s:'hdrC' });
       t.heads.forEach((x, j) => put(r, c0 + j, { v: x, s:'hdr' }));
       const R = (id, c) => {
-        const own = pos[s.key + '.' + id], ext = pos[id];
+        const own = pos[s.key + '.' + ti + '.' + id], ext = pos[id];
         const P = own || ext; if(!P) return '0';
         const ref = C(P.c0 + c) + P.row;
         return P.sheet === name ? ref : `'${P.sheet.replace(/'/g, "''")}'!${ref}`;
