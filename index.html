@@ -3539,6 +3539,15 @@ body.cx-locked{ overflow:hidden; }
       <select id="cap-bscap"></select>
       <p class="hint">Each cash flow line explains the movement of a balance sheet component &mdash; accounts under it inherit this link, and can override it when they point at a different component.</p>
     </div>
+    <div class="field" id="capOpField" style="display:none;">
+      <label for="cap-op">Profit from operations</label>
+      <select id="cap-op">
+        <option value="">Automatic &mdash; finance income and costs, and the share of results of associates and joint ventures, below it</option>
+        <option value="op">Included in profit from operations</option>
+        <option value="below">Presented below profit from operations</option>
+      </select>
+      <p class="hint">Where this line sits in the IFRS statement of profit or loss, above or below the profit from operations subtotal.</p>
+    </div>
     <p class="hint" id="capSysHint" style="display:none; margin:-8px 0 12px 2px;">System caption &mdash; only the code number can be changed.</p>
 
     <div class="form-actions">
@@ -12984,6 +12993,60 @@ function cxNciByWindow(p, g, cfg){
   return out;
 }
 
+/* v39.38: transactions with owners for the statement of changes in equity, measured on the equity accounts (the
+   amounts declared or issued, whether or not settled in cash — the paid part is in the statement of cash flows).
+   Each consolidated window: its trial balance against its opening, with the opening's profit or loss closed into
+   retained earnings and its OCI into the reserves. The parent's are the owners'; a subsidiary's go to the NCI at
+   the share it does not own (the group's own share is intragroup and eliminated). */
+function cxEquityTx(p, g, cfg){
+  const W = cxGroupWindows(p), consol = groupConsolidationFor(p), out = [];
+  const reCode = JE_PL_TO_EQUITY_ACCOUNT;
+  const capKey = a => { const c = capById(a.captionId); return c && c.category === 'EQ' ? c.id : '_other'; };
+  const closed = lines => {
+    const m = {};
+    (lines || []).forEach(([code, d, c]) => {
+      const a = accountByCode(code); if(!a) return;
+      let k = code;
+      if(['INC','EXP','TAX'].includes(a.category)) k = reCode;
+      else if(a.category === 'OCI'){ const cp = capById(a.captionId); k = a.ociReserveCode || (cp && cp.ociReserveCode) || reCode; }
+      m[k] = (m[k] || 0) + (+d || 0) - (+c || 0);
+    });
+    return m;
+  };
+  const label = (a, v) => {
+    const cp = capById(a.captionId), n = String(a.name || '') + ' ' + String((cp && cp.name) || '');
+    if(a.code === reCode || /dividend/i.test(a.name) || (cp && cp.id === 'cap-sys-re')) return v < 0 ? 'Dividends declared' : null;
+    if(/share capital|stated capital|ordinary shares|share premium/i.test(n)) return v > 0 ? 'Issue of shares' : 'Reduction of share capital';
+    return null;
+  };
+  withGroupOverrides(groupOverrideMap(cfg, g.key), () => W.list.forEach(rec => {
+    const e = rec.e, parent = e.id === g.parentId;
+    const c = consol.get(e.id), cls = c ? c.cls : 'cons';
+    rec.windows.forEach(w => {
+      if(!w.tbEnd || w.plOnly || !w.openLines) return;
+      let s = 0;
+      if(!parent){
+        const own = Math.max(0, Math.min(100, effectiveHoldingAdj(ownershipEdges(parseDMY(w.to || p.endDate)), g.parentId, e.id).total));
+        const share = cls === 'jo' && w.share ? w.share : 1;
+        s = Math.max(0, 1 - (own / 100) / (share || 1));
+        if(s < 1e-9) return;
+      }
+      const rate = e.currency === groupCurrency ? 1 : (w.rA || 0);
+      /* the opening's profit or loss is closed into equity; the window's own is its result (not an owner transaction) */
+      const o = closed(w.openLines), t = {};
+      w.tbEnd.forEach(([code, d, c]) => { const a = accountByCode(code); if(a && a.category === 'EQ') t[code] = (t[code] || 0) + (+d || 0) - (+c || 0); });
+      new Set([...Object.keys(o), ...Object.keys(t)]).forEach(code => {
+        const a = accountByCode(code); if(!a || a.category !== 'EQ' || code === NCI_ACCOUNT_CODE) return;
+        const v = -((t[code] || 0) - (o[code] || 0)) * rate;   /* credit positive: an increase in equity */
+        if(Math.abs(v) < 0.005) return;
+        const l = label(a, v); if(!l) return;
+        out.push(parent ? { label: l, k: capKey(a), v } : { label: l, k: 'nci', v: v * s });
+      });
+    });
+  }));
+  return out;
+}
+
 /* one period's group figures by caption */
 function cxIfrsSnap(pid, gkey, cur){
   const p = reportingPeriods.find(x => x.id === pid); if(!p) return null;
@@ -13056,25 +13119,30 @@ function cxIfrsSnap(pid, gkey, cur){
       const T = k => (c.totals[k] ? c.totals[k].final : 0) || 0;
       cf = { order: c.lines.map(l => l.key), lines, ope: T('ope'), inv: T('inv'), fin: T('fin'), net: T('net'), fx: T('fx'), diff: T('diff'), open: T('open'), close: T('close'), bsCash: c.bsCash };
     }
-    /* transactions with owners from the financing cash flows linked to equity: the parent's own (its shareholders)
-       to that equity component; a subsidiary's with outsiders (dividends to, shares issued to the NCI) to the NCI.
-       Flows on the NCI account itself are part of the change in ownership interests, measured from the register. */
-    const ownerTx = [];
-    if(cf) cfAccounts.forEach(a => {
-      if(a.category !== 'FIN' || a.ic) return;
-      const ba = a.bsAccountCode ? accountByCode(a.bsAccountCode) : null;
-      if(!ba || ba.category !== 'EQ' || ba.code === NCI_ACCOUNT_CODE) return;
-      const ln = cf.lines['cf:' + a.code]; if(!ln || Math.abs(ln.v) < 0.005) return;
-      const bc = capById(ba.captionId);
-      const k = bc && bc.category === 'EQ' ? bc.id : '_other';
-      if(Math.abs(ln.parent) >= 0.005) ownerTx.push({ label: a.name, k, v: ln.parent });
-      if(Math.abs(ln.v - ln.parent) >= 0.005) ownerTx.push({ label: a.name, k: nciKey, v: ln.v - ln.parent });
-    });
+    /* transactions with owners, as declared or issued (cxEquityTx); the NCI column takes a subsidiary's with outsiders */
+    const txRank = l => ({ 'Issue of shares': 0, 'Reduction of share capital': 1, 'Dividends declared': 2 })[l] ?? 3;
+    const ownerTx = cxEquityTx(p0, g, cfg).map(t => t.k === 'nci' ? Object.assign(t, { k: nciKey }) : t).sort((x, y) => txRank(x.label) - txRank(y.label));
 
     const D = gdData();
+    /* the period's consolidation adjustments, one row per journal: a journal posting again an adjustment brought
+       forward (the same amounts on the note's components) cancels against it; what remains of the brought-forward
+       adjustments is shown on one line, so the rows still add to the movement */
+    const curJes = scopeJEs().filter(j => j.posted).map(j => ({ j, agg: jeBsAgg([j]) }));
+    const priorJes = (W.group ? cxPriorJEs(p0, W.group.key) : []).map(j => ({ j, agg: jeBsAgg([j]) }));
+    const splitJe = (N, row) => {
+      const vec = x => N.cols.map(c => x.agg[c] || 0), nz0 = v => v.some(x => Math.abs(x) >= 0.5);
+      const cur = curJes.map(x => ({ j: x.j, v: vec(x) })).filter(x => nz0(x.v));
+      const pri = priorJes.map(x => ({ j: x.j, v: vec(x) })).filter(x => nz0(x.v));
+      const used = new Set();
+      const rest = pri.filter(x => { const m = cur.find(y => !used.has(y) && y.v.every((a, i) => Math.abs(a - x.v[i]) < 0.5)); if(m){ used.add(m); return false; } return true; });
+      const out = cur.filter(y => !used.has(y)).map(y => ({ key: 'je:' + y.j.id, label: String(y.j.description || y.j.category || ('Journal ' + y.j.number)), vals: y.v }));
+      if(rest.length) out.push({ key: 'jebf', label: 'Consolidation adjustments brought forward, posted again above', vals: N.cols.map((c, i) => -rest.reduce((t, x) => t + x.v[i], 0)) });
+      const tot = N.cols.map((c, i) => out.reduce((t, r) => t + r.vals[i], 0));
+      return tot.every((t, i) => Math.abs(t - row.vals[i]) < 0.5) ? out : [row];   /* never show rows that do not add up */
+    };
     const notes = D && D.notes ? D.notes.map(N => ({
-      capId: N.caption.id, name: N.caption.name, comps: N.comps.map(c => c.name), cols: N.cols,
-      rows: N.rows.map(r => ({ key: r.key, label: r.label, vals: N.cols.map(c => r.fcy[c] || 0) }))
+      capId: N.caption.id, name: N.caption.name, cat: N.caption.category, comps: N.comps.map(c => c.name), cols: N.cols,
+      rows: N.rows.flatMap(r => { const row = { key: r.key, label: r.label, vals: N.cols.map(c => r.fcy[c] || 0) }; return r.key === 'jeadj' ? splitJe(N, row) : [row]; })
     })) : [];
 
     return {
@@ -13129,10 +13197,10 @@ function cxIfrsDoc(){
     let seq = 0;
     ['INC','EXP'].forEach(cat => fsCaptions.filter(c => c.category === cat).sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true })).forEach(c => {
       const k = String(c.name).trim().toLowerCase();
-      if(!lines.has(k)) lines.set(k, { label: c.name, ids: [], rank: rank(c.name), seq: seq++ });
+      if(!lines.has(k)) lines.set(k, { label: c.name, ids: [], rank: rank(c.name), seq: seq++, below: cxIfrsBelowOp(c) });
       lines.get(k).ids.push({ id: c.id, sign: cat === 'INC' ? 1 : -1, cat });
     }));
-    const L = [...lines.values()].sort((a, b) => a.rank - b.rank || a.seq - b.seq);
+    const L = [...lines.values()].sort((a, b) => (a.below - b.below) || a.rank - b.rank || a.seq - b.seq);
     const valOf = (ln, s) => ln.ids.reduce((t, x) => t + x.sign * ((s.P[x.cat].m[x.id]) || 0), 0);
     const shown = L.map(ln => ({ ln, vals: snaps.map(s => valOf(ln, s)) })).filter(x => nz(x.vals));
     const hasRev = shown.some(x => x.ln.rank === 0), hasCos = shown.some(x => x.ln.rank === 1);
@@ -13144,8 +13212,18 @@ function cxIfrsDoc(){
       }
     });
     const restI = snaps.map(s => s.P.INC.rest), restE = snaps.map(s => -s.P.EXP.rest);
-    if(nz(restI)){ rows.push({ id:'plri', label:'Other income (accounts without a caption)', kind:'line', vals: restI }); lineIds.push('plri'); }
-    if(nz(restE)){ rows.push({ id:'plre', label:'Other expenses (accounts without a caption)', kind:'line', vals: restE }); lineIds.push('plre'); }
+    const restRows = [];
+    if(nz(restI)) restRows.push({ id:'plri', label:'Other income (accounts without a caption)', kind:'line', vals: restI });
+    if(nz(restE)) restRows.push({ id:'plre', label:'Other expenses (accounts without a caption)', kind:'line', vals: restE });
+    /* profit from operations: after the operating lines (and anything without a caption), before the lines presented
+       below it — finance income and costs, the share of results of associates and joint ventures (per caption) */
+    const firstBelow = rows.findIndex(r => r.id && /^pl\d+$/.test(r.id) && shown[+r.id.slice(2)].ln.below);
+    const opLines = shown.map((x, i) => ({ x, id: 'pl' + i })).filter(o => !o.x.ln.below).map(o => o.id).concat(restRows.map(r => r.id));
+    if(firstBelow >= 0 && opLines.length){
+      const opVals = snaps.map((s, si) => shown.filter(y => !y.ln.below).reduce((t, y) => t + y.vals[si], 0) + restRows.reduce((t, r) => t + r.vals[si], 0));
+      rows.splice(firstBelow, 0, ...restRows, { id:'op', label:'Profit from operations', kind:'total', vals: opVals, f: sumF(opLines) });
+    } else rows.push(...restRows);
+    restRows.forEach(r => lineIds.push(r.id));
     rows.push({ id:'pbt', label:'Profit before tax', kind:'total', vals: snaps.map(s => s.T.pbt), f: sumF(lineIds) });
     const taxIds = [];
     fsCaptions.filter(c => c.category === 'TAX').sort((a, b) => String(a.num).localeCompare(String(b.num), undefined, { numeric:true })).forEach((c, i) => {
@@ -13187,7 +13265,37 @@ function cxIfrsDoc(){
   /* notes: captions with a balance at the opening or the closing (a caption eliminated to nil is not on the face) */
   const ends = n => n.rows.filter(r => r.key === 'open' || r.key === 'jeopen' || r.key === 'close');
   now.notes = now.notes.filter(n => ends(n).some(r => r.vals.some(v => Math.abs(v) >= 0.5)));
-  const noteNo = {}; now.notes.forEach((n, i) => { noteNo[n.capId] = i + 1; });
+  /* one note for a caption that is on the face twice (non-current and current borrowings): the movement of the
+     whole, then the split between non-current and current */
+  {
+    const byName = new Map(), merged = [];
+    now.notes.forEach(n => {
+      const k = n.name.trim().toLowerCase(), m = byName.get(k);
+      if(!m){ const x = Object.assign({}, n, { capIds: [n.capId], parts: [n] }); byName.set(k, x); merged.push(x); return; }
+      m.capIds.push(n.capId); m.parts.push(n);
+    });
+    merged.forEach(m => {
+      if(m.parts.length < 2) return;
+      m.cols = m.parts.flatMap(n => n.cols); m.comps = m.parts.flatMap(n => n.comps);
+      const rows = new Map();
+      m.parts.forEach((n, pi) => n.rows.forEach(r => {
+        const x = rows.get(r.key) || { key: r.key, label: r.label, vals: m.cols.map(() => 0) };
+        const off = m.parts.slice(0, pi).reduce((t, q) => t + q.cols.length, 0);
+        r.vals.forEach((v, j) => { x.vals[off + j] += v; });
+        rows.set(r.key, x);
+      }));
+      const order = ['open', 'jeopen'];
+      m.rows = [...rows.values()].sort((a, b) => (order.indexOf(b.key) >= 0) - (order.indexOf(a.key) >= 0) || (a.key === 'close') - (b.key === 'close'));
+      const isNc = n => n.cat === 'NCA' || n.cat === 'NCL';
+      m.split = m.parts.map((n, pi) => {
+        const off = m.parts.slice(0, pi).reduce((t, q) => t + q.cols.length, 0);
+        const cl = n.rows.find(r => r.key === 'close');
+        return { label: isNc(n) ? 'Non-current' : 'Current', vals: m.cols.map((c, j) => j >= off && j < off + n.cols.length && cl ? cl.vals[j - off] : 0) };
+      }).sort((a, b) => (a.label === 'Current') - (b.label === 'Current'));
+    });
+    now.notes = merged;
+  }
+  const noteNo = {}; now.notes.forEach((n, i) => { (n.capIds || [n.capId]).forEach(id => { noteNo[id] = i + 1; }); });
   const eqCols = [];   /* owners' equity components, in statement order, for the SOFP and the SOCE */
   {
     const rows = [];
@@ -13326,10 +13434,13 @@ function cxIfrsDoc(){
         rows.push({ label: head, kind:'head' });
         const ids = [];
         let adjHead = false;
+        let wcHead = false;
+        const capOf = k => { const a = /^cf:/.test(k) ? cfAccounts.find(x => 'cf:' + x.code === k) : null; const c = a ? capById(a.cfCaptionId) : null; return c ? c.name : ''; };
         keys.filter(k => info(k).sec === code).forEach((k, i) => {
           const vals = cfs.map(c => v(c, k)); if(!nz(vals)) return;
           const l = info(k);
           if(l.sub === 'adj' && !adjHead){ rows.push({ label:'Adjustments for:', kind:'sub' }); adjHead = true; }
+          if(l.sub !== 'adj' && !wcHead && /working capital/i.test(capOf(k))){ rows.push({ label:'Changes in working capital:', kind:'sub' }); wcHead = true; }
           const id = code + i; rows.push({ id, label: l.label, kind:'line', vals }); ids.push(id);
         });
         rows.push({ id: totId, label: totalLabel, kind:'total', vals: cfs.map(c => c ? c[totKey] : 0), f: sumF(ids) });
@@ -13364,6 +13475,11 @@ function cxIfrsDoc(){
       const cl = n.rows.find(r => r.key === 'close');
       const cv = cl ? cl.vals : n.cols.map(() => 0);
       rows.push({ id:'cl', label:'Closing balance', kind:'grand', vals: cv.concat([cv.reduce((a, b) => a + b, 0)]), f: sumF(ids) });
+      if(n.split){
+        rows.push({ kind:'blank' }, { label:'Analysed as:', kind:'sub' });
+        n.split.forEach((x, j) => rows.push({ id:'sp' + j, label: x.label, kind:'line', vals: x.vals.concat([x.vals.reduce((a, b) => a + b, 0)]) }));
+        rows.push({ id:'spt', label:'Closing balance', kind:'total', vals: cv.concat([cv.reduce((a, b) => a + b, 0)]), f: sumF(n.split.map((_, j) => 'sp' + j)) });
+      }
       return { caption: `${i + 1}. ${n.name}`, heads: n.comps.concat(['Total']), rows, colSum: [{ col: n.comps.length, of: [...Array(n.comps.length).keys()] }] };
     });
     if(tables.length) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
@@ -13373,6 +13489,13 @@ function cxIfrsDoc(){
     ties: { bs: Math.abs(now.S.ta - now.S.tel) < 1, cf: !now.cf || Math.abs(now.cf.close - now.cf.bsCash) < 1 } };
 }
 
+/* below the profit from operations subtotal: the caption's own setting, else finance items and the share of
+   results of associates and joint ventures */
+function cxIfrsBelowOp(c){
+  if(c && c.opClass === 'below') return true;
+  if(c && c.opClass === 'op') return false;
+  return /finance (income|costs?)|interest (income|expense)|share of (the )?(profit|results?|loss)/i.test(String((c && c.name) || ''));
+}
 /* ---------- number format shared by the preview and the PDF ---------- */
 function cxIfrsFmt(v){
   if(v == null) return '';
@@ -21995,6 +22118,7 @@ function openCaptionModal(presetFace, capId, fromComp){
     document.getElementById('capSysHint').style.display = c.system ? 'block' : 'none';
     populateCapReserveSelect(c.ociReserveCode || '');
     populateCapBsSelect(c.bsAccountCode || '');
+    document.getElementById('cap-op').value = c.opClass || '';
   } else {
     stmtSel.disabled = false; catSel.disabled = false; nameIn.disabled = false;
     stmtSel.value = face;
@@ -22003,6 +22127,7 @@ function openCaptionModal(presetFace, capId, fromComp){
     document.getElementById('capSysHint').style.display = 'none';
     populateCapReserveSelect('');
     populateCapBsSelect('');
+    document.getElementById('cap-op').value = '';
   }
   onCaptionCatChange();
   document.getElementById('captionModalOverlay').classList.add('show');
@@ -22059,6 +22184,8 @@ function populateCapBsSelect(selected){
 }
 function onCaptionCatChange(){
   const cat = document.getElementById('cap-cat').value;
+  const of = document.getElementById('capOpField');
+  if(of) of.style.display = (document.getElementById('cap-stmt').value === 'PL' && (cat === 'INC' || cat === 'EXP')) ? 'block' : 'none';
   document.getElementById('capCodePfx').textContent = cat ? cat + '-' : '';
   if(!editingCaptionId) document.getElementById('cap-num').value = cat ? nextCaptionNum(cat) : '';
 }
@@ -22184,6 +22311,7 @@ function saveCaption(){
       }
     }
     if(face === 'CF') existing.bsAccountCode = capBs;
+    if(face === 'PL' && (cat === 'INC' || cat === 'EXP')){ const v = document.getElementById('cap-op').value; if(v) existing.opClass = v; else delete existing.opClass; }
     logActivity('category', 'Edited caption', captionCode(existing), `${before}  →  ${captionCode(existing)} — ${name}`);
     showToast('Caption updated', checkIcon());
   } else {
@@ -22191,6 +22319,7 @@ function saveCaption(){
     const nc = { id, name, statement, category: cat, num: padded };
     if(face === 'OCI') nc.ociReserveCode = capReserve;
     if(face === 'CF') nc.bsAccountCode = capBs;
+    if(face === 'PL' && (cat === 'INC' || cat === 'EXP') && document.getElementById('cap-op').value) nc.opClass = document.getElementById('cap-op').value;
     fsCaptions.push(nc);
     logActivity('category', 'Created caption', `${cat}-${padded}`, `${statement} · ${catLabelOf(cat)} — ${name}`);
     showToast('Caption created', checkIcon());
