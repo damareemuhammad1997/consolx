@@ -12245,9 +12245,13 @@ function computeGroupCashFlow(){
        or that move cash. A prior-year profit or loss entry is posted again to retained earnings this year (no
        cash flow); reversing its prior-year profit lines would put last year's adjustments into this year's. */
     const cfCodes = new Set(cfAccounts.map(a => a.code));
+    /* an entry with profit or loss lines eliminates that year's flows (an intra-group dividend or interest): its
+       cash-flow lines are not cumulative either, so it is not reversed */
+    const plCats = new Set(['INC','EXP','TAX','OCI']);
     pc.forEach(c => {
       cash += c.cash;
-      if(Math.abs(c.cash) < 0.005 && !c.je.lines.some(l => cfCodes.has(l.accountCode))) return;
+      if(Math.abs(c.cash) < 0.005 && (!c.je.lines.some(l => cfCodes.has(l.accountCode))
+        || c.je.lines.some(l => { const a = accountByCode(l.accountCode); return a && plCats.has(a.category); }))) return;
       Object.keys(c.imp).forEach(k => { imp[k] = (imp[k] || 0) - c.imp[k]; });
     });
     jeCols.push({ je: { id: null, number: 'b/f', category: 'Prior-period entries' }, imp, cash: 0, openCash: cash, prior: true });
@@ -12278,9 +12282,11 @@ function computeGroupCashFlow(){
   /* tie-outs. Closing: each entity's own cash components on the group BS, plus the JEs on cash (FINAL).
      Opening: the prior period's group BS, when the period is linked to one. */
   const bs = computeGroupStatement('BS');
+  /* the statement's rows carry liabilities as positive amounts: a bank overdraft in cash and cash equivalents is negative */
+  const cashSign = c => { const a = accountByCode(c); return a && (a.category === 'CL' || a.category === 'NCL') ? -1 : 1; };
   let bsCash = 0;
-  ents.forEach(e => (compsOf[e.id] || []).forEach(c => { const r = bs.rows.acct[c]; if(r) bsCash += r.byEntity[e.id] || 0; }));
-  cashSet.forEach(c => { const r = bs.rows.acct[c]; if(r) bsCash += r.adjustment || 0; });
+  ents.forEach(e => (compsOf[e.id] || []).forEach(c => { const r = bs.rows.acct[c]; if(r) bsCash += cashSign(c) * (r.byEntity[e.id] || 0); }));
+  cashSet.forEach(c => { const r = bs.rows.acct[c]; if(r) bsCash += cashSign(c) * (r.adjustment || 0); });
   let prior = null;
   const pp = cxLinkedPrior(p);
   if(pp && W.group && (getPeriodConfig(pp.id).userGroups || []).some(g => g.key === W.group.key)){
@@ -12290,8 +12296,8 @@ function computeGroupCashFlow(){
       /* the entities consolidated at this period's opening */
       const openSet = new Set(W.list.filter(r => r.windows.some(w => w.entry === 'open')).map(r => r.e.id));
       pb.sortedEntities.forEach(e => { if(!openSet.has(e.id)) return;
-        (compsOf[e.id] || cashComponentsFor(e.id)).forEach(c => { const r = pb.rows.acct[c]; if(r) v += r.byEntity[e.id] || 0; }); });
-      cashSet.forEach(c => { const r = pb.rows.acct[c]; if(r) v += r.adjustment || 0; });
+        (compsOf[e.id] || cashComponentsFor(e.id)).forEach(c => { const r = pb.rows.acct[c]; if(r) v += cashSign(c) * (r.byEntity[e.id] || 0); }); });
+      cashSet.forEach(c => { const r = pb.rows.acct[c]; if(r) v += cashSign(c) * (r.adjustment || 0); });
       prior = { label: pp.label, cash: v };
     } catch(err){ prior = null; }
   }
