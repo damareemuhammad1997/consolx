@@ -8162,11 +8162,27 @@ function packOpeningSource(entityId, from){
 /* Excel sheet names: 31 characters, none of \ / ? * [ ] : or apostrophes (which break formula references) */
 function xlSheetName(s){ return String(s || 'Sheet').replace(/[\\\/?*\[\]:'&<>"]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 31).trim() || 'Sheet'; }
 function defaultCashComponents(){
+  /* v39.38: a bank overdraft repayable on demand is part of cash and cash equivalents in the statement of cash
+     flows (IAS 7.8) — it stays in borrowings on the statement of financial position */
   return accounts.filter(a => {
     if(statementOfCategory(a.category) !== 'BS') return false;
     const cap = capById(a.captionId);
-    return cap && /cash/i.test(cap.name);
+    return (cap && /cash/i.test(cap.name) && (a.category === 'CA' || a.category === 'NCA')) || ((a.category === 'CL') && /overdraft/i.test(a.name));
   }).map(a => a.code);
+}
+/* v39.38: an add-back linked to a cash component is an exchange difference on cash and cash equivalents: added
+   back in operating and shown as the effect of exchange rate changes (IAS 7.28), never as a cash flow */
+function cxFxOnCashAccounts(comps){
+  const set = new Set(comps || []);
+  return packAdjAccounts().filter(a => a.cfAdj && set.has(a.cfAdj.bsAccountCode));
+}
+/* v39.38: the movement in a retirement or employee benefit obligation (excluding remeasurements in OCI) is the
+   pension cost net of contributions — always presented under "Adjustments for" */
+function cxIsBenefitCfLine(a){
+  if(!a || a.category !== 'OPE') return false;
+  const b = a.bsAccountCode ? accountByCode(a.bsAccountCode) : null;
+  const cap = b ? capById(b.captionId) : capById(a.bsCaptionId);
+  return /retirement|pension|employee benefit|defined benefit/i.test(String((b && b.name) || '') + ' ' + String((cap && cap.name) || ''));
 }
 function cashComponentsFor(entityId){
   const stored = PACK_CF[`${activePeriodId}-${entityId}`];
@@ -8247,7 +8263,8 @@ function buildEntityPackBytes(entityId, from, to){
   push([{v:'', s:1}, {v:'', s:1}, {v:'', s:1}]);
   push([{v:'Adjustments for', s:2}, {v:'', s:1}, {v:'', s:1}]);
   const adjs = packAdjAccounts();
-  adjs.forEach(a => push([{v:'  ' + a.name, s:1}, {v:a.code, s:3}, {f:`'${tbName}'!C${codeRow[a.code]}-'${tbName}'!D${codeRow[a.code]}`, s:1}]));
+  const adjRow = {};
+  adjs.forEach(a => { push([{v:'  ' + a.name, s:1}, {v:a.code, s:3}, {f:`'${tbName}'!C${codeRow[a.code]}-'${tbName}'!D${codeRow[a.code]}`, s:1}]); adjRow[a.code] = r; });
   if(!adjs.length) push([{v:'  (no P&L items are flagged as add-backs)', s:4}, {v:'', s:1}, {v:'', s:1}]);
   const opeCaps = fsCaptions.filter(c => c.statement === 'CF' && c.category === 'OPE').sort((a,b)=>a.num.localeCompare(b.num, undefined, {numeric:true}));
   let anyOpeInput = false;
@@ -8280,6 +8297,10 @@ function buildEntityPackBytes(entityId, from, to){
   push([{v:'Net increase / (decrease) in cash', s:2}, {v:'', s:1}, {f:`C${bRow}+C${catTotals.INV}+C${catTotals.FIN}`, s:2}]);
   const netRow = r;
   const comps = cashComponentsFor(entityId);
+  /* v39.38: exchange differences on cash (add-backs linked to a cash component) */
+  const fxAdj = cxFxOnCashAccounts(comps).filter(a => adjRow[a.code]);
+  push([{v:'Effect of exchange rate changes on cash and cash equivalents', s:1}, {v:'', s:1}, fxAdj.length ? {f:`-(${fxAdj.map(a => 'C' + adjRow[a.code]).join('+')})`, s:1} : {v:0, s:1}]);
+  const fxRow = r;
   const checkFrom = () => checkStart + 1; // resolved after check rows are placed
   let openingCell;
   if(needsOpening){
@@ -8289,7 +8310,7 @@ function buildEntityPackBytes(entityId, from, to){
     push([{v:`Cash at beginning of period (${opSource.label})`, s:1}, {v:'', s:1}, {v: Math.round(openVal * 100) / 100, s:1}]);
   }
   const openRow = r;
-  push([{v:'Cash at end of period', s:2}, {v:'', s:1}, {f:`C${netRow}+C${openRow}`, s:2}]);
+  push([{v:'Cash at end of period', s:2}, {v:'', s:1}, {f:`C${netRow}+C${fxRow}+C${openRow}`, s:2}]);
   const closeRow = r;
   push([{v:'\u2014 end of the cash flow statement \u2014', s:4}, {v:'', s:1}, {v:'', s:1}]);
   sec('NON-CASH ITEMS \u2014 MUST NET TO NIL');
@@ -8465,9 +8486,10 @@ async function importEntityPack(entityId, arrayBuffer, fileName, from, reqKey){
     const openLines = opLines || (opNil ? [] : opSource.lines);
     const opening = comps.reduce((s, c) => s + tbAmount(openLines, c), 0);
     const closingPerTb = comps.reduce((s, c) => s + tbAmount(lines, c), 0);
-    const diff = closingPerTb - (opening + net);
+    const fxCash = -cxFxOnCashAccounts(comps).reduce((s, a) => s + tbAmount(lines, a.code), 0);
+    const diff = closingPerTb - (opening + net + fxCash);
     if(Math.abs(diff) > 0.5)
-      errs.push(`Cash flow does not tie: components at closing ${Math.round(closingPerTb)} vs opening ${Math.round(opening)} + net movement ${Math.round(net)} (difference ${Math.round(diff)})`);
+      errs.push(`Cash flow does not tie: components at closing ${Math.round(closingPerTb)} vs opening ${Math.round(opening)} + net movement ${Math.round(net)}${Math.abs(fxCash) >= 0.5 ? ' + exchange differences ' + Math.round(fxCash) : ''} (difference ${Math.round(diff)})`);
     if(!errs.length && reqKey){
       PACK_ERRORS[key] = null;
       REQ_UPLOADS[key] = { rows: lines, fileName: fileName || 'entity pack', uploadedAt: todayDMY(), validation:'validated',
@@ -12085,7 +12107,8 @@ function gcfLineCatalogue(){
   const deal = gcfDealLines();
   L.push({ key:'pbt', label:'Profit before tax', sec:'OPE' });
   packAdjAccounts().forEach(a => L.push({ key:'adj:' + a.code, label: a.name, sec:'OPE', sub:'adj' }));
-  cfAccounts.filter(a => a.category === 'OPE').forEach(a => L.push({ key:'cf:' + a.code, label: a.name, sec:'OPE' }));
+  cfAccounts.filter(a => a.category === 'OPE' && cxIsBenefitCfLine(a)).forEach(a => L.push({ key:'cf:' + a.code, label: a.name, sec:'OPE', sub:'adj' }));
+  cfAccounts.filter(a => a.category === 'OPE' && !cxIsBenefitCfLine(a)).forEach(a => L.push({ key:'cf:' + a.code, label: a.name, sec:'OPE' }));
   L.push({ key:'jeother', label:'Other consolidation adjustments', sec:'OPE' });
   const net = (a, t) => /net of cash/i.test(a.name) ? '' : t;
   cfAccounts.filter(a => a.category === 'INV').forEach(a => L.push({ key:'cf:' + a.code,
@@ -12118,6 +12141,14 @@ function gcfJeImpacts(jes, cashSet, line, dirOf){
     je.lines.forEach(l => { if(cashSet.has(l.accountCode)) cash += (+l.debit || 0) - (+l.credit || 0); });
     if(cfLines.length){
       cfLines.forEach(l => { const v = (+l.credit || 0) - (+l.debit || 0); addI('cf:' + l.accountCode, v); lines += v; });
+      /* v39.38: its profit or loss still moves profit before tax (and an add-back moves with it), so the cash flow
+         starts from the group's profit before tax */
+      je.lines.forEach(l => {
+        const a = accountByCode(l.accountCode); if(!a) return;
+        const dc = (+l.debit || 0) - (+l.credit || 0);
+        if(a.category === 'INC' || a.category === 'EXP'){ addI('pbt', -dc); lines += -dc; }
+        if(line['adj:' + a.code]){ addI('adj:' + a.code, dc); lines += dc; }
+      });
     } else {
       const movesCash = Math.abs(cash) >= 0.005;
       let plNet = 0;
@@ -12181,6 +12212,9 @@ function computeGroupCashFlow(){
       packAdjAccounts().forEach(a => addL('adj:' + a.code, tbAmount(w.tbEnd, a.code)));
       Object.keys((w.cf && w.cf.manual) || {}).forEach(code => addL('cf:' + code, w.cf.manual[code]));
       const closeCash = cashOf(w.tbEnd);
+      /* exchange differences on cash: added back above, so they are the effect of exchange rate changes */
+      const fxCash = -cxFxOnCashAccounts(comps).reduce((t, a) => t + tbAmount(w.tbEnd, a.code), 0);
+      net += fxCash;
       const openCash = w.openLines ? cashOf(w.openLines) : (prevCloseCash != null ? prevCloseCash : closeCash - net);
       if(w.entry === 'open'){ openF += openCash * (w.rO || 0); }
       else if(w.entry === 'acq'){ const v = openCash * (w.spotIn || 0); put(line[deal.acqKey], eid, v); movF += v; }
@@ -13118,6 +13152,17 @@ function cxIfrsSnap(pid, gkey, cur){
         parent: r && r.byEntity ? (r.byEntity[g.parentId] || 0) : 0 }; });
       const T = k => (c.totals[k] ? c.totals[k].final : 0) || 0;
       cf = { order: c.lines.map(l => l.key), lines, ope: T('ope'), inv: T('inv'), fin: T('fin'), net: T('net'), fx: T('fx'), diff: T('diff'), open: T('open'), close: T('close'), bsCash: c.bsCash };
+      /* cash and cash equivalents in the cash flow statement against the statement of financial position: the asset
+         captions as presented there, and any component held elsewhere (a bank overdraft in borrowings) on its own */
+      const rec = new Map(); let other = false;
+      (c.cashCodes || []).forEach(code => {
+        const a = accountByCode(code), r = bs.rows.acct[code]; if(!a || !r) return;
+        const asset = a.category === 'CA' || a.category === 'NCA', cp = capById(a.captionId);
+        if(!asset) other = true;
+        const label = asset ? (cp ? cp.name : a.name) : a.name;
+        rec.set(label, (rec.get(label) || 0) + (asset ? (r.final || 0) : -(r.final || 0)));
+      });
+      cf.recon = other ? [...rec.entries()].map(([label, v]) => ({ label, v })) : null;
     }
     /* transactions with owners, as declared or issued (cxEquityTx); the NCI column takes a subsidiary's with outsiders */
     const txRank = l => ({ 'Issue of shares': 0, 'Reduction of share capital': 1, 'Dividends declared': 2 })[l] ?? 3;
@@ -13456,6 +13501,13 @@ function cxIfrsDoc(){
       if(nz(fx)){ rows.push({ id:'fx', label:'Effect of exchange rate changes on cash and cash equivalents', kind:'line', vals: fx }); endIds.push('fx'); }
       if(nz(df)){ rows.push({ id:'dif', label:'Movement not explained by the cash flow packs', kind:'line', vals: df }); endIds.push('dif'); }
       rows.push({ id:'cls', label:`Cash and cash equivalents at the end of the ${word}`, kind:'grand', vals: cfs.map(c => c ? c.close : 0), f: sumF(endIds) });
+      /* the reconciliation to the statement of financial position (a bank overdraft is in borrowings there) */
+      if(cfs.some(c => c && c.recon)){
+        const labels = []; cfs.forEach(c => (c && c.recon || []).forEach(x => { if(!labels.includes(x.label)) labels.push(x.label); }));
+        rows.push({ kind:'blank' }, { label:'Cash and cash equivalents in the statement of cash flows comprise:', kind:'sub' });
+        const rIds = labels.map((l, i) => { const id = 'rc' + i; rows.push({ id, label: l, kind:'line', vals: cfs.map(c => { const x = c && c.recon ? c.recon.find(y => y.label === l) : null; return x ? x.v : 0; }) }); return id; });
+        rows.push({ id:'rct', label:'Cash and cash equivalents in the statement of cash flows', kind:'total', vals: cfs.map(c => c ? c.close : 0), f: sumF(rIds) });
+      }
       rows.push({ label:'Check: closing cash less cash per the group balance sheet (should be nil)', kind:'check', vals: cfs.map(c => c ? c.close - c.bsCash : null),
         f: (R, c) => cfs[c] ? `${R('cls', c)}-${Math.round(cfs[c].bsCash * 100) / 100}` : null });
     }
