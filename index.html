@@ -2533,6 +2533,32 @@ body.cx-locked{ overflow:hidden; }
         </div>
       </div>
 
+      <!-- ============ CONSOLIDATION: SEGMENT INFORMATION PAGE (v39.39) ============ -->
+      <div class="page" id="page-group-seg">
+        <div style="margin-bottom:16px;">
+          <h2 class="panel-title" style="font-size:17px;">Segment information</h2>
+          <p class="panel-sub" style="margin-bottom:0;">Each company's accounts before the consolidation journals, the journals attributed to it, and after; journals no company carries sit in "Consolidation adjustments"; the group column is their sum and agrees to the group statements. Choose how journals are attributed: line by line (each journal line names its company, in the journal editor or the import file's entity column), or every journal to "Consolidation adjustments" so each company stays as reported.</p>
+        </div>
+        <div id="gsNoPeriod" class="coming-soon" style="display:none;">
+          <h3>No reporting period selected</h3>
+          <p>Choose or create a reporting period first.</p>
+          <button class="primary" onclick="goToPage('periods')" style="margin-top:6px;">Go to reporting periods</button>
+        </div>
+        <div id="gsContent">
+          <div class="table-wrap" style="margin-bottom:14px;">
+            <div class="table-toolbar" style="flex-wrap:wrap; gap:8px;">
+              <span style="font-size:12px; color:var(--text-tertiary);" id="gsSummary"></span>
+              <div class="spacer"></div>
+              <label style="font-size:12px; color:var(--text-secondary); display:inline-flex; align-items:center; gap:6px;">Journals
+                <select id="gsAttr" onchange="cxSetSegSetting('segAttr', this.value)" style="font-size:12px;"><option value="line">Attributed line by line</option><option value="fictional">All to Consolidation adjustments</option></select></label>
+              <label style="font-size:12px; color:var(--text-secondary); display:inline-flex; align-items:center; gap:6px;">Show
+                <select id="gsView" onchange="cxSetSegSetting('segView', this.value)" style="font-size:12px;"><option value="full">Before, journals and after</option><option value="after">After journals only</option></select></label>
+              <button class="small gs-dl" onclick="exportGroupSegmentsExcel()" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h2l2 5 2-5h2"/></svg>Download Excel</button>
+            </div>
+          </div>
+          <div id="gsBody"></div>
+        </div>
+      </div>
       <!-- ============ CONSOLIDATION: GROUP IFRS STATEMENTS PAGE (v39.38) ============ -->
       <div class="page" id="page-group-ifrs">
         <div style="margin-bottom:16px;">
@@ -2550,6 +2576,8 @@ body.cx-locked{ overflow:hidden; }
             <div class="table-toolbar" style="flex-wrap:wrap; gap:8px;">
               <span style="font-size:12px; color:var(--text-tertiary);" id="gfSummary"></span>
               <div class="spacer"></div>
+              <label style="font-size:12px; color:var(--text-secondary); display:inline-flex; align-items:center; gap:6px;">Cash flow lines
+                <select id="gfCfMode" onchange="cxSetIfrsCfMode(this.value)" style="font-size:12px;"><option value="line">By chart line</option><option value="caption">By caption</option></select></label>
               <button class="small gf-dl" onclick="exportGroupIfrsExcel()" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h2l2 5 2-5h2"/></svg>Download Excel</button>
               <button class="small gf-dl" onclick="exportGroupIfrsPdf()" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>Download PDF</button>
             </div>
@@ -2646,11 +2674,12 @@ body.cx-locked{ overflow:hidden; }
               </div>
               <table class="je-lines-table" id="jeLinesTable">
                 <thead><tr>
-                  <th style="width:38%;">Account</th>
-                  <th style="width:12%;">Statement</th>
-                  <th style="width:20%; text-align:right;">Debit</th>
-                  <th style="width:20%; text-align:right;">Credit</th>
-                  <th style="width:10%;"></th>
+                  <th style="width:34%;">Account</th>
+                  <th style="width:10%;">Statement</th>
+                  <th style="width:18%; text-align:right;">Debit</th>
+                  <th style="width:18%; text-align:right;">Credit</th>
+                  <th style="width:14%;" title="For segment reporting: the company this line belongs to">Company</th>
+                  <th style="width:6%;"></th>
                 </tr></thead>
                 <tbody id="jeLinesBody"></tbody>
                 <tfoot id="jeLinesFoot"></tfoot>
@@ -5001,12 +5030,13 @@ const pageMeta = {
   'group-cf':            { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group cash flow</span>' },
   'group-disc':          { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group disclosures</span>' },
   'group-ifrs':          { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group IFRS statements</span>' },
+  'group-seg':           { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Segment information</span>' },
   'group-je':            { crumb: 'Consolidation <span class="sep">/</span> <span class="current">Group journal entries</span>' },
   'comm-mgmt':           { crumb: 'Communication <span class="sep">/</span> <span class="current">Management</span>' },
   'comm-inv':            { crumb: 'Communication <span class="sep">/</span> <span class="current">Investors</span>' },
   'reports-soon':        { crumb: 'Workflow <span class="sep">/</span> <span class="current">Reports</span>', title: 'Reports (Soon)', desc: 'Generate the trial balance, balance sheet and profit & loss under an IFRS-aligned template.' },
 };
-const realPages = ['configuration', 'entities', 'dashboard', 'shareholders', 'structure', 'periods', 'sh-financials', 'sh-localreports', 'sh-ifrs', 'sh-fcreports', 'sh-cfreport', 'sh-fxrates', 'sh-icvalidation', 'sh-iccashflow', 'group-bs', 'group-pl', 'group-cf', 'group-disc', 'group-ifrs', 'group-je', 'comm-mgmt', 'comm-inv'];
+const realPages = ['configuration', 'entities', 'dashboard', 'shareholders', 'structure', 'periods', 'sh-financials', 'sh-localreports', 'sh-ifrs', 'sh-fcreports', 'sh-cfreport', 'sh-fxrates', 'sh-icvalidation', 'sh-iccashflow', 'group-bs', 'group-pl', 'group-cf', 'group-disc', 'group-ifrs', 'group-seg', 'group-je', 'comm-mgmt', 'comm-inv'];
 
 function goToPage(page){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -5032,6 +5062,7 @@ function goToPage(page){
     if(page === 'group-cf') renderGroupCF();
     if(page === 'group-disc') renderGroupDisclosures();
     if(page === 'group-ifrs') renderGroupIfrs();
+    if(page === 'group-seg') renderGroupSegments();
     if(page === 'group-je') renderJournalEntriesPage();
     if(page === 'comm-mgmt') renderCommMgmt();
     if(page === 'comm-inv') renderCommInv();
@@ -10058,12 +10089,26 @@ function jeSignedImpact(accountCode, debit, credit){
 
 /* Total debits / credits of a JE (for the balance check). */
 function jeTotals(je){
-  /* v39.34: cash-flow lines (group cash flow only) must net to nil on their own, so the balance-sheet and P&L
-     lines balance on their own too — otherwise the group balance sheet would not balance */
-  let dr = 0, cr = 0, cfd = 0, cfc = 0;
-  je.lines.forEach(l => { const d = +l.debit || 0, c = +l.credit || 0; dr += d; cr += c; if(cfAccounts.some(a => a.code === l.accountCode)){ cfd += d; cfc += c; } });
-  const cfOk = Math.abs(cfd - cfc) < 0.005;
-  return { dr, cr, balanced: Math.abs(dr - cr) < 0.005 && cfOk, cfOk, cfDiff: cfd - cfc };
+  /* v39.34: cash-flow lines (group cash flow only) sit outside the statements, so the balance-sheet and P&L lines
+     must balance on their own — otherwise the group balance sheet would not balance.
+     v39.39: the cash-flow lines net to nil (they move cash flows between lines), or they balance against the
+     entry's effect on operating cash flows: its profit or loss that is not added back, plus any cash it moves.
+     E.g. eliminating rent one company pays another under a lease: profit before tax falls by the rent (operating)
+     and a credit to the lease-payment line takes the payment out of financing. */
+  let dr = 0, cr = 0, cfd = 0, cfc = 0, op = 0, cash = 0;
+  const cashSet = new Set(defaultCashComponents());
+  je.lines.forEach(l => {
+    const d = +l.debit || 0, c = +l.credit || 0; dr += d; cr += c;
+    if(cfAccounts.some(a => a.code === l.accountCode)){ cfd += d; cfc += c; return; }
+    const a = accountByCode(l.accountCode);
+    if(a && (a.category === 'INC' || a.category === 'EXP') && !(a.cfAdj && a.cfAdj.on)) op += c - d;
+    if(cashSet.has(l.accountCode)) cash += d - c;
+  });
+  const cfNet = cfc - cfd, want = cash - op;
+  const cfNil = Math.abs(cfNet) < 0.005, cfVsPl = !cfNil && Math.abs(cfNet - want) < 0.005;
+  const cfOk = cfNil || cfVsPl;
+  const bsOk = Math.abs((dr - cfd) - (cr - cfc)) < 0.005;
+  return { dr, cr, balanced: bsOk && cfOk, bsOk, cfOk, cfVsPl, cfDiff: cfd - cfc, cfWant: want, bsDr: dr - cfd, bsCr: cr - cfc };
 }
 
 /* Returns the per-account signed impact of a single posted JE, split by statement.
@@ -11256,6 +11301,11 @@ function jeAccountOptions(selectedCode){
   return html;
 }
 
+/* v39.39: each line can name the company it belongs to (segment reporting); blank = the entry's company */
+function jeLineEntityOptions(v){
+  return `<option value="">As the entry</option>` + [...entities].sort((a, b) => a.code.localeCompare(b.code))
+    .map(e => `<option value="${escapeHtml(e.code)}"${e.code === v ? ' selected' : ''}>${escapeHtml(e.code)}</option>`).join('');
+}
 function renderJeLines(){
   const body = document.getElementById('jeLinesBody');
   body.innerHTML = jeEditing.lines.map((line, idx) => {
@@ -11268,6 +11318,7 @@ function renderJeLines(){
       <td style="text-align:center;">${stmtBadge}</td>
       <td><input type="number" step="any" value="${line.debit||''}" placeholder="0" oninput="updateJeLine(${idx}, 'debit', this.value)" /></td>
       <td><input type="number" step="any" value="${line.credit||''}" placeholder="0" oninput="updateJeLine(${idx}, 'credit', this.value)" /></td>
+      <td><select onchange="updateJeLine(${idx}, 'entity', this.value)" title="The company this line belongs to, for segment reporting">${jeLineEntityOptions(line.entity)}</select></td>
       <td style="text-align:center;">
         <button class="je-icon-btn danger" title="Remove line" onclick="removeJeLine(${idx})" ${jeEditing.lines.length<=1?'disabled style="opacity:0.4;"':''}><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M5 12h14"/></svg></button>
       </td>
@@ -11282,12 +11333,14 @@ function updateJeFooter(){
     <td colspan="2" style="text-align:right; color:var(--text-tertiary); text-transform:uppercase; font-size:10.5px; letter-spacing:0.03em;">Totals</td>
     <td style="text-align:right;">${formatAmount(t.dr)}</td>
     <td style="text-align:right;">${formatAmount(t.cr)}</td>
-    <td></td>
+    <td></td><td></td>
   </tr>`;
   const status = document.getElementById('jeBalanceStatus');
-  const diff = t.dr - t.cr;
+  const diff = t.bsDr - t.bsCr;
   if(t.balanced && t.dr > 0){
-    status.innerHTML = `<span style="color:var(--accent);">✓ Balanced — debits = credits = ${formatAmount(t.dr)} ${activePresentationCurrency()}</span>`;
+    status.innerHTML = t.cfVsPl
+      ? `<span style="color:var(--accent);">✓ Balanced — debits = credits = ${formatAmount(t.bsDr)} ${activePresentationCurrency()}; the cash flow lines (net ${formatAmount(-t.cfDiff)}) balance the entry's effect on operating cash flows</span>`
+      : `<span style="color:var(--accent);">✓ Balanced — debits = credits = ${formatAmount(t.bsDr || t.dr)} ${activePresentationCurrency()}${t.bsDr && Math.abs(t.bsDr - t.dr) >= 0.005 ? ' (cash flow lines net to nil)' : ''}</span>`;
     document.getElementById('jePostBtn').disabled = false;
     document.getElementById('jePostBtn').style.opacity = '1';
   } else if(t.dr === 0 && t.cr === 0){
@@ -11295,13 +11348,14 @@ function updateJeFooter(){
     document.getElementById('jePostBtn').disabled = true;
     document.getElementById('jePostBtn').style.opacity = '0.5';
   } else {
-    status.innerHTML = `<span style="color:var(--danger);">⚠ ${t.cfOk || Math.abs(diff) >= 0.005 ? 'Out of balance by ' + formatAmount(Math.abs(diff)) : 'Cash flow lines must net to nil on their own \u2014 off by ' + formatAmount(Math.abs(t.cfDiff))} ${activePresentationCurrency()}</span>`;
+    status.innerHTML = `<span style="color:var(--danger);">⚠ ${!t.bsOk ? 'Out of balance by ' + formatAmount(Math.abs(diff)) : 'Cash flow lines must net to nil' + (Math.abs(t.cfWant) >= 0.005 ? ', or to ' + formatAmount(t.cfWant) + ' (the entry\u2019s effect on operating cash flows)' : '') + ' \u2014 they net to ' + formatAmount(-t.cfDiff)} ${activePresentationCurrency()}</span>`;
     document.getElementById('jePostBtn').disabled = true;
     document.getElementById('jePostBtn').style.opacity = '0.5';
   }
 }
 
 function updateJeLine(idx, field, value){
+  if(field === 'entity'){ jeEditing.lines[idx].entity = value; return; }
   if(field === 'accountCode'){
     jeEditing.lines[idx].accountCode = value;
     renderJeLines(); // re-render to update statement badge
@@ -11325,7 +11379,7 @@ function saveJournalEntry(post){
   if(jeEditing.lines.length === 0){ showToast('Add at least one line with an account and amount', warnIcon()); return; }
 
   const t = jeTotals(jeEditing);
-  if(post && !t.balanced){ showToast(t.cfOk ? 'Cannot post — debits must equal credits' : 'Cannot post — cash flow lines must net to nil on their own', warnIcon()); return; }
+  if(post && !t.balanced){ showToast(t.bsOk ? 'Cannot post — cash flow lines must net to nil, or to the entry\u2019s effect on operating cash flows' : 'Cannot post — debits must equal credits', warnIcon()); return; }
 
   jeEditing.posted = post;
 
@@ -11395,7 +11449,7 @@ function exportJEs(){
   [...inScope].sort((a,b)=>a.number-b.number).forEach(je => {
     je.lines.forEach(l => {
       const a = accountByCode(l.accountCode);
-      rows.push([je.number, je.category, je.frequency, je.entity||'', je.description||'',
+      rows.push([je.number, je.category, je.frequency, l.entity || je.entity || '', je.description||'',
                  l.accountCode, a ? a.name : ((cfAccounts.find(x => x.code === l.accountCode) || {}).name || ''), l.debit||0, l.credit||0, je.posted?'Yes':'No']);
     });
   });
@@ -11425,7 +11479,8 @@ function handleJEImport(evt){
         grouped[num].lines.push({
           accountCode: (r.account_code||'').trim(),
           debit: parseFloat(r.debit)||0,
-          credit: parseFloat(r.credit)||0 });
+          credit: parseFloat(r.credit)||0,
+          entity: (r.entity||'').trim().toUpperCase() });
       });
       /* v39.33 (C15): all-or-nothing — unknown account codes and unbalanced posted JEs are rejected. */
       if(!activePeriodId){ showToast('Select a reporting period first', warnIcon()); return; }
@@ -11433,8 +11488,12 @@ function handleJEImport(evt){
       Object.keys(grouped).forEach(num => {
         const g = grouped[num];
         g.lines = g.lines.filter(l => l.accountCode && (l.debit!==0 || l.credit!==0));
+        /* v39.39: the CSV's entity column is per line; the entry's own company is the one every line names, if any */
+        const ents = [...new Set(g.lines.map(l => l.entity))];
+        g.entity = ents.length === 1 ? ents[0] : '';
+        g.lines.forEach(l => { if(!l.entity || l.entity === g.entity) delete l.entity; });
         g.lines.forEach(l => { if(!accountByCode(l.accountCode) && !cfAccounts.some(a => a.code === l.accountCode)) problems.push(`JE ${num}: account "${l.accountCode}" is not in the chart of accounts`); });
-        if(g.posted && g.lines.length && !jeTotals(g).balanced) problems.push(`JE ${num}: marked posted but ` + (jeTotals(g).cfOk ? 'debits do not equal credits' : 'its cash flow lines do not net to nil'));
+        if(g.posted && g.lines.length && !jeTotals(g).balanced) problems.push(`JE ${num}: marked posted but ` + (jeTotals(g).bsOk ? 'its cash flow lines do not net to nil or to its effect on operating cash flows' : 'debits do not equal credits'));
       });
       if(problems.length){
         showToast(problems[0] + (problems.length > 1 ? ` (+${problems.length-1} more)` : '') + ' — nothing imported', warnIcon());
@@ -11922,6 +11981,20 @@ function cxGroupWindowsIn(p){
   return res;
 }
 
+/* v39.39 — note row labels shared by the group and entity notes:
+   - a cash flow line on an investing or financing item reads "(cash)", its non-cash declaration "(non-cash)",
+     so every addition shows which part went through the statement of cash flows;
+   - exchange differences on cash are one row, as in the statement of cash flows;
+   - a cash component held outside cash and cash equivalents on the balance sheet (a bank overdraft in
+     borrowings) moves "as part of cash and cash equivalents", not by a "net cash flow". */
+function noteCashLabel(a){ return a.name + (a.category === 'INV' || a.category === 'FIN' ? ' (cash)' : ''); }
+const NOTE_FX_CASH_LABEL = 'Effect of exchange rate changes on cash and cash equivalents';
+function noteNetCashLabel(cashCols){
+  const liab = cashCols.map(accountByCode).filter(a => a && (a.category === 'CL' || a.category === 'NCL'));
+  if(liab.length && liab.length === cashCols.length)
+    return (liab.length === 1 ? 'Movement in ' + liab[0].name.toLowerCase() : 'Net movement') + ' (part of cash and cash equivalents)';
+  return 'Net cash flow for the period (statement of cash flows)';
+}
 /* ---- disclosure-note movements in local currency, for one caption over one span ----
    The same rules as the Financial reports note: cash movements from the cash flow lines linked to a component,
    the pack's non-cash declarations, the P&L add-backs pointed at a component, and a balancing line. */
@@ -11935,17 +12008,21 @@ function noteLcyMovements(comps, sgn, openLines, closeLines, cf){
   cfAccounts.forEach(a => {
     const t = effBs(a); if(!cols.includes(t)) return;
     const v = manual[a.code] || 0; if(Math.abs(v) < 0.005) return;
-    add('cash:' + a.code, a.name, 'cash').cells[t] = sgn === 1 ? -v : v;
+    add('cash:' + a.code, noteCashLabel(a), 'cash').cells[t] = sgn === 1 ? -v : v;
   });
   ((cf && cf.nonCash) || []).forEach(x => {
     const a = cfAccounts.find(c => c.code === x.code); if(!a) return;
     const t = effBs(a); if(!cols.includes(t) || Math.abs(x.amount) < 0.005) return;
     add('nc:' + a.code, a.name + ' (non-cash)', 'noncash').cells[t] = sgn === 1 ? -x.amount : x.amount;
   });
+  const cashSet = new Set((cf && cf.cashComponents && cf.cashComponents.length) ? cf.cashComponents : defaultCashComponents());
+  const fxCash = new Set(cxFxOnCashAccounts([...cashSet]).map(a => a.code));
+  let fxRow = null;
   accounts.forEach(a => {
     if(!(a.cfAdj && a.cfAdj.on)) return;
     const t = a.cfAdj.bsAccountCode; if(!cols.includes(t)) return;
     const v = tbAmount(closeLines, a.code); if(Math.abs(v) < 0.005) return;
+    if(fxCash.has(a.code)){ fxRow = fxRow || add('fxcash', NOTE_FX_CASH_LABEL, 'adj'); fxRow.cells[t] += sgn === 1 ? -v : v; return; }
     add('adj:' + a.code, a.name, 'adj').cells[t] = sgn === 1 ? -v : v;
   });
   const bal = (lines, code) => sgn * tbAmount(lines, code);
@@ -11953,10 +12030,9 @@ function noteLcyMovements(comps, sgn, openLines, closeLines, cf){
   cols.forEach(c => { opening[c] = bal(openLines, c); closing[c] = bal(closeLines, c); });
   /* cash components move by the cash flow itself: the pack has already tied them, so their movement is the
      period's net cash flow, never a balancing figure */
-  const cashSet = new Set((cf && cf.cashComponents && cf.cashComponents.length) ? cf.cashComponents : defaultCashComponents());
   const cashCols = cols.filter(c => cashSet.has(c));
   if(cashCols.length){
-    const r = { key:'cashnet', label:'Net cash flow for the period (statement of cash flows)', kind:'cash', cells: zero() };
+    const r = { key:'cashnet', label: noteNetCashLabel(cashCols), kind:'cash', cells: zero() };
     cashCols.forEach(c => { r.cells[c] = closing[c] - opening[c] - rows.reduce((s, x) => s + (x.cells[c] || 0), 0); });
     if(cashCols.some(c => Math.abs(r.cells[c]) >= 0.005)) rows.unshift(r);
   }
@@ -11969,7 +12045,7 @@ function noteComps(caption){
 function noteSign(caption){ return ['NCA','CA'].includes(caption.category) ? 1 : -1; }
 /* canonical order of movement lines, shared by every entity, the group and the workbook */
 function noteLineOrder(){
-  const o = { cashnet: 5 }; let i = 10;
+  const o = { cashnet: 5, fxcash: 6 }; let i = 10;
   cfAccounts.forEach(a => { o['cash:' + a.code] = i++; });
   cfAccounts.forEach(a => { o['nc:' + a.code] = i++; });
   accounts.forEach(a => { if(a.cfAdj && a.cfAdj.on) o['adj:' + a.code] = i++; });
@@ -12047,6 +12123,33 @@ function groupNoteFor(caption, W, jeCur, jePrior){
     if(!g){ g = { key: base, label: r.label.replace(/ \(\d\d\/\d\d–\d\d\/\d\d\)$/, ''), kind: r.kind, fcy: Object.fromEntries(cols.map(c => [c, 0])) }; map.set(base, g); }
     cols.forEach(c => { g.fcy[c] += r.fcy[c]; });
   }));
+  /* v39.39: a journal that eliminates a year's flows without touching a component's balance — intra-group
+     interest or dividends: cash-flow lines on the paid and received lines, profit or loss on the add-backs that
+     point at the same components — takes them out of the note's movement rows too. Applied per component, only
+     when the journal has no balance-sheet line on it and its lines there net to nil, so the closing is unchanged
+     (balance eliminations, e.g. intra-group loans, keep their own journal row). */
+  const sgnN = noteSign(caption);
+  const effBsN = a => a.bsAccountCode || ((capById(a.cfCaptionId) || {}).bsAccountCode || '');
+  scopeJEs().filter(j => j.posted).forEach(j => {
+    const add = {}, bsHit = new Set();
+    j.lines.forEach(l => {
+      const dc = (+l.debit || 0) - (+l.credit || 0); if(Math.abs(dc) < 0.005) return;
+      const f = cfAccounts.find(a => a.code === l.accountCode);
+      if(f){ const t = effBsN(f); if(cols.includes(t)) (add[t] = add[t] || []).push({ key:'cash:' + f.code, label: noteCashLabel(f), kind:'cash', v: sgnN === 1 ? dc : -dc }); return; }
+      const a = accountByCode(l.accountCode); if(!a) return;
+      if(cols.includes(a.code)) bsHit.add(a.code);
+      if(a.cfAdj && a.cfAdj.on && cols.includes(a.cfAdj.bsAccountCode))
+        (add[a.cfAdj.bsAccountCode] = add[a.cfAdj.bsAccountCode] || []).push({ key:'adj:' + a.code, label: a.name, kind:'adj', v: sgnN === 1 ? -dc : dc });
+    });
+    Object.entries(add).forEach(([t, xs]) => {
+      if(bsHit.has(t) || Math.abs(xs.reduce((s2, x) => s2 + x.v, 0)) >= 0.005) return;
+      xs.forEach(x => {
+        let g = map.get(x.key);
+        if(!g){ g = { key: x.key, label: x.label, kind: x.kind, fcy: Object.fromEntries(cols.map(c => [c, 0])) }; map.set(x.key, g); }
+        g.fcy[t] += x.v;
+      });
+    });
+  });
   /* v39.34: consolidation journal entries (already in the presentation currency). The prior period's entries
      are part of the opening (they are in the prior group balance sheet); this period's movement is current less
      prior; the closing carries this period's entries — so the note agrees to the group balance sheet (FINAL)
@@ -13173,6 +13276,25 @@ function cxIfrsSnap(pid, gkey, cur){
     /* transactions with owners, as declared or issued (cxEquityTx); the NCI column takes a subsidiary's with outsiders */
     const txRank = l => ({ 'Issue of shares': 0, 'Reduction of share capital': 1, 'Dividends declared': 2 })[l] ?? 3;
     const ownerTx = cxEquityTx(p0, g, cfg).map(t => t.k === 'nci' ? Object.assign(t, { k: nciKey }) : t).sort((x, y) => txRank(x.label) - txRank(y.label));
+    /* v39.39: share issues and dividends — as issued or declared (statement of changes in equity) against what was
+       received or paid in cash (statement of cash flows): the financing lines that explain share capital, retained
+       earnings or non-controlling interests; the parent's non-cash declarations on those lines (shares issued for
+       an asset, a dividend in specie); what is left is the movement in the amounts unpaid. */
+    let eqCash = null;
+    if(cf){
+      const effBs = a => a.bsAccountCode || ((capById(a.cfCaptionId) || {}).bsAccountCode || '');
+      const kindOf = a => { const b = accountByCode(effBs(a)); if(!b || b.category !== 'EQ') return null; const cp = capById(b.captionId);
+        if(/share capital|stated capital|ordinary shares|share premium/i.test(b.name + ' ' + ((cp && cp.name) || ''))) return 'sh';
+        if(b.code === JE_PL_TO_EQUITY_ACCOUNT || b.code === NCI_ACCOUNT_CODE || /dividend|retained/i.test(b.name)) return 'div'; return null; };
+      const fin = cfAccounts.filter(a => a.category === 'FIN' && kindOf(a));
+      const sum = (kind, f) => fin.filter(a => kindOf(a) === kind).reduce((t, a) => t + f(a), 0);
+      const nc = code => { let t = 0; W.list.filter(r => r.e.id === g.parentId).forEach(r => r.windows.forEach(w => ((w.cf && w.cf.nonCash) || []).forEach(x => {
+        if(x.code === code) t += (+x.amount || 0) * (r.e.currency === groupCurrency ? 1 : (w.rA || 0)); }))); return t; };
+      const txSum = l => ownerTx.filter(t => t.label === l).reduce((t2, t) => t2 + t.v, 0);
+      eqCash = { issued: txSum('Issue of shares'), declared: -txSum('Dividends declared'),
+        received: sum('sh', a => (cf.lines['cf:' + a.code] || {}).v || 0), paid: -sum('div', a => (cf.lines['cf:' + a.code] || {}).v || 0),
+        ncIssue: sum('sh', a => nc(a.code)), ncDiv: -sum('div', a => nc(a.code)) };
+    }
 
     const D = gdData();
     /* the period's consolidation adjustments, one row per journal: a journal posting again an adjustment brought
@@ -13197,7 +13319,7 @@ function cxIfrsSnap(pid, gkey, cur){
     })) : [];
 
     return {
-      p, g, cur, P, B, eq, reKey, nciKey, ociBy, nciProfit, nciOci, nciAcq, nciStake, stakeChange, ownerTx, cf, notes,
+      p, g, cur, P, B, eq, reKey, nciKey, ociBy, nciProfit, nciOci, nciAcq, nciStake, stakeChange, ownerTx, eqCash, cf, notes,
       T: { inc: tot(pl, 'totalIncome'), exp: tot(pl, 'totalExpenses'), pbt: tot(pl, 'profitBeforeTax'), tax: tot(pl, 'totalTax'),
            profit: tot(pl, 'profitForPeriod'), oci: tot(pl, 'totalOci'), tci: tot(pl, 'totalComprehensiveIncome') },
       S: { nca: tot(bs, 'totalNca'), ca: tot(bs, 'totalCa'), ta: tot(bs, 'totalAssets'), teq, ncl: tot(bs, 'totalNcl'), cl: tot(bs, 'totalCl'),
@@ -13219,6 +13341,9 @@ function cxIfrsGroupIn(pp, gkey){ return !!(pp && (getPeriodConfig(pp.id).userGr
 
 /* the document: sheets → tables → rows. A row: {id, label, kind, vals[], f(R, c) → formula | null, note, xl}
    kinds: head, sub, line, total, grand, blank, check (Excel only) */
+/* how the statement of cash flows lists its lines: 'line' (each chart line) or 'caption' (by cash-flow caption) */
+function cxIfrsCfMode(){ const p = activePeriod(); return p ? (getPeriodConfig(p.id).ifrsCfBy || 'line') : 'line'; }
+function cxSetIfrsCfMode(m){ const p = activePeriod(); if(!p) return; getPeriodConfig(p.id).ifrsCfBy = m; cxSaveDurableState(); renderGroupIfrs(); }
 function cxIfrsDoc(){
   const p = activePeriod(); if(!p) return { state:'noPeriod' };
   const g = cmGroupFor(p); if(!g) return { state:'noGroup', p };
@@ -13477,16 +13602,34 @@ function cxIfrsDoc(){
       rows.push({ label:'No cash flow information in the packs for this period.', kind:'sub' });
     } else {
       const cfs = snaps.map(s => s.cf);
-      const keys = [];
-      cfs.forEach(c => { if(c) c.order.forEach(k => { if(!keys.includes(k)) keys.push(k); }); });
-      const info = k => (now.cf.lines[k] || (prior && prior.cf && prior.cf.lines[k]));
-      const v = (c, k) => c && c.lines[k] ? c.lines[k].v : 0;
+      const keys0 = [];
+      cfs.forEach(c => { if(c) c.order.forEach(k => { if(!keys0.includes(k)) keys0.push(k); }); });
+      const info0 = k => (now.cf.lines[k] || (prior && prior.cf && prior.cf.lines[k]));
+      const v0 = (c, k) => c && c.lines[k] ? c.lines[k].v : 0;
+      /* v39.39: by caption (period setting) — the chart's lines are added up under their cash-flow caption (one
+         "Interest paid", one "Purchase of property, plant and equipment"); an add-back takes the operating caption
+         set on its account, when one other than "Adjustments for" is set. Working-capital movements and the
+         acquisition / disposal lines (net of the cash acquired or disposed of) keep their own lines. */
+      const byCap = cxIfrsCfMode() === 'caption';
+      const deal = gcfDealLines();
+      const gKey = k => {
+        if(!byCap || k === deal.acqKey || k === deal.dispKey) return k;
+        let c = null;
+        if(/^cf:/.test(k)){ const a = cfAccounts.find(x => 'cf:' + x.code === k); c = a ? capById(a.cfCaptionId) : null; }
+        else if(/^adj:/.test(k)){ const a = accountByCode(k.slice(4)); c = a && a.cfAdj ? capById(a.cfAdj.cfCaptionId) : null; if(c && /^adjustments?\s+for/i.test(c.name)) c = null; }
+        if(!c || /working capital/i.test(c.name)) return k;
+        return 'cap:' + (info0(k) || {}).sec + ':' + c.name;
+      };
+      const keys = [], members = {};
+      keys0.forEach(k => { const g = gKey(k); if(!members[g]){ members[g] = []; keys.push(g); } members[g].push(k); });
+      const info = g => { const l = info0(members[g][0]); return members[g].length > 1 || g.startsWith('cap:') ? Object.assign({}, l, { label: g.split(':').slice(2).join(':') }) : l; };
+      const v = (c, g) => members[g].reduce((t, k) => t + v0(c, k), 0);
       const sec = (code, head, totalLabel, totId, totKey) => {
         rows.push({ label: head, kind:'head' });
         const ids = [];
         let adjHead = false;
         let wcHead = false;
-        const capOf = k => { const a = /^cf:/.test(k) ? cfAccounts.find(x => 'cf:' + x.code === k) : null; const c = a ? capById(a.cfCaptionId) : null; return c ? c.name : ''; };
+        const capOf = g => { const k = members[g][0]; const a = /^cf:/.test(k) ? cfAccounts.find(x => 'cf:' + x.code === k) : null; const c = a ? capById(a.cfCaptionId) : null; return c ? c.name : ''; };
         keys.filter(k => info(k).sec === code).forEach((k, i) => {
           const vals = cfs.map(c => v(c, k)); if(!nz(vals)) return;
           const l = info(k);
@@ -13540,6 +13683,29 @@ function cxIfrsDoc(){
       }
       return { caption: `${i + 1}. ${n.name}`, heads: n.comps.concat(['Total']), rows, colSum: [{ col: n.comps.length, of: [...Array(n.comps.length).keys()] }] };
     });
+    /* v39.39: share issues and dividends, from the statement of changes in equity to the statement of cash flows */
+    const ec = snaps.map(s => s.eqCash);
+    const ecv = f => ec.map(x => x ? f(x) : 0);
+    if(ec.some(x => x && [x.issued, x.declared, x.received, x.paid].some(v => Math.abs(v) >= 0.5))){
+      const rows = [];
+      const block = (pre, head, a, aLbl, ncF, ncLbl, cashF, cashLbl) => {
+        const A = ecv(a), NC = ecv(ncF), CASH = ecv(cashF), UN = A.map((v, j) => v - NC[j] - CASH[j]);
+        if(![A, NC, CASH].some(nz)) return;
+        rows.push({ label: head, kind:'sub' });
+        const ids = [pre + 'a'];
+        rows.push({ id: pre + 'a', label: aLbl, kind:'line', vals: A });
+        if(nz(NC)){ rows.push({ id: pre + 'n', label: ncLbl, kind:'line', vals: NC.map(v => -v) }); ids.push(pre + 'n'); }
+        rows.push({ id: pre + 'u', label: 'Movement in the amount unpaid at the end of the ' + word, kind:'line', vals: UN.map(v => -v) }); ids.push(pre + 'u');
+        rows.push({ id: pre + 't', label: cashLbl, kind:'total', vals: CASH, f: sumF(ids) });
+        rows.push({ kind:'blank' });
+      };
+      block('sh', 'Issue of shares', x => x.issued, 'Shares issued (statement of changes in equity)', x => x.ncIssue, 'Issued for consideration other than cash',
+        x => x.received, 'Proceeds received in cash (statement of cash flows)');
+      block('dv', 'Dividends', x => x.declared, 'Dividends declared (statement of changes in equity)', x => x.ncDiv, 'Settled other than in cash (dividends in specie)',
+        x => x.paid, 'Dividends paid in cash (statement of cash flows)');
+      if(rows.length && rows[rows.length - 1].kind === 'blank') rows.pop();
+      if(rows.length) tables.push({ caption: `${tables.length + 1}. Share issues and dividends: declared to paid`, heads: yrs, rows });
+    }
     if(tables.length) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
   }
 
@@ -13573,6 +13739,7 @@ function renderGroupIfrs(){
   try { D = cxIfrsDoc(); } catch(err){ console.error(err); D = { state:'error' }; }
   const btns = document.querySelectorAll('#gfContent .gf-dl');
   btns.forEach(b => { b.disabled = D.state !== 'ok'; });
+  const cfm = document.getElementById('gfCfMode'); if(cfm) cfm.value = cxIfrsCfMode();
   if(D.state !== 'ok'){
     sum.textContent = '';
     body.innerHTML = `<div class="cx-empty">${D.state === 'noGroup' ? 'Define a group in the reporting period first.' : D.state === 'error' ? 'The statements could not be prepared — check the group statements for this period.' : 'No entity in the consolidation has financials for this period.'}</div>`;
@@ -13614,6 +13781,166 @@ function cxIfrsHtml(D){
     h += '</div>';
   });
   return h;
+}
+
+/* ============================================================
+   v39.39 SEGMENT REPORTING — each consolidated company's accounts before the consolidation journals, the journals
+   attributed to it, and after; the journals no company carries in a "Consolidation adjustments" column; the
+   group as their sum (= the group statements, FINAL). The preparer chooses the attribution (period setting):
+   - 'line': each journal line goes to the company it names (the line's company, else the entry's); a line that
+     names none, or a company outside the consolidation, goes to "Consolidation adjustments";
+   - 'fictional': every journal goes to "Consolidation adjustments", so each company stays as reported.
+   A journal's profit or loss and OCI fall into the company of the line that carries them (as in the group
+   statements, on the profit and OCI lines of equity), so after-journal balance sheets of single companies need not
+   balance when an entry spans companies: the group column always does.
+   ============================================================ */
+const CX_SEG_CX = '__cx';
+function cxSegSetting(k, d){ const p = activePeriod(); return p ? (getPeriodConfig(p.id)[k] || d) : d; }
+function cxSetSegSetting(k, v){ const p = activePeriod(); if(!p) return; getPeriodConfig(p.id)[k] = v; cxSaveDurableState(); renderGroupSegments(); }
+function jeLineEntity(je, l){ return String((l && l.entity) || je.entity || '').trim().toUpperCase(); }
+function cxSegDoc(){
+  const p = activePeriod(); if(!p) return { state:'noPeriod' };
+  const g = cmGroupFor(p); if(!g) return { state:'noGroup', p };
+  const cur = activePresentationCurrency();
+  const mode = cxSegSetting('segAttr', 'line'), view = cxSegSetting('segView', 'full');
+  return cxOwnRead(() => withPeriodGroup(p.id, g.key, () => withPresentation(cur, () => {
+    const pl = computeGroupStatement('PL'), bs = computeGroupStatement('BS');
+    const ents = bs.sortedEntities.length ? bs.sortedEntities : pl.sortedEntities;
+    if(!ents.length) return { state:'noData', p, g, cur };
+    const idByCode = Object.fromEntries(ents.map(e => [e.code.toUpperCase(), e.id]));
+    /* the posted journals, split by the company each line is attributed to */
+    const parts = {};
+    scopeJEs().filter(j => j.posted).forEach(j => {
+      const by = {};
+      j.lines.forEach(l => {
+        if(cfAccounts.some(a => a.code === l.accountCode)) return;   /* cash-flow lines: group cash flow only */
+        const id = mode === 'line' ? idByCode[jeLineEntity(j, l)] : null;
+        const t = id != null ? String(id) : CX_SEG_CX;
+        (by[t] = by[t] || []).push(l);
+      });
+      Object.entries(by).forEach(([t, ls]) => {
+        const im = jeImpact({ lines: ls }), x = parts[t] = parts[t] || { pl:{}, bs:{}, plNet:0, ociNet:0 };
+        Object.keys(im.pl).forEach(c => { x.pl[c] = (x.pl[c] || 0) + im.pl[c]; });
+        Object.keys(im.bs).forEach(c => { x.bs[c] = (x.bs[c] || 0) + im.bs[c] - ((im.mirror || {})[c] || 0); });
+        x.plNet += im.plNet || 0; x.ociNet += im.ociNet || 0;
+      });
+    });
+    const hasCx = mode === 'fictional' || !!parts[CX_SEG_CX];
+    /* sources: an entity before journals, a set of attributed journals */
+    const before = e => ({ acct: (st, code) => { const r = st.rows.acct[code]; return r ? (r.byEntity[e.id] || 0) : 0; },
+      tot: (st, k) => { const r = st.rows.totals[k]; return r && r.byEntity ? (r.byEntity[e.id] || 0) : 0; } });
+    const jes = t => { const x = parts[t] || { pl:{}, bs:{}, plNet:0, ociNet:0 };
+      return { acct: (st, code) => (st === pl ? x.pl[code] : x.bs[code]) || 0,
+        tot: (st, k) => k === 'profitForPeriod' ? x.plNet : k === 'totalOci' ? x.ociNet : 0 }; };
+    const cols = [];   /* {head, src, kind:'b'|'j'|'a'|'cx'|'g', of:[col indexes]} */
+    ents.forEach(e => {
+      if(view === 'full'){
+        const b = cols.length;
+        cols.push({ head: e.code + ' before journals', src: [before(e)], kind:'b' });
+        cols.push({ head: e.code + ' journals', src: [jes(String(e.id))], kind:'j' });
+        cols.push({ head: e.code + ' after journals', src: [before(e), jes(String(e.id))], kind:'a', of: [b, b + 1] });
+      } else cols.push({ head: e.code, src: [before(e), jes(String(e.id))], kind:'a' });
+    });
+    if(hasCx) cols.push({ head: 'Consolidation adjustments', src: [jes(CX_SEG_CX)], kind:'cx' });
+    const gOf = cols.map((c, i) => (c.kind === 'a' || c.kind === 'cx') ? i : -1).filter(i => i >= 0);
+    cols.push({ head: 'Group', kind:'g', of: gOf });
+    cols.forEach(c => { if(c.kind === 'g') c.src = cols.filter((_, i) => gOf.includes(i)).flatMap(x => x.src); });
+    const val = (fn) => cols.map(c => c.src.reduce((t, s2) => t + fn(s2), 0));
+    const nz = vals => vals.some(v => Math.abs(v) >= 0.5);
+    const sumF = ids => (R, c) => ids.length ? ids.map(id => R(id, c)).join('+') : '0';
+    /* one row per caption; captions of the same name across the categories given are one net line (an exchange
+       gains caption and an exchange losses caption of the same name), as in the IFRS statements */
+    const capRows = (st, catSigns, pre) => {
+      const caps = new Map();
+      Object.keys(st.rows.acct).forEach(code => { const a = accountByCode(code); if(!a || catSigns[a.category] == null) return;
+        const c = capById(a.captionId); const ok = c && c.category === a.category;
+        const k = ok ? String(c.name).trim().toLowerCase() : '_none_' + a.category;
+        if(!caps.has(k)) caps.set(k, { label: ok ? c.name : 'Other (' + a.category + ')', ord: Object.keys(catSigns).indexOf(a.category), num: ok ? String(c.num) : 'zz', codes: [] });
+        caps.get(k).codes.push(code); });
+      return [...caps.values()].sort((a, b) => a.ord - b.ord || a.num.localeCompare(b.num, undefined, { numeric:true })).map((c, i) => ({ id: pre + i, label: c.label, kind:'line',
+        vals: val(s2 => c.codes.reduce((t, code) => t + catSigns[accountByCode(code).category] * s2.acct(st, code), 0)) })).filter(r => nz(r.vals));
+    };
+    const colSum = cols.map((c, i) => c.of ? { col: i, of: c.of } : null).filter(Boolean);
+    const heads = cols.map(c => c.head);
+    /* profit or loss and other comprehensive income */
+    const P = [];
+    const ie = capRows(pl, { INC: 1, EXP: -1 }, 'i'), tax = capRows(pl, { TAX: -1 }, 't'), oci = capRows(pl, { OCI: 1 }, 'o');
+    const inc = ie, exp = [];
+    P.push(...ie);
+    P.push({ id:'pbt', label:'Profit before tax', kind:'total', vals: val(s2 => s2.tot(pl, 'profitBeforeTax') || 0), f: sumF(inc.concat(exp).map(r => r.id)) });
+    P.push(...tax);
+    P.push({ id:'pfy', label:`Profit for the ${cxIfrsSpanWord(p)}`, kind:'total', vals: null, f: sumF(['pbt'].concat(tax.map(r => r.id))) });
+    if(oci.length){ P.push({ label:'Other comprehensive income', kind:'sub' }, ...oci); }
+    P.push({ id:'tci', label:'Total comprehensive income', kind:'grand', vals: null, f: sumF(['pfy'].concat(oci.map(r => r.id))) });
+    /* JS values of the totals (journal sources carry no totals: derive them from the lines) */
+    const sumV = (rows, ids) => cols.map((_, j) => rows.filter(r => ids.includes(r.id)).reduce((t, r) => t + r.vals[j], 0));
+    P.find(r => r.id === 'pbt').vals = sumV(P, inc.concat(exp).map(r => r.id));
+    P.find(r => r.id === 'pfy').vals = sumV(P, ['pbt'].concat(tax.map(r => r.id)));
+    P.find(r => r.id === 'tci').vals = sumV(P, ['pfy'].concat(oci.map(r => r.id)));
+    /* financial position */
+    const B = [];
+    const nca = capRows(bs, { NCA: 1 }, 'na'), ca = capRows(bs, { CA: 1 }, 'ca'), eq = capRows(bs, { EQ: 1 }, 'eq'), ncl = capRows(bs, { NCL: 1 }, 'nl'), cl = capRows(bs, { CL: 1 }, 'cl');
+    B.push(...nca, ...ca);
+    B.push({ id:'ta', label:'Total assets', kind:'total', vals: sumV(nca.concat(ca), nca.concat(ca).map(r => r.id)), f: sumF(nca.concat(ca).map(r => r.id)) });
+    B.push({ kind:'blank' });
+    const eqx = [
+      { id:'ep', label:`Profit for the ${cxIfrsSpanWord(p)}`, kind:'line', vals: val(s2 => s2.tot(bs, 'profitForPeriod')) },
+      { id:'eo', label:'Other comprehensive income for the period', kind:'line', vals: val(s2 => s2.tot(bs, 'totalOci')) },
+      { id:'et', label:'Translation reserve', kind:'line', vals: val(s2 => s2.tot(bs, 'translationReserve')) }].filter(r => nz(r.vals));
+    const eqAll = eq.concat(eqx);
+    B.push(...eqAll);
+    B.push({ id:'te', label:'Total equity', kind:'total', vals: sumV(eqAll, eqAll.map(r => r.id)), f: sumF(eqAll.map(r => r.id)) });
+    B.push(...ncl, ...cl);
+    const li = ncl.concat(cl);
+    B.push({ id:'tl', label:'Total liabilities', kind:'total', vals: sumV(li, li.map(r => r.id)), f: sumF(li.map(r => r.id)) });
+    B.push({ id:'tel', label:'Total equity and liabilities', kind:'grand', vals: cols.map((_, j) => B.find(r => r.id === 'te').vals[j] + B.find(r => r.id === 'tl').vals[j]), f: sumF(['te','tl']) });
+    B.push({ label:'Check: total assets less total equity and liabilities (nil for the group; a company can differ when a journal spans companies)', kind:'check',
+      vals: cols.map((_, j) => B.find(r => r.id === 'ta').vals[j] - B.find(r => r.id === 'tel').vals[j]), f: (R, c) => `${R('ta', c)}-${R('tel', c)}` });
+    const word = cxIfrsSpanWord(p), endLong = cxIfrsLongDate(p.endDate);
+    const sheets = [
+      { key:'segpl', name:'Segments P&L', title:'Segment information — profit or loss and other comprehensive income', sub:`For the ${word} ended ${endLong}`, wide: true, tables:[{ heads, rows: P, colSum }] },
+      { key:'segbs', name:'Segments BS', title:'Segment information — financial position', sub:`As at ${endLong}`, wide: true, tables:[{ heads, rows: B, colSum }] } ];
+    /* the group column agrees to the group statements */
+    const gi = cols.length - 1;
+    const ties = { pl: Math.abs(P.find(r => r.id === 'pfy').vals[gi] - (pl.rows.totals.profitForPeriod.final || 0)) < 1,
+      bs: Math.abs(B.find(r => r.id === 'ta').vals[gi] - (bs.rows.totals.totalAssets.final || 0)) < 1 && Math.abs(B.find(r => r.id === 'tel').vals[gi] - (bs.rows.totals.totalEquityAndLiabilities.final || 0)) < 1 };
+    return { state:'ok', p, g, cur, word, endLong, mode, view, sheets, ties, cols, hasCx,
+      tocTitle:'Segment information', tocNote:`Each company before and after the consolidation journals (${mode === 'line' ? 'journals attributed line by line' : 'every journal in Consolidation adjustments'}); the group column is their sum and agrees to the group statements. Subtotals are live formulas.` };
+  })));
+}
+function renderGroupSegments(){
+  const noP = document.getElementById('gsNoPeriod'), content = document.getElementById('gsContent');
+  if(!content) return;
+  if(!activePeriodId){ noP.style.display = 'flex'; content.style.display = 'none'; return; }
+  noP.style.display = 'none'; content.style.display = 'block';
+  const a = document.getElementById('gsAttr'), v = document.getElementById('gsView');
+  if(a) a.value = cxSegSetting('segAttr', 'line'); if(v) v.value = cxSegSetting('segView', 'full');
+  let D; try { D = cxSegDoc(); } catch(err){ console.error(err); D = { state:'error' }; }
+  const sum = document.getElementById('gsSummary'), body = document.getElementById('gsBody');
+  document.querySelectorAll('#gsContent .gs-dl').forEach(b => { b.disabled = D.state !== 'ok'; });
+  if(D.state !== 'ok'){ sum.textContent = ''; body.innerHTML = `<div class="cx-empty">${D.state === 'noGroup' ? 'Define a group in the reporting period first.' : 'No entity in the consolidation has financials for this period.'}</div>`; return; }
+  sum.innerHTML = `${escapeHtml(D.g.name)} · ${escapeHtml(D.p.label)} · ${escapeHtml(D.cur)}` + (D.ties.pl && D.ties.bs ? ' · group column agrees to the group statements' : ' · <span style="color:var(--danger); font-weight:600;">⚠ the group column differs from the group statements</span>');
+  let h = '';
+  D.sheets.forEach(s => {
+    h += `<div class="gf-page gf-land" style="max-width:none;"><div class="gf-h-title">${escapeHtml(s.title)}</div><div class="gf-h-sub">${escapeHtml(s.sub)} · all amounts in ${escapeHtml(D.cur)}</div>`;
+    s.tables.forEach(t => {
+      h += `<div class="gf-scroll"><table class="gf-t wide"><thead><tr><th class="gf-l"></th>${t.heads.map(x => `<th>${escapeHtml(x)}</th>`).join('')}</tr></thead><tbody>`;
+      t.rows.forEach(r => {
+        if(r.kind === 'blank'){ h += `<tr class="gf-blank"><td colspan="${t.heads.length + 1}"></td></tr>`; return; }
+        if(r.kind === 'head' || r.kind === 'sub'){ h += `<tr class="gf-${r.kind}"><td colspan="${t.heads.length + 1}">${escapeHtml(r.label)}</td></tr>`; return; }
+        h += `<tr class="gf-${r.kind === 'check' ? 'line' : r.kind}"${r.kind === 'check' ? ' style="color:var(--text-tertiary); font-style:italic;"' : ''}><td class="gf-l">${escapeHtml(r.label)}</td>${t.heads.map((_, j) => `<td class="gf-n">${cxIfrsFmt(r.vals[j])}</td>`).join('')}</tr>`;
+      });
+      h += '</tbody></table></div>';
+    });
+    h += '</div>';
+  });
+  body.innerHTML = h;
+}
+function exportGroupSegmentsExcel(){
+  const D = cxSegDoc();
+  if(D.state !== 'ok'){ showToast('No segment information for this period', warnIcon()); return null; }
+  const base = `Segments_${String(D.g.name || 'Group').replace(/[^A-Za-z0-9]+/g, '_')}_${D.cur}_${String(D.p.label).replace(/\s+/g, '_')}`;
+  return xlsxRichDownload(base + '.xlsx', cxIfrsWorkbook(D), CXI_STYLES).then(bytes => { showToast('Segment information exported to Excel — totals are live formulas', checkIcon()); return bytes; });
 }
 
 /* ---------- Excel: one sheet per statement, every subtotal a live formula, checks at the foot ---------- */
@@ -13705,10 +14032,10 @@ function cxIfrsWorkbook(D){
     out.push({ name, rows, cols, grid: false });
   });
   /* contents first */
-  const toc = [[{ v: D.g.name, s:'group' }], [{ v:'Consolidated financial statements', s:'title' }], [{ v:`For the ${D.word} ended ${D.endLong} · presented in ${D.cur}`, s:'sub' }], []];
+  const toc = [[{ v: D.g.name, s:'group' }], [{ v: D.tocTitle || 'Consolidated financial statements', s:'title' }], [{ v:`For the ${D.word} ended ${D.endLong} · presented in ${D.cur}`, s:'sub' }], []];
   plan.forEach(({ s, name }) => toc.push([{ f:`HYPERLINK("#'${name.replace(/'/g, "''")}'!A1","${s.title.replace(/"/g, "'")}")`, s:'toc' }]));
   toc.push([]);
-  toc.push([{ v:'FINAL figures from the group statements, after the posted consolidation journal entries. Subtotals are live formulas; the grey check rows should all be nil.', s:'sub' }]);
+  toc.push([{ v: D.tocNote || 'FINAL figures from the group statements, after the posted consolidation journal entries. Subtotals are live formulas; the grey check rows should all be nil.', s:'sub' }]);
   return [{ name:'Contents', rows: toc, cols:[100], grid: false }].concat(out);
 }
 function cxIfrsFileBase(D){
@@ -14248,7 +14575,7 @@ function buildDisclosureNoteHtml(entity, caption, p){
     if(!cols.includes(target)) return;
     const cf = (((__pk && __pk.manual) ? __pk.manual : (CF_LINES[pek(entity.id)] || {}))[a.code]) || 0;
     if(Math.round(cf) === 0) return;
-    const r = addRow(a.name, 'cash');
+    const r = addRow(noteCashLabel(a), 'cash');
     r.cells[target] = sgn === 1 ? -cf : cf;   // outflows build assets; inflows build liabilities
   });
   // non-cash declarations from the entity pack
@@ -14261,21 +14588,25 @@ function buildDisclosureNoteHtml(entity, caption, p){
     const r = addRow((a.name) + ' (non-cash)', 'noncash');
     r.cells[target] = sgn === 1 ? -x.amount : x.amount;
   });
-  // P&L add-backs pointed at these components (depreciation, impairment, disposal gains/losses...)
+  // P&L add-backs pointed at these components (depreciation, impairment, disposal gains/losses...);
+  // exchange differences on cash are one row
+  const cashSet = new Set(cashComponentsFor(entity.id));
+  const fxCash = new Set(cxFxOnCashAccounts([...cashSet]).map(a => a.code));
+  let fxRow = null;
   accounts.forEach(a => {
     if(!(a.cfAdj && a.cfAdj.on)) return;
     const target = a.cfAdj.bsAccountCode;
     if(!cols.includes(target)) return;
     const amt = tbAmount(closingTb, a.code);
     if(Math.round(amt) === 0) return;
+    if(fxCash.has(a.code)){ fxRow = fxRow || addRow(NOTE_FX_CASH_LABEL, 'adj'); fxRow.cells[target] += sgn === 1 ? -amt : amt; return; }
     const r = addRow(a.name, 'adj');
     r.cells[target] = sgn === 1 ? -amt : amt;   // expenses reduce assets / grow liabilities; gains the reverse
   });
   // cash components move by the (tied) cash flow itself
-  const cashSet = new Set(cashComponentsFor(entity.id));
   const cashCols = cols.filter(c => cashSet.has(c));
   if(cashCols.length){
-    const r = { label:'Net cash flow for the period (statement of cash flows)', kind:'cash', cells: zero() };
+    const r = { label: noteNetCashLabel(cashCols), kind:'cash', cells: zero() };
     cashCols.forEach(c => { r.cells[c] = bal(closingTb, c) - bal(openTb, c) - rows.reduce((s, x) => s + (x.cells[c] || 0), 0); });
     if(cashCols.some(c => Math.round(r.cells[c]) !== 0)) rows.unshift(r);
   }
@@ -19230,6 +19561,8 @@ async function parseCoaWorkbook(arrayBuffer){
           row.cf_adjustment = adj;
           const rel = cell(tr, L.rel);
           if(truthy(adj) && rel) row.bs_account = stripRef(rel).toUpperCase();
+          const cc = L.v2 ? cell(tr, 8) : '';
+          if(truthy(adj) && cc) row.cf_caption = cc;
         }
       }
       if(face === 'OCI'){
@@ -19823,13 +20156,13 @@ function buildCoaWorkbookBytes(){
 
   const HDRS = {
     BS:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with'],
-    PL:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Add back in cash flow (Yes/No)','Related BS Account (if Yes)'],
+    PL:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Add back in cash flow (Yes/No)','Related BS Account (if Yes)','Cash flow caption (if Yes)'],
     OCI: ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Goes to reserves','Moves a BS account (Yes/No)','Related BS Account (if Yes)'],
     CF:  ['Statement line','Code','Account','Code','Intercompany (Yes/No)','If yes, Intercompany with','Related BS Account'],
   };
   const HDRSTYLE = { BS:5, PL:6, OCI:7, CF:8 };
   const TABCOLOR = { BS:'AFA9EC', PL:'5DCAA5', OCI:'F0997B', CF:'ED93B1' };
-  const COLS = { BS:[34,10,34,13,17,22], PL:[30,10,34,13,17,20,24,32], OCI:[40,10,40,13,17,20,30,22,32], CF:[32,10,36,13,17,20,34] };
+  const COLS = { BS:[34,10,34,13,17,22], PL:[30,10,34,13,17,20,24,32,28], OCI:[40,10,40,13,17,20,30,22,32], CF:[32,10,36,13,17,20,34] };
 
   const faceRows = face => {
     const width = HDRS[face].length;
@@ -19861,6 +20194,9 @@ function buildCoaWorkbookBytes(){
             const adj = a.cfAdj && a.cfAdj.on;
             cells[6] = {v: adj ? 'Yes' : 'No', s:1};
             cells[7] = {v: adj ? accLabel(accByCode(a.cfAdj.bsAccountCode)) : '', s:1};
+            /* v39.39: the operating caption the add-back lands on (cash flow by caption) */
+            const cc = adj ? capById(a.cfAdj.cfCaptionId) : null;
+            cells[8] = {v: cc ? cc.name : '', s:1};
           }
           if(face === 'OCI'){
             cells[6] = {v: a.ociReserveCode && a.ociReserveCode !== cap.ociReserveCode ? accLabel(accByCode(a.ociReserveCode)) : '', s:1};
@@ -19904,6 +20240,7 @@ function buildCoaWorkbookBytes(){
     ['The columns with decisions', 11],
     ['Intercompany (Yes/No) — choose Yes and list the entity codes under "If yes, Intercompany with" (e.g. MU02, MU03).', 12],
     ['Add back in cash flow (Yes/No) — on the Profit or loss tab, choose Yes for non-cash items, then pick the Related BS Account. The line mirrors under "Adjustments for" in the cash flow automatically.', 12],
+    ['Cash flow caption (if Yes) — optional: the operating caption the add-back is added up under when the statement of cash flows is presented by caption (e.g. "Interest expense"). Leave it empty to show the account on its own under "Adjustments for".', 12],
     ['Goes to reserves (OCI tab) — every OCI line accumulates in an equity reserve; accounts underneath inherit it. Non-controlling interests is never a valid reserve.', 12],
     ['Moves a BS account (OCI tab) — choose Yes and pick the account the OCI item changes (e.g. a fair value gain on the investment it remeasures). The disclosure note then shows it as its own line; it is never added back in the cash flow.', 12],
     ['Related BS Account (Cash flows tab) — each cash account explains the movement of a balance sheet component. Set a default on the Statement line for accounts to inherit, or point each account at its own (e.g. Purchase of land → Land and buildings).', 12],
@@ -22685,7 +23022,7 @@ const CX_NAV_TREE = {
     { kind:'group', key:'rep', label:'Reports', icon: CX_ICONS.reports,
       children: [['sh-localreports','Financial reports'], ['sh-ifrs','IFRS Financial Statements']] },
     { kind:'group', key:'grp', label:'Consolidation', icon: CX_ICONS.consolidation,
-      children: [['group-bs','Group balance sheet'], ['group-pl','Group P&L'], ['group-cf','Group cash flow'], ['group-disc','Group disclosures'], ['group-ifrs','Group IFRS statements'], ['group-je','Group journal entries']] },
+      children: [['group-bs','Group balance sheet'], ['group-pl','Group P&L'], ['group-cf','Group cash flow'], ['group-disc','Group disclosures'], ['group-ifrs','Group IFRS statements'], ['group-seg','Segment information'], ['group-je','Group journal entries']] },
     { kind:'group', key:'comm', label:'Communication', icon: CX_ICONS.communication,
       children: [['comm-mgmt','Management'], ['comm-inv','Investors']] }
   ]
