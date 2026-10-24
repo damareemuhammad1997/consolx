@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ConsolX Administration</title>
+<style>
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --surface-2:#f8f9fc; --text:#1d2433; --text-2:#4d5668; --muted:#7a8396; --border:#e1e5ee; --border-strong:#c9cfdb;
+  --accent:#1f5fd0; --accent-2:#e8f0fd; --ok:#11683a; --ok-bg:#e3f6ea; --warn:#8a5309; --warn-bg:#fff4e0; --danger:#b42318; --danger-bg:#fdecea;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#161d28; --surface-2:#1b2430; --text:#e6eaf2; --text-2:#b4bccb; --muted:#8a93a6; --border:#273142; --border-strong:#38445a;
+  --accent:#6ea2ff; --accent-2:#1c2a44; --ok:#7ed7a2; --ok-bg:#16301f; --warn:#f2c27a; --warn-bg:#33270f; --danger:#ff8f86; --danger-bg:#3a1714; } }
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#161d28; --surface-2:#1b2430; --text:#e6eaf2; --text-2:#b4bccb; --muted:#8a93a6; --border:#273142; --border-strong:#38445a;
+  --accent:#6ea2ff; --accent-2:#1c2a44; --ok:#7ed7a2; --ok-bg:#16301f; --warn:#f2c27a; --warn-bg:#33270f; --danger:#ff8f86; --danger-bg:#3a1714; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--text); font:14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+header{ display:flex; align-items:center; gap:16px; padding:12px 20px; background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:5; flex-wrap:wrap; }
+header h1{ font-size:17px; margin:0; } header h1 span{ color:var(--accent); }
+nav.tabs{ display:flex; gap:4px; flex-wrap:wrap; }
+nav.tabs button{ background:none; border:1px solid transparent; color:var(--text-2); padding:6px 12px; border-radius:7px; cursor:pointer; font:inherit; }
+nav.tabs button.on{ background:var(--accent-2); color:var(--accent); font-weight:600; }
+.spacer{ flex:1; }
+main{ max-width:1180px; margin:0 auto; padding:20px 16px 60px; }
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; }
+.card h2{ font-size:15px; margin:0 0 12px; } .card h3{ font-size:13.5px; margin:16px 0 8px; }
+table{ width:100%; border-collapse:collapse; } th,td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+th{ font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); font-weight:600; }
+td.n, th.n{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+tr.click{ cursor:pointer; } tr.click:hover td{ background:var(--surface-2); }
+.wrap-x{ overflow-x:auto; }
+input, select, textarea{ font:inherit; color:var(--text); background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; padding:6px 8px; min-width:0; }
+textarea{ width:100%; min-height:64px; }
+label.f{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-2); }
+.grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:12px; }
+.b{ font:inherit; display:inline-flex; align-items:center; text-decoration:none; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:6px 12px; border-radius:7px; cursor:pointer; }
+.b:hover{ border-color:var(--accent); } .b.p{ background:var(--accent); border-color:var(--accent); color:#fff; } .b.d{ color:var(--danger); }
+.b.sm{ padding:3px 8px; font-size:12.5px; }
+.row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.pill{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+.pill.ok{ background:var(--ok-bg); color:var(--ok); } .pill.warn{ background:var(--warn-bg); color:var(--warn); } .pill.bad{ background:var(--danger-bg); color:var(--danger); } .pill.mute{ background:var(--surface-2); color:var(--muted); border:1px solid var(--border); }
+.muted{ color:var(--muted); } .small{ font-size:12.5px; }
+.chk{ display:flex; gap:6px; align-items:flex-start; padding:4px 0; } .chk input{ margin-top:3px; }
+#toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:9px 16px; border-radius:8px; display:none; max-width:90vw; z-index:20; }
+#login{ max-width:380px; margin:10vh auto; }
+.secret{ font-family:ui-monospace, Menlo, Consolas, monospace; background:var(--warn-bg); color:var(--warn); padding:2px 6px; border-radius:5px; }
+.banner{ padding:10px 12px; border-radius:8px; background:var(--warn-bg); color:var(--warn); margin-bottom:12px; }
+@media (max-width:640px){ header{ padding:10px 16px; } main{ padding:16px 16px 60px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Consol<span>X</span> · Administration</h1>
+  <nav class="tabs" id="tabs" style="display:none;">
+    <button data-t="clients" class="on">Clients</button><button data-t="plans">Plans and add-ons</button><button data-t="invoices">Invoices</button><button data-t="settings">Settings</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="row" id="who" style="display:none;"><span class="muted small" id="whoName"></span><a class="b sm" href="/" style="text-decoration:none;">Open the app</a><button class="b sm" onclick="signOut()">Sign out</button></div>
+</header>
+<main id="main"></main>
+<div id="toast"></div>
+<script>
+'use strict';
+let O = null;          // overview
+let tab = 'clients', clientId = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+const money = v => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const day = v => v ? new Date(v).toISOString().slice(0, 10) : '—';
+function toast(m){ const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => { t.style.display = 'none'; }, 4200); }
+async function api(method, url, body){
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-ConsolX': '1' }, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok){ const e = new Error(d.error || ('Request failed (' + r.status + ')')); e.status = r.status; throw e; }
+  return d;
+}
+async function act(fn){ try { await fn(); } catch(e){ toast(e.message); } }
+const kindLabel = k => k === 'firm' ? 'Accounting firm' : 'Holding company';
+
+/* ---------- sign in ---------- */
+function showLogin(msg){
+  $('#tabs').style.display = 'none'; $('#who').style.display = 'none';
+  $('#main').innerHTML = `<div class="card" id="login"><h2>Administrator sign-in</h2>
+    ${msg ? `<div class="banner">${esc(msg)}</div>` : ''}
+    <form onsubmit="return doLogin(event)"><div class="grid" style="grid-template-columns:1fr;">
+    <label class="f">E-mail<input id="lem" type="email" autocomplete="username" required></label>
+    <label class="f">Password<input id="lpw" type="password" autocomplete="current-password" required></label>
+    <button class="b p" type="submit">Sign in</button></div></form></div>`;
+}
+async function doLogin(e){
+  e.preventDefault();
+  act(async () => { const r = await api('POST', '/api/login', { email: $('#lem').value, password: $('#lpw').value });
+    if(!r.superadmin){ await api('POST', '/api/logout'); return showLogin('This console is for the administrator. Users sign in to the app at the home page.'); }
+    load(); });
+  return false;
+}
+async function signOut(){ await api('POST', '/api/logout').catch(() => {}); showLogin(); }
+
+async function load(){
+  try { O = await api('GET', '/api/admin/overview'); }
+  catch(e){ return showLogin(e.status === 403 ? 'This console is for the administrator.' : ''); }
+  $('#tabs').style.display = 'flex'; $('#who').style.display = 'flex'; $('#whoName').textContent = O.me.email;
+  if(O.me.mustChangePassword) return renderPassword();
+  render();
+}
+function renderPassword(){
+  $('#main').innerHTML = `<div class="card" style="max-width:420px;"><h2>Choose your own password</h2><p class="muted small">You signed in with a temporary password. At least 10 characters, with letters and numbers.</p>
+    <div class="grid" style="grid-template-columns:1fr;"><label class="f">Current password<input id="p0" type="password" autocomplete="current-password"></label>
+    <label class="f">New password<input id="p1" type="password" autocomplete="new-password"></label><button class="b p" onclick="act(changePw)">Save password</button></div></div>`;
+}
+async function changePw(){ await api('POST', '/api/me/password', { current: $('#p0').value, next: $('#p1').value }); toast('Password changed'); load(); }
+
+document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; tab = b.dataset.t; clientId = null;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+function render(){ ({ clients: renderClients, plans: renderPlans, invoices: renderInvoices, settings: renderSettings })[tab](); }
+const tiersOf = kind => O.tiers.filter(t => t.kind === kind && t.active);
+const tierOpts = (kind, sel) => tiersOf(kind).map(t => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)} — ${t.max_users} users, ${t.max_orgs} org${t.max_orgs === 1 ? '' : 's'}, ${money(t.price_monthly)} ${esc(O.settings.currency)}/month</option>`).join('');
+const addonBoxes = (sel, name) => O.addons.filter(a => a.active || sel.includes(a.key)).map(a => `<label class="chk"><input type="checkbox" name="${name}" value="${a.key}" ${sel.includes(a.key) ? 'checked' : ''}><span><strong>${esc(a.name)}</strong> · ${money(a.price_monthly)} ${esc(O.settings.currency)}/month<br><span class="muted small">${esc(a.description)}</span></span></label>`).join('');
+const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(x => x.value);
+const pricesUnset = () => O.tiers.every(t => !Number(t.price_monthly));
+
+/* ---------- clients ---------- */
+function renderClients(){
+  if(clientId) return renderClient(clientId);
+  const rows = O.clients.map(c => `<tr class="click" onclick="openClient(${c.id})"><td><strong>${esc(c.name)}</strong><div class="muted small">${kindLabel(c.kind)}</div></td>
+    <td>${esc(c.tier_name)}</td><td class="n">${c.users} / ${c.max_users}</td><td class="n">${c.orgs} / ${c.max_orgs}</td><td>${c.addons.length ? c.addons.map(k => esc((O.addons.find(a => a.key === k) || {}).name || k)).join(', ') : '<span class="muted">None</span>'}</td>
+    <td>${c.cycle === 'annual' ? 'Annual' : 'Monthly'}</td><td>${c.status === 'active' ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Suspended</span>'}</td>
+    <td class="n">${Number(c.unpaid) ? `<span class="pill warn">${money(c.unpaid)}</span>` : '—'}</td></tr>`).join('');
+  $('#main').innerHTML = (pricesUnset() ? `<div class="banner">Plan prices are all nil. Set them under Plans and add-ons before you issue invoices.</div>` : '') + `
+  <div class="card"><h2>Clients</h2><div class="wrap-x"><table><thead><tr><th>Client</th><th>Plan</th><th class="n">Users</th><th class="n">Organisations</th><th>Add-ons</th><th>Billing</th><th>Status</th><th class="n">Unpaid (${esc(O.settings.currency)})</th></tr></thead>
+  <tbody>${rows || '<tr><td colspan="8" class="muted">No clients yet — add the first one below.</td></tr>'}</tbody></table></div></div>
+  <div class="card"><h2>New client</h2><div class="grid">
+    <label class="f">Name<input id="nc_name" placeholder="e.g. Company A Group"></label>
+    <label class="f">Type<select id="nc_kind" onchange="document.getElementById('nc_tier').innerHTML = tierOpts(this.value)"><option value="holding">Holding company (one group)</option><option value="firm">Accounting firm (several organisations)</option></select></label>
+    <label class="f">Plan<select id="nc_tier">${tierOpts('holding')}</select></label>
+    <label class="f">Billing<select id="nc_cycle"><option value="monthly">Monthly</option><option value="annual">Annual (${esc(O.settings.annual_discount_pct)}% discount)</option></select></label>
+    <label class="f">Billing e-mail<input id="nc_email" type="email"></label></div>
+    <h3>Add-ons</h3><div class="grid">${addonBoxes([], 'nc_add')}</div>
+    <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(newClient)">Create client</button></div></div>`;
+}
+async function newClient(){
+  const c = await api('POST', '/api/admin/clients', { name: $('#nc_name').value, kind: $('#nc_kind').value, tier_id: $('#nc_tier').value, cycle: $('#nc_cycle').value, billing_email: $('#nc_email').value, addons: checked('nc_add') });
+  toast('Client created'); O = await api('GET', '/api/admin/overview'); openClient(c.id);
+}
+function openClient(id){ clientId = id; renderClient(id); }
+async function renderClient(id){
+  let D; try { D = await api('GET', '/api/admin/clients/' + id); } catch(e){ toast(e.message); clientId = null; return renderClients(); }
+  const c = D.client, U = D.usage; CUR_ORGS = D.orgs;
+  const orgName = oid => (D.orgs.find(o => o.id === oid) || {}).name || '?';
+  const memb = u => u.memberships.length ? u.memberships.map(m => `${esc(orgName(m.org_id))} <span class="pill mute">${m.role === 'admin' ? 'Admin' : 'User'}</span>`).join('<br>') : '<span class="muted">No organisation</span>';
+  const orgRows = D.orgs.map(o => `<tr><td><input value="${esc(o.name)}" id="on_${o.id}" style="width:100%;"></td><td class="n">${o.version}</td><td>${day(o.updated_at)}</td><td class="n">${o.bytes ? (o.bytes / 1024).toFixed(0) + ' KB' : '—'}</td>
+    <td class="n"><button class="b sm" onclick="act(() => renameOrg(${o.id}))">Rename</button> <button class="b sm d" onclick="act(() => deleteOrg(${o.id}))">Delete</button></td></tr>`).join('');
+  const userRows = D.users.map(u => `<tr><td><strong>${esc(u.name || u.email)}</strong><div class="muted small">${esc(u.email)}${u.title ? ' · ' + esc(u.title) : ''}</div></td><td>${memb(u)}</td>
+    <td>${u.status === 'active' ? '<span class="pill ok">Active</span>' : '<span class="pill mute">Disabled</span>'}${u.must_change_password ? ' <span class="pill warn">Temporary password</span>' : ''}</td><td>${day(u.last_login_at)}</td>
+    <td class="n"><button class="b sm" onclick="editUser(${u.id})">Access</button> <button class="b sm" onclick="act(() => resetPw(${u.id}))">Reset password</button>
+    <button class="b sm ${u.status === 'active' ? 'd' : ''}" onclick="act(() => setUserStatus(${u.id}, '${u.status === 'active' ? 'disabled' : 'active'}'))">${u.status === 'active' ? 'Disable' : 'Enable'}</button></td></tr>
+    <tr id="ue_${u.id}" style="display:none;"><td colspan="5">${membEditor('ue' + u.id, D.orgs, u.memberships)}<div class="row"><button class="b sm p" onclick="act(() => saveAccess(${u.id}))">Save access</button></div></td></tr>`).join('');
+  const invRows = D.invoices.map(i => invRow(i, false)).join('');
+  const today = new Date(); const first = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  $('#main').innerHTML = `<p><button class="b sm" onclick="clientId=null; load()">← All clients</button></p>
+  <div class="card"><h2>${esc(c.name)} <span class="pill mute">${kindLabel(c.kind)}</span> ${c.status === 'active' ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Suspended</span>'}</h2>
+    <p class="muted small">Plan ${esc(c.tier_name)}: ${U.users} of ${c.max_users} users, ${U.orgs} of ${c.max_orgs} organisation${c.max_orgs === 1 ? '' : 's'} in use.</p>
+    <div class="grid"><label class="f">Name<input id="ec_name" value="${esc(c.name)}"></label>
+      <label class="f">Type<select id="ec_kind" onchange="document.getElementById('ec_tier').innerHTML = tierOpts(this.value)"><option value="holding" ${c.kind === 'holding' ? 'selected' : ''}>Holding company</option><option value="firm" ${c.kind === 'firm' ? 'selected' : ''}>Accounting firm</option></select></label>
+      <label class="f">Plan<select id="ec_tier">${tierOpts(c.kind, c.tier_id)}</select></label>
+      <label class="f">Billing<select id="ec_cycle"><option value="monthly" ${c.cycle === 'monthly' ? 'selected' : ''}>Monthly</option><option value="annual" ${c.cycle === 'annual' ? 'selected' : ''}>Annual</option></select></label>
+      <label class="f">Status<select id="ec_status"><option value="active" ${c.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${c.status === 'suspended' ? 'selected' : ''}>Suspended (users cannot sign in)</option></select></label>
+      <label class="f">Billing e-mail<input id="ec_email" value="${esc(c.billing_email)}"></label></div>
+    <label class="f" style="margin-top:10px;">Billing address<textarea id="ec_addr">${esc(c.billing_address)}</textarea></label>
+    <h3>Add-ons</h3><div class="grid">${addonBoxes(c.addons, 'ec_add')}</div>
+    <label class="f" style="margin-top:10px;">Notes<textarea id="ec_notes">${esc(c.notes)}</textarea></label>
+    <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(() => saveClient(${c.id}))">Save client</button></div></div>
+  <div class="card"><h2>Organisations</h2><div class="wrap-x"><table><thead><tr><th>Name</th><th class="n">Saves</th><th>Last saved</th><th class="n">Data</th><th></th></tr></thead><tbody>${orgRows || '<tr><td colspan="5" class="muted">None yet.</td></tr>'}</tbody></table></div>
+    <div class="row" style="margin-top:10px;"><input id="no_name" placeholder="New organisation name"><button class="b" onclick="act(() => newOrg(${c.id}))">Add organisation</button>
+    <span class="muted small">${U.orgs >= c.max_orgs ? 'The plan\u2019s limit is reached.' : (c.max_orgs - U.orgs) + ' more allowed by the plan.'}</span></div></div>
+  <div class="card"><h2>Users</h2><div class="wrap-x"><table><thead><tr><th>User</th><th>Organisations</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead><tbody>${userRows || '<tr><td colspan="5" class="muted">None yet.</td></tr>'}</tbody></table></div>
+    <h3>New user</h3><div class="grid"><label class="f">E-mail<input id="nu_email" type="email"></label><label class="f">Name<input id="nu_name"></label><label class="f">Job title<input id="nu_title"></label></div>
+    <div style="margin-top:8px;">${D.orgs.length ? membEditor('nu', D.orgs, []) : '<p class="muted small">Add an organisation first to give the user access to it.</p>'}</div>
+    <div class="row" style="margin-top:10px;"><button class="b p" onclick="act(() => newUser(${c.id}))">Create user</button><span class="muted small">A temporary password is shown once; the user changes it at first sign-in.${U.users >= c.max_users ? ' The plan\u2019s user limit is reached.' : ''}</span></div>
+    <div id="newpw"></div></div>
+  <div class="card"><h2>Invoices</h2><div class="wrap-x"><table><thead><tr><th>Number</th><th>Period</th><th class="n">Total</th><th>Status</th><th>Due</th><th></th></tr></thead><tbody>${invRows || '<tr><td colspan="6" class="muted">None yet.</td></tr>'}</tbody></table></div>
+    <h3>Issue an invoice</h3><div class="row"><label class="f">Billing<select id="ii_cycle"><option value="monthly" ${c.cycle === 'monthly' ? 'selected' : ''}>Monthly</option><option value="annual" ${c.cycle === 'annual' ? 'selected' : ''}>Annual</option></select></label>
+    <label class="f">Period starts<input id="ii_start" type="date" value="${first}"></label><button class="b" onclick="act(() => quoteInv(${c.id}))">Preview</button><button class="b p" onclick="act(() => issueInv(${c.id}))">Issue invoice</button></div>
+    <div id="quote"></div></div>`;
+}
+function membEditor(p, orgs, cur){
+  return `<table><thead><tr><th>Organisation</th><th>Access</th></tr></thead><tbody>${orgs.map(o => { const m = cur.find(x => x.org_id === o.id);
+    return `<tr><td>${esc(o.name)}</td><td><select data-m="${p}" data-org="${o.id}"><option value="">No access</option><option value="user" ${m && m.role === 'user' ? 'selected' : ''}>User (User view)</option><option value="admin" ${m && m.role === 'admin' ? 'selected' : ''}>Admin (Admin and User views)</option></select></td></tr>`; }).join('')}</tbody></table>`;
+}
+const membRead = p => [...document.querySelectorAll(`select[data-m="${p}"]`)].filter(s => s.value).map(s => ({ org_id: +s.dataset.org, role: s.value }));
+async function saveClient(id){
+  await api('PATCH', '/api/admin/clients/' + id, { name: $('#ec_name').value, kind: $('#ec_kind').value, tier_id: $('#ec_tier').value, cycle: $('#ec_cycle').value, status: $('#ec_status').value,
+    billing_email: $('#ec_email').value, billing_address: $('#ec_addr').value, notes: $('#ec_notes').value, addons: checked('ec_add') });
+  toast('Client saved'); O = await api('GET', '/api/admin/overview'); renderClient(id);
+}
+async function newOrg(cid){ await api('POST', `/api/admin/clients/${cid}/orgs`, { name: $('#no_name').value }); toast('Organisation added'); renderClient(cid); }
+async function renameOrg(oid){ await api('PATCH', '/api/admin/orgs/' + oid, { name: document.getElementById('on_' + oid).value }); toast('Renamed'); renderClient(clientId); }
+let CUR_ORGS = [];
+async function deleteOrg(oid){
+  const name = (CUR_ORGS.find(o => o.id === oid) || {}).name || '';
+  const t = prompt(`Delete "${name}" and all of its data? This cannot be undone.\n\nType the organisation's name to confirm:`); if(t == null) return;
+  await api('DELETE', '/api/admin/orgs/' + oid, { confirm: t }); toast('Organisation deleted'); renderClient(clientId);
+}
+async function newUser(cid){
+  const r = await api('POST', `/api/admin/clients/${cid}/users`, { email: $('#nu_email').value, name: $('#nu_name').value, title: $('#nu_title').value, memberships: membRead('nu') });
+  await renderClient(cid);
+  $('#newpw').innerHTML = `<div class="banner" style="margin-top:10px;">${esc(r.email)} can sign in at <strong>${esc(location.origin)}/</strong> with the temporary password <span class="secret">${esc(r.password)}</span>. It is shown only now.</div>`;
+}
+function editUser(uid){ const r = document.getElementById('ue_' + uid); r.style.display = r.style.display === 'none' ? '' : 'none'; }
+async function saveAccess(uid){ await api('PATCH', '/api/admin/users/' + uid, { memberships: membRead('ue' + uid) }); toast('Access saved'); renderClient(clientId); }
+async function setUserStatus(uid, status){ await api('PATCH', '/api/admin/users/' + uid, { status }); toast(status === 'active' ? 'User enabled' : 'User disabled'); renderClient(clientId); }
+async function resetPw(uid){
+  if(!confirm('Give this user a new temporary password? Their current sessions end.')) return;
+  const r = await api('POST', `/api/admin/users/${uid}/reset-password`); await renderClient(clientId);
+  $('#newpw').innerHTML = `<div class="banner" style="margin-top:10px;">New temporary password for ${esc(r.email)}: <span class="secret">${esc(r.password)}</span>. It is shown only now.</div>`;
+}
+function quoteHtml(Q){
+  return `<div class="wrap-x" style="margin-top:10px;"><table><thead><tr><th>Description</th><th class="n">Months</th><th class="n">Monthly</th><th class="n">Amount (${esc(Q.currency)})</th></tr></thead><tbody>
+    ${Q.lines.map(l => `<tr><td>${esc(l.description)}</td><td class="n">${l.qty}</td><td class="n">${money(l.unit)}</td><td class="n">${money(l.amount)}</td></tr>`).join('')}
+    ${Q.discount ? `<tr><td colspan="3">Annual billing discount</td><td class="n">(${money(Q.discount)})</td></tr>` : ''}
+    <tr><td colspan="3"><strong>Total for ${esc(Q.period.start)} to ${esc(Q.period.end)}</strong></td><td class="n"><strong>${money(Q.total)}</strong></td></tr></tbody></table></div>`;
+}
+async function quoteInv(cid){ const Q = await api('POST', '/api/admin/invoices/quote', { client_id: cid, cycle: $('#ii_cycle').value, start: $('#ii_start').value }); $('#quote').innerHTML = quoteHtml(Q); }
+async function issueInv(cid){ const i = await api('POST', '/api/admin/invoices', { client_id: cid, cycle: $('#ii_cycle').value, start: $('#ii_start').value }); toast('Invoice ' + i.number + ' issued'); renderClient(cid); }
+
+/* ---------- invoices ---------- */
+function invRow(i, withClient){
+  const st = i.status === 'paid' ? '<span class="pill ok">Paid</span>' : i.status === 'void' ? '<span class="pill mute">Void</span>' : (new Date(i.due_date) < new Date() ? '<span class="pill bad">Overdue</span>' : '<span class="pill warn">Issued</span>');
+  return `<tr><td><a href="/invoice/${i.id}" target="_blank" rel="noopener">${esc(i.number)}</a></td>${withClient ? `<td>${esc(i.client)}</td>` : ''}<td>${day(i.period_start)} – ${day(i.period_end)}</td>
+    <td class="n">${esc(i.currency)} ${money(i.total)}</td><td>${st}${i.status === 'paid' ? `<div class="muted small">${day(i.paid_at)}${i.paid_ref ? ' · ' + esc(i.paid_ref) : ''}</div>` : ''}</td><td>${day(i.due_date)}</td>
+    <td class="n">${i.status === 'issued' ? `<button class="b sm" onclick="act(() => paid(${i.id}))">Mark paid</button> <button class="b sm d" onclick="act(() => voidInv(${i.id}))">Void</button>` : ''}</td></tr>`;
+}
+async function paid(id){ const ref = prompt('Payment reference (e.g. bank transfer reference):', ''); if(ref == null) return; await api('POST', `/api/admin/invoices/${id}/paid`, { ref, gateway: 'manual' }); toast('Marked paid'); render(); }
+async function voidInv(id){ if(!confirm('Void this invoice? It stays on record as void, and a new one can be issued for the period.')) return; await api('POST', `/api/admin/invoices/${id}/void`); toast('Invoice voided'); render(); }
+async function renderInvoices(){
+  const list = await api('GET', '/api/admin/invoices').catch(e => { toast(e.message); return []; });
+  const unpaid = list.filter(i => i.status === 'issued').reduce((t, i) => t + Number(i.total), 0);
+  const today = new Date(); const first = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  $('#main').innerHTML = `<div class="card"><h2>Run billing</h2><p class="muted small">Issues one invoice per active client on that billing cycle, for the period starting on the date chosen. A client already invoiced for that period is skipped.</p>
+    <div class="row"><label class="f">Billing<select id="rb_cycle"><option value="monthly">Monthly clients</option><option value="annual">Annual clients</option></select></label>
+    <label class="f">Period starts<input id="rb_start" type="date" value="${first}"></label><button class="b p" onclick="act(runBilling)">Issue invoices</button></div><div id="rbout"></div></div>
+  <div class="card"><h2>All invoices</h2><p class="muted small">Unpaid: ${esc(O.settings.currency)} ${money(unpaid)}</p><div class="wrap-x"><table><thead><tr><th>Number</th><th>Client</th><th>Period</th><th class="n">Total</th><th>Status</th><th>Due</th><th></th></tr></thead>
+    <tbody>${list.map(i => invRow(i, true)).join('') || '<tr><td colspan="7" class="muted">No invoices yet.</td></tr>'}</tbody></table></div></div>`;
+}
+async function runBilling(){
+  const r = await api('POST', '/api/admin/invoices/run', { cycle: $('#rb_cycle').value, start: $('#rb_start').value });
+  await renderInvoices();
+  $('#rbout').innerHTML = `<ul class="small">${r.map(x => `<li>${esc(x.client)}: ${x.number ? 'invoice ' + esc(x.number) + ', ' + money(x.total) : '<span class="muted">' + esc(x.skipped) + '</span>'}</li>`).join('') || '<li class="muted">No active client on that cycle.</li>'}</ul>`;
+}
+
+/* ---------- plans and add-ons ---------- */
+function renderPlans(){
+  const tr = t => `<tr><td><input id="tn_${t.id}" value="${esc(t.name)}" style="width:100%;"></td><td>${kindLabel(t.kind)}</td>
+    <td class="n"><input id="tu_${t.id}" type="number" min="1" value="${t.max_users}" style="width:80px;"></td>
+    <td class="n">${t.kind === 'holding' ? '1' : `<input id="to_${t.id}" type="number" min="1" value="${t.max_orgs}" style="width:80px;">`}</td>
+    <td class="n"><input id="tp_${t.id}" type="number" min="0" step="0.01" value="${Number(t.price_monthly)}" style="width:110px;"></td>
+    <td><select id="ta_${t.id}"><option value="1" ${t.active ? 'selected' : ''}>Offered</option><option value="0" ${!t.active ? 'selected' : ''}>Retired</option></select></td>
+    <td class="n"><button class="b sm" onclick="act(() => saveTier(${t.id}))">Save</button></td></tr>`;
+  const ar = a => `<tr><td><input id="an_${a.key}" value="${esc(a.name)}" style="width:100%;"><div class="muted small">key: ${esc(a.key)}</div></td><td><input id="ad_${a.key}" value="${esc(a.description)}" style="width:100%;"></td>
+    <td class="n"><input id="ap_${a.key}" type="number" min="0" step="0.01" value="${Number(a.price_monthly)}" style="width:110px;"></td>
+    <td><select id="aa_${a.key}"><option value="1" ${a.active ? 'selected' : ''}>Offered</option><option value="0" ${!a.active ? 'selected' : ''}>Retired</option></select></td>
+    <td class="n"><button class="b sm" onclick="act(() => saveAddon('${a.key}'))">Save</button></td></tr>`;
+  const cur = esc(O.settings.currency);
+  $('#main').innerHTML = `<div class="card"><h2>Plans</h2><p class="muted small">Each client is on one plan for its type. A plan includes a number of users and organisations; adding beyond them is refused until the client moves to a bigger plan. A holding company has one organisation (its group). Prices are per month in ${cur}; annual billing is twelve months less ${esc(O.settings.annual_discount_pct)}%.</p>
+    <div class="wrap-x"><table><thead><tr><th>Plan</th><th>For</th><th class="n">Users</th><th class="n">Organisations</th><th class="n">Price / month</th><th>Status</th><th></th></tr></thead><tbody>${O.tiers.map(tr).join('')}</tbody></table></div>
+    <h3>New plan</h3><div class="row"><input id="nt_name" placeholder="Plan name"><select id="nt_kind"><option value="firm">Accounting firm</option><option value="holding">Holding company</option></select>
+    <input id="nt_users" type="number" min="1" placeholder="Users" style="width:90px;"><input id="nt_orgs" type="number" min="1" placeholder="Organisations" style="width:120px;"><input id="nt_price" type="number" min="0" step="0.01" placeholder="Price / month" style="width:130px;">
+    <button class="b p" onclick="act(newTier)">Add plan</button></div></div>
+  <div class="card"><h2>Add-ons</h2><p class="muted small">Sold on top of a plan, per client, at a monthly price. Equity accounting, goodwill and non-controlling interests change the consolidated figures: a group that needs one the client has not bought shows a notice instead of its statements.</p>
+    <div class="wrap-x"><table><thead><tr><th>Add-on</th><th>What it unlocks</th><th class="n">Price / month</th><th>Status</th><th></th></tr></thead><tbody>${O.addons.map(ar).join('')}</tbody></table></div></div>`;
+}
+async function saveTier(id){
+  const o = document.getElementById('to_' + id);
+  await api('PATCH', '/api/admin/tiers/' + id, { name: $('#tn_' + id).value, max_users: $('#tu_' + id).value, max_orgs: o ? o.value : 1, price_monthly: $('#tp_' + id).value, active: $('#ta_' + id).value === '1' });
+  toast('Plan saved'); O = await api('GET', '/api/admin/overview'); renderPlans();
+}
+async function newTier(){
+  await api('POST', '/api/admin/tiers', { name: $('#nt_name').value, kind: $('#nt_kind').value, max_users: $('#nt_users').value, max_orgs: $('#nt_orgs').value || 1, price_monthly: $('#nt_price').value || 0 });
+  toast('Plan added'); O = await api('GET', '/api/admin/overview'); renderPlans();
+}
+async function saveAddon(k){
+  await api('PATCH', '/api/admin/addons/' + k, { name: $('#an_' + k).value, description: $('#ad_' + k).value, price_monthly: $('#ap_' + k).value, active: $('#aa_' + k).value === '1' });
+  toast('Add-on saved'); O = await api('GET', '/api/admin/overview'); renderPlans();
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const s = O.settings, i = s.issuer || {};
+  $('#main').innerHTML = `<div class="card"><h2>Billing settings</h2><div class="grid">
+    <label class="f">Currency (three letters)<input id="s_cur" value="${esc(s.currency)}" maxlength="3"></label>
+    <label class="f">Annual billing discount (%)<input id="s_disc" type="number" min="0" max="100" value="${esc(s.annual_discount_pct)}"></label>
+    <label class="f">Invoice number prefix<input id="s_pre" value="${esc(s.invoice_prefix)}"></label>
+    <label class="f">Payment terms (days)<input id="s_days" type="number" min="0" max="365" value="${esc(s.payment_terms_days)}"></label></div>
+    <h3>On every invoice</h3><div class="grid"><label class="f">Your company name<input id="s_in" value="${esc(i.name)}"></label><label class="f">E-mail<input id="s_ie" value="${esc(i.email)}"></label><label class="f">Tax / VAT number<input id="s_it" value="${esc(i.tax_id)}"></label></div>
+    <label class="f" style="margin-top:10px;">Address<textarea id="s_ia">${esc(i.address)}</textarea></label>
+    <label class="f" style="margin-top:10px;">How to pay (bank details for transfers)<textarea id="s_pay">${esc(s.payment_instructions)}</textarea></label>
+    <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(saveSettings)">Save settings</button></div></div>
+  <div class="card"><h2>Payment methods</h2><table><thead><tr><th>Method</th><th>Status</th></tr></thead><tbody>${O.gateways.map(g => `<tr><td>${esc(g.name)}</td><td>${g.key === 'manual' ? '<span class="pill ok">In use — mark invoices paid by hand</span>' : g.configured ? '<span class="pill warn">Keys set — not connected yet</span>' : '<span class="pill mute">Not connected</span>'}</td></tr>`).join('')}</tbody></table></div>
+  <div class="card"><h2>Your password</h2><div class="row"><input id="p0" type="password" placeholder="Current password" autocomplete="current-password"><input id="p1" type="password" placeholder="New password" autocomplete="new-password"><button class="b" onclick="act(changePw)">Change password</button></div></div>`;
+}
+async function saveSettings(){
+  O.settings = await api('PUT', '/api/admin/settings', { currency: $('#s_cur').value, annual_discount_pct: $('#s_disc').value, invoice_prefix: $('#s_pre').value, payment_terms_days: $('#s_days').value,
+    payment_instructions: $('#s_pay').value, issuer: { name: $('#s_in').value, email: $('#s_ie').value, tax_id: $('#s_it').value, address: $('#s_ia').value } });
+  toast('Settings saved');
+}
+load();
+</script>
+</body>
+</html>

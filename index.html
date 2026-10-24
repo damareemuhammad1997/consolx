@@ -959,6 +959,16 @@ body.cx-locked{ overflow:hidden; }
     stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   #cxUserPop .view-toggle button.active{ background:var(--accent-light, #e8f2fe);
     color:var(--accent-text, #155eef); border-color:transparent; }
+  #cxUserPop .cxp-link{ display:block; width:100%; margin-top:8px; font:inherit; font-size:12px; font-weight:600; padding:7px 0; text-align:center;
+    border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; text-decoration:none; }
+  #cxUserPop .cxp-link:hover{ border-color:var(--border-strong); }
+  #cxSaveState{ font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:12px; white-space:nowrap; color:var(--text-secondary, #5c6b82); background:var(--surface-2, #f1f5fa); border:1px solid var(--border); }
+  #cxSaveState.warn{ color:var(--danger); background:var(--danger-bg); border-color:var(--danger-border); }
+  #cxSaveState button{ font:inherit; margin-left:6px; border:none; background:none; color:inherit; text-decoration:underline; cursor:pointer; padding:0; }
+  #cxPwModal{ position:fixed; inset:0; background:rgba(9,17,28,0.45); display:none; align-items:center; justify-content:center; z-index:300; padding:16px; }
+  #cxPwModal.show{ display:flex; }
+  #cxPwModal .box{ background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:20px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(9,17,28,0.3); }
+  #cxPwModal input{ width:100%; font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); margin:4px 0 10px; box-sizing:border-box; }
   #cxUserPop .cxp-reset{ width:100%; margin-top:12px; font:inherit; font-size:12px; font-weight:600; padding:7px 0;
     border-radius:8px; border:1px solid var(--danger-border); background:var(--danger-bg);
     color:var(--danger); cursor:pointer; display:flex; justify-content:center; }
@@ -1690,6 +1700,13 @@ body.cx-locked{ overflow:hidden; }
             </div>
           </div>
 
+          <div class="field" id="cxPwField" style="display:none;">
+            <label for="password">Password</label>
+            <div class="input-shell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+            </div>
+          </div>
           <div class="cx-err" id="cxErr"></div>
           <button type="submit" class="btn-signin">
             Sign in
@@ -1735,11 +1752,16 @@ body.cx-locked{ overflow:hidden; }
   </div>
   <div id="breadcrumb" style="display:none;"><span class="current">Dashboard</span></div>
   <div class="cxt-right">
+    <span id="cxSaveState" role="status" aria-live="polite" style="display:none;"></span>
     <button type="button" id="cxThemeBtn" onclick="cxToggleTheme()" aria-label="Switch theme" title="Switch theme"></button>
     <button type="button" id="cxAvatarBtn" onclick="cxToggleUserPop(event)" aria-label="Account and view options"><span id="sbAvatar">AM</span></button>
     <div id="cxUserPop">
       <p class="cxp-name" id="sbUserName">Alex Martin</p>
       <p class="cxp-role" id="sbUserRole">Group Controller</p>
+      <div id="cxOrgBox" style="display:none; margin-bottom:12px;">
+        <div class="view-label">Organisation</div>
+        <select id="cxOrgSel" onchange="cxSwitchOrg(this.value)" style="width:100%; font:inherit; font-size:12.5px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text);"></select>
+      </div>
       <div class="view-label">Viewing as</div>
       <div class="view-toggle" id="viewToggle">
         <button type="button" id="viewBtnUser" onclick="setViewRole('user')">
@@ -1757,7 +1779,12 @@ body.cx-locked{ overflow:hidden; }
         <button type="button" data-theme-opt="dark" onclick="cxSetTheme('dark')">Dark</button>
         <button type="button" data-theme-opt="system" onclick="cxSetTheme('system')">Auto</button>
       </div>
-      <button type="button" class="cxp-reset" onclick="cxResetWorkspace()">Reset workspace data</button>
+      <button type="button" class="cxp-reset" id="cxResetBtn" onclick="cxResetWorkspace()">Reset workspace data</button>
+      <div id="cxAcctBox" style="display:none;">
+        <button type="button" class="cxp-link" onclick="cxOpenPassword()">Change password</button>
+        <a class="cxp-link" id="cxAdminLink" href="/admin" style="display:none;">Administration</a>
+        <button type="button" class="cxp-link" onclick="cxSignOut()">Sign out</button>
+      </div>
     </div>
   </div>
 </header>
@@ -2705,6 +2732,13 @@ body.cx-locked{ overflow:hidden; }
       <div class="page" id="page-comm-mgmt"><div id="cmMgmtBody"></div></div>
       <div class="page" id="page-comm-inv"><div id="cmInvBody"></div></div>
 
+      <div class="page" id="page-locked">
+        <div class="coming-soon">
+          <div class="cs-icon"><svg class="icon" viewBox="0 0 24 24" style="width:26px;height:26px;"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h3 id="lockTitle">Not included in your plan</h3>
+          <p id="lockText"></p>
+        </div>
+      </div>
       <div class="page" id="page-generic-soon">
         <div class="coming-soon">
           <div class="cs-icon" id="genericSoonIcon"><svg class="icon" viewBox="0 0 24 24" style="width:26px;height:26px;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg></div>
@@ -3614,6 +3648,27 @@ body.cx-locked{ overflow:hidden; }
 
 <script>
 /* ============ CONSOLIX LOGIN / AUTH ============ */
+/* v39.40 — hosted version: the server serves this page with the signed-in user, their organisations, the add-ons
+   their client has bought and the saved data of the organisation they have open (window.CX_SERVER /
+   window.CX_BOOT_STATE). The page then signs in and saves against the server instead of this browser's storage.
+   Opened without the server (a file, a plain static host), everything works as before, in this browser only. */
+const CX_SRV = (window.CX_SERVER && window.CX_SERVER.mode === 'server') ? window.CX_SERVER : null;
+const CX_ADDON_NAMES = { ifrs:'IFRS statements', notes:'Disclosure notes', segments:'Segment information', comms:'Management and investor communication',
+  equity:'Equity accounting', goodwill:'Goodwill and business combinations', nci:'Non-controlling interests' };
+function cxHasAddon(k){ return !CX_SRV || !CX_SRV.entitlements || (CX_SRV.entitlements.addons || []).includes(k); }
+async function cxApi(method, url, body){
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-ConsolX': '1' }, credentials: 'same-origin', body: body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)) });
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok){ const e = new Error(d.error || ('Request failed (' + r.status + ')')); e.status = r.status; e.data = d; throw e; }
+  return d;
+}
+if(CX_SRV){
+  const em = document.getElementById('email');
+  if(em){ em.type = 'email'; em.value = ''; em.placeholder = 'you@company.com'; em.autocomplete = 'username'; const lb = document.querySelector('label[for="email"]'); if(lb) lb.textContent = 'E-mail'; }
+  const pf = document.getElementById('cxPwField'); if(pf) pf.style.display = '';
+  const pw = document.getElementById('password'); if(pw) pw.required = true;
+  const hint = document.querySelector('#consolixLogin .cx-hint'); if(hint) hint.style.display = 'none';
+}
 const CX_ACCOUNTS = {
   'saad':       { role:'Admin',       name:'Alex Martin',   title:'Group Controller' },
   'admin':      { role:'Admin',       name:'Alex Martin',   title:'Group Controller' },
@@ -3624,6 +3679,12 @@ let cxCurrentUser = null;
 
 function cxSignIn(e){
   if(e) e.preventDefault();
+  if(CX_SRV){
+    const err = document.getElementById('cxErr'); err.textContent = '';
+    cxApi('POST', '/api/login', { email: document.getElementById('email').value, password: document.getElementById('password').value })
+      .then(() => location.reload()).catch(x => { err.textContent = x.message; });
+    return false;
+  }
   let name = (document.getElementById('email').value || '').trim().toLowerCase();
   // accept "saad", "admin", "user" — also tolerate an email like admin@x.com
   name = name.split('@')[0];
@@ -3644,6 +3705,12 @@ function cxSignIn(e){
   return false;
 }
 function cxSignOut(){
+  if(CX_SRV){
+    const go = () => cxApi('POST', '/api/logout').catch(() => {}).then(() => location.reload());
+    if(cxSrvDirty()) cxServerSave(true).then(go, () => { if(confirm('Your latest changes could not be saved. Sign out anyway?')) go(); });
+    else go();
+    return;
+  }
   cxCurrentUser = null;
   const login = document.getElementById('consolixLogin');
   login.style.display = 'flex';
@@ -5041,7 +5108,12 @@ const realPages = ['configuration', 'entities', 'dashboard', 'shareholders', 'st
 function goToPage(page){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-  if(realPages.includes(page)){
+  const lock = realPages.includes(page) ? cxPageLock(page) : null;
+  if(lock){
+    document.getElementById('lockTitle').textContent = lock.title;
+    document.getElementById('lockText').textContent = lock.text;
+    document.getElementById('page-locked').classList.add('active');
+  } else if(realPages.includes(page)){
     const target = document.getElementById('page-' + page);
     if(target) target.classList.add('active');
     if(page === 'dashboard'){ renderDashboardMap(); updateDashboardEmptyState(); }
@@ -5102,6 +5174,7 @@ function closeMobileSidebar(){
 /* Switch between the User and Admin views from the sidebar toggle. */
 function setViewRole(role){
   currentRole = (role === 'user') ? 'user' : 'admin';
+  if(CX_SRV && CX_SRV.user && !(CX_SRV.org && CX_SRV.org.role === 'admin')) currentRole = 'user';
   // toggle button states
   const ub = document.getElementById('viewBtnUser');
   const ab = document.getElementById('viewBtnAdmin');
@@ -11702,9 +11775,9 @@ function exportGroupStatementExcelIn(statementCode){
   const sheetName = statementCode === 'BS' ? 'Group BS' : 'Group P&L';
   XLSX_W.download(
     `Group_${statementCode === 'BS' ? 'Balance_Sheet' : 'PL'}_${groupCurrency}_${(period?period.label:'').replace(/\s/g,'_')}.xlsx`,
-    [{ name: sheetName, rows: sheetRows, cols }]
+    cxXlValues([{ name: sheetName, rows: sheetRows, cols }])
   );
-  showToast('Exported to Excel with live formulas', checkIcon());
+  showToast('Exported to Excel', checkIcon());
 }
 
 
@@ -11823,6 +11896,116 @@ async function xlsxZipDeflate(files){
   return out;
 }
 /* builds the workbook now (in the caller's presentation currency), then compresses and downloads it */
+
+/* v39.40 — report exports carry values, not formulas (client decision: the figures are hardcoded so a reader
+   cannot see or alter how totals are built). Every formula cell of a report workbook is worked out here, with
+   the subset of Excel the exports use — arithmetic, comparisons, &, SUM, SUMIF(S), ROUND, ABS, MIN, MAX, IF,
+   TEXT — and written as its value. HYPERLINK cells (the contents page) keep their link; a formula outside the
+   subset stays a formula. Input templates (entity packs, intragroup and chart workbooks) are not touched. */
+function cxXlValues(sheets){
+  const byName = {}; sheets.forEach(sh => { byName[String(sh.name).toLowerCase()] = sh; });
+  const memo = new Map();
+  const colNum = L => L.replace(/\$/g, '').split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+  const num = x => (x === true ? 1 : x === false || x == null || x === '' ? 0 : typeof x === 'number' ? x : (isFinite(+x) ? +x : NaN));
+  function cellVal(sh, r, c, depth){
+    const row = sh.rows[r]; const cell = row ? row[c] : null;
+    if(!cell) return null;
+    if(cell.f == null) return cell.v === '' ? null : cell.v;
+    const key = sh.name + '!' + r + ',' + c;
+    if(memo.has(key)){ const m = memo.get(key); if(m && m.err) throw m.err; return m; }
+    if(depth > 400) throw new Error('nested too deep');
+    memo.set(key, { err: new Error('circular') });
+    try { const v = evalF(String(cell.f), sh, depth + 1); memo.set(key, v); return v; }
+    catch(e){ memo.set(key, { err: e }); throw e; }
+  }
+  function evalF(f, sh, depth){
+    const T = []; let i = 0;
+    const refRe = /^(?:'((?:[^']|'')+)'!|([A-Za-z_][\w.]*)!)?(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?|\$?[A-Z]{1,3}:\$?[A-Z]{1,3})/;
+    while(i < f.length){
+      const ch = f[i];
+      if(ch === ' '){ i++; continue; }
+      if(ch === '"'){ let j = i + 1, t = ''; while(j < f.length){ if(f[j] === '"'){ if(f[j + 1] === '"'){ t += '"'; j += 2; continue; } break; } t += f[j++]; } T.push({ t:'s', v:t }); i = j + 1; continue; }
+      const mNum = /^\d+(\.\d+)?(E[+-]?\d+)?/i.exec(f.slice(i)); if(mNum && !/^[A-Z]/i.test(f[i])){ T.push({ t:'n', v:+mNum[0] }); i += mNum[0].length; continue; }
+      const mFn = /^([A-Za-z][A-Za-z0-9.]*)\(/.exec(f.slice(i)); if(mFn){ T.push({ t:'f', v:mFn[1].toUpperCase() }); i += mFn[1].length; continue; }
+      const mRef = refRe.exec(f.slice(i));
+      if(mRef){ T.push({ t:'r', sheet: mRef[1] ? mRef[1].replace(/''/g, "'") : mRef[2] || null, a: mRef[3].replace(/\$/g, '') }); i += mRef[0].length; continue; }
+      const two = f.substr(i, 2); if(['<>','<=','>='].includes(two)){ T.push({ t:'o', v:two }); i += 2; continue; }
+      if('+-*/&=<>(),:'.includes(ch)){ T.push({ t:'o', v:ch }); i++; continue; }
+      throw new Error('cannot read ' + f.slice(i, i + 10));
+    }
+    let k = 0;
+    const peek = () => T[k], take = () => T[k++];
+    const isOp = (v) => T[k] && T[k].t === 'o' && T[k].v === v;
+    const range = tk => {
+      const s2 = tk.sheet ? byName[tk.sheet.toLowerCase()] : sh; if(!s2) throw new Error('no sheet ' + tk.sheet);
+      const [a, b] = tk.a.split(':');
+      const pc = x => { const m = /^([A-Z]+)(\d+)?$/.exec(x); return { c: colNum(m[1]), r: m[2] ? +m[2] - 1 : null }; };
+      const A1 = pc(a), B1 = b ? pc(b) : A1;
+      return { sh: s2, r1: A1.r == null ? 0 : A1.r, r2: B1.r == null ? s2.rows.length - 1 : B1.r, c1: A1.c, c2: B1.c, single: !b };
+    };
+    const cells = rg => { const out = []; for(let r = rg.r1; r <= rg.r2; r++) for(let c = rg.c1; c <= rg.c2; c++) out.push(cellVal(rg.sh, r, c, depth)); return out; };
+    const scalar = v => v && v.sh ? (v.single ? cellVal(v.sh, v.r1, v.c1, depth) : (() => { throw new Error('range as a value'); })()) : (Array.isArray(v) ? (() => { throw new Error('array as a value'); })() : v);
+    /* arrays (a range in arithmetic, as inside SUMPRODUCT): element by element */
+    const vec = v => v && v.sh && !v.single ? cells(v) : Array.isArray(v) ? v : null;
+    const op2 = (a, b, f2) => { const A = vec(a), B = vec(b);
+      if(!A && !B) return f2(num(scalar(a)), num(scalar(b)));
+      const n = (A || B).length; if(A && B && A.length !== B.length) throw new Error('array sizes');
+      return Array.from({ length: n }, (_, j) => f2(num(A ? A[j] : scalar(a)), num(B ? B[j] : scalar(b)))); };
+    const flat = args => args.flatMap(a => a && a.sh ? cells(a) : [a]);
+    const crit = (val, c) => { c = scalar(c);
+      if(typeof c === 'string'){ const m = /^(<>|<=|>=|=|<|>)(.*)$/.exec(c); if(m){ const x = m[2], nv = num(val), nx = num(x), isN = isFinite(nx) && x !== '';
+        const L = isN ? nv : String(val == null ? '' : val).toLowerCase(), R = isN ? nx : x.toLowerCase();
+        return m[1] === '=' ? L === R : m[1] === '<>' ? L !== R : m[1] === '<' ? L < R : m[1] === '>' ? L > R : m[1] === '<=' ? L <= R : L >= R; }
+        return String(val == null ? '' : val).toLowerCase() === c.toLowerCase(); }
+      return num(val) === num(c); };
+    const fmt = (x, f2) => { x = num(x); if(/#,##0/.test(f2)){ const d = (/0\.(0+)/.exec(f2) || [, ''])[1].length; const s3 = Math.abs(x).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); return (x < 0 ? '-' : '') + s3; } return String(x); };
+    const FN = {
+      SUM: a => flat(a).reduce((t, x) => t + (typeof x === 'number' ? x : 0), 0),
+      MIN: a => Math.min(...flat(a).filter(x => typeof x === 'number')),
+      MAX: a => Math.max(...flat(a).filter(x => typeof x === 'number')),
+      ABS: a => Math.abs(num(scalar(a[0]))),
+      ROUND: a => { const n = num(scalar(a[1])), m = Math.pow(10, n); const x = num(scalar(a[0])); return Math.sign(x) * Math.round(Math.abs(x) * m) / m; },
+      IF: a => (num(scalar(a[0])) ? scalar(a[1]) : (a.length > 2 ? scalar(a[2]) : false)),
+      TEXT: a => fmt(scalar(a[0]), String(scalar(a[1]))),
+      SUMIF: a => { const R = cells(a[0]), S = a.length > 2 ? cells(a[2]) : R; return R.reduce((t, v, j) => t + (crit(v, a[1]) && typeof S[j] === 'number' ? S[j] : 0), 0); },
+      SUMPRODUCT: a => { const L = a.map(x => vec(x) || [num(scalar(x))]); const n = Math.max(...L.map(x => x.length));
+        let t = 0; for(let j = 0; j < n; j++) t += L.reduce((p2, x) => p2 * num(x.length === 1 ? x[0] : x[j]), 1); return t; },
+      SUMIFS: a => { const S = cells(a[0]); const pairs = []; for(let j = 1; j < a.length; j += 2) pairs.push([cells(a[j]), a[j + 1]]);
+        return S.reduce((t, v, j) => t + (pairs.every(([R, c]) => crit(R[j], c)) && typeof v === 'number' ? v : 0), 0); },
+    };
+    function primary(){
+      const tk = take(); if(!tk) throw new Error('unexpected end');
+      if(tk.t === 'n' || tk.t === 's') return tk.v;
+      if(tk.t === 'r') return range(tk);
+      if(tk.t === 'f'){ if(!FN[tk.v]) throw new Error('function ' + tk.v); take(); const args = []; if(!isOp(')')){ do { args.push(cmp()); } while(isOp(',') && take()); } if(!isOp(')')) throw new Error(')'); take(); return FN[tk.v](args); }
+      if(tk.t === 'o' && tk.v === '('){ const v = cmp(); if(!isOp(')')) throw new Error(')'); take(); return v; }
+      if(tk.t === 'o' && tk.v === '-') return -num(scalar(primary()));
+      if(tk.t === 'o' && tk.v === '+') return num(scalar(primary()));
+      throw new Error('unexpected ' + tk.v);
+    }
+    function term(){ let v = primary(); while(isOp('*') || isOp('/')){ const o = take().v, w = primary(); v = op2(v, w, o === '*' ? (x, y) => x * y : (x, y) => x / y); } return v; }
+    function add(){ let v = term(); while(isOp('+') || isOp('-')){ const o = take().v, w = term(); v = op2(v, w, o === '+' ? (x, y) => x + y : (x, y) => x - y); } return v; }
+    function cat(){ let v = add(); while(isOp('&')){ take(); const w = scalar(add()); v = String(scalar(v) == null ? '' : scalar(v)) + String(w == null ? '' : w); } return v; }
+    function cmp(){ let v = cat(); while(peek() && peek().t === 'o' && ['=','<>','<','>','<=','>='].includes(peek().v)){ const o = take().v; const L = scalar(v), R = scalar(cat());
+      const a = typeof L === 'string' || typeof R === 'string' ? [String(L == null ? '' : L), String(R == null ? '' : R)] : [num(L), num(R)];
+      v = o === '=' ? a[0] === a[1] : o === '<>' ? a[0] !== a[1] : o === '<' ? a[0] < a[1] : o === '>' ? a[0] > a[1] : o === '<=' ? a[0] <= a[1] : a[0] >= a[1]; } return v; }
+    const v = scalar(cmp());
+    if(k < T.length) throw new Error('trailing ' + T[k].v);
+    return v;
+  }
+  let left = 0;
+  sheets.forEach(sh => (sh.rows || []).forEach((row, r) => (row || []).forEach((cell, c) => {
+    if(!cell || cell.f == null || /^\s*HYPERLINK\(/i.test(cell.f)) return;
+    try {
+      let v = cellVal(sh, r, c, 0);
+      if(typeof v === 'boolean') v = v ? 'TRUE' : 'FALSE';
+      if(typeof v === 'number' && !isFinite(v)) throw new Error('not a number');
+      row[c] = Object.assign({}, cell, { v: v == null ? '' : (typeof v === 'number' ? Math.round(v * 100) / 100 : v) }); delete row[c].f;
+    } catch(e){ left++; if((sheets.formulaErrors = sheets.formulaErrors || []).length < 5) sheets.formulaErrors.push(sh.name + '!' + XLSX_W.colLetter(c) + (r + 1) + ' ' + cell.f + ': ' + e.message); }
+  })));
+  sheets.formulasLeft = left;
+  return sheets;
+}
 function xlsxRichDownload(filename, sheets, styles){
   const files = xlsxRichFiles(sheets, styles);
   return xlsxZipDeflate(files).then(bytes => {
@@ -12592,8 +12775,8 @@ function exportGroupDisclosuresIn(){
   if(!D || !D.W.group || !D.notes.length){ showToast('No disclosure notes for this group and period', warnIcon()); return null; }
   const book = gdBuildWorkbook(D);
   const fname = `Group_Disclosures_${String(D.W.group.name || 'Group').replace(/[^A-Za-z0-9]+/g, '_')}_${groupCurrency}_${String(D.p.label).replace(/\s+/g, '_')}.xlsx`;
-  return xlsxRichDownload(fname, book.sheets, GD_STYLES).then(bytes => {
-    showToast('Group disclosures exported — every total is a live formula', checkIcon());
+  return xlsxRichDownload(fname, cxXlValues(book.sheets), GD_STYLES).then(bytes => {
+    showToast('Group disclosures exported to Excel', checkIcon());
     return bytes;
   });
 }
@@ -12964,8 +13147,8 @@ function exportGroupCashFlowExcelIn(){
   if(!D.W.group || !D.ents.length){ showToast('No group cash flow for this period', warnIcon()); return null; }
   const book = gcfBuildWorkbook(D);
   const fname = `Group_Cash_Flow_${groupCurrency}_${String(D.p.label).replace(/\s+/g, '_')}.xlsx`;
-  return xlsxRichDownload(fname, book.sheets, GCF_STYLES).then(bytes => {
-    showToast('Exported to Excel — local amounts × rates, every total a live formula', checkIcon());
+  return xlsxRichDownload(fname, cxXlValues(book.sheets), GCF_STYLES).then(bytes => {
+    showToast('Group cash flow exported to Excel', checkIcon());
     return bytes;
   });
 }
@@ -13706,7 +13889,7 @@ function cxIfrsDoc(){
       if(rows.length && rows[rows.length - 1].kind === 'blank') rows.pop();
       if(rows.length) tables.push({ caption: `${tables.length + 1}. Share issues and dividends: declared to paid`, heads: yrs, rows });
     }
-    if(tables.length) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
+    if(tables.length && cxHasAddon('notes')) sheets.push({ key:'notes', name:'Notes', title:'Notes to the consolidated financial statements', sub:`Movements for the ${word} ended ${endLong}`, wide: true, tables });
   }
 
   return { state:'ok', p, g, cur, prior: prior ? pp : null, word, endLong, yrs, sheets,
@@ -13905,7 +14088,7 @@ function cxSegDoc(){
     const ties = { pl: Math.abs(P.find(r => r.id === 'pfy').vals[gi] - (pl.rows.totals.profitForPeriod.final || 0)) < 1,
       bs: Math.abs(B.find(r => r.id === 'ta').vals[gi] - (bs.rows.totals.totalAssets.final || 0)) < 1 && Math.abs(B.find(r => r.id === 'tel').vals[gi] - (bs.rows.totals.totalEquityAndLiabilities.final || 0)) < 1 };
     return { state:'ok', p, g, cur, word, endLong, mode, view, sheets, ties, cols, hasCx,
-      tocTitle:'Segment information', tocNote:`Each company before and after the consolidation journals (${mode === 'line' ? 'journals attributed line by line' : 'every journal in Consolidation adjustments'}); the group column is their sum and agrees to the group statements. Subtotals are live formulas.` };
+      tocTitle:'Segment information', tocNote:`Each company before and after the consolidation journals (${mode === 'line' ? 'journals attributed line by line' : 'every journal in Consolidation adjustments'}); the group column is their sum and agrees to the group statements.` };
   })));
 }
 function renderGroupSegments(){
@@ -13940,7 +14123,7 @@ function exportGroupSegmentsExcel(){
   const D = cxSegDoc();
   if(D.state !== 'ok'){ showToast('No segment information for this period', warnIcon()); return null; }
   const base = `Segments_${String(D.g.name || 'Group').replace(/[^A-Za-z0-9]+/g, '_')}_${D.cur}_${String(D.p.label).replace(/\s+/g, '_')}`;
-  return xlsxRichDownload(base + '.xlsx', cxIfrsWorkbook(D), CXI_STYLES).then(bytes => { showToast('Segment information exported to Excel — totals are live formulas', checkIcon()); return bytes; });
+  return xlsxRichDownload(base + '.xlsx', cxXlValues(cxIfrsWorkbook(D)), CXI_STYLES).then(bytes => { showToast('Segment information exported to Excel', checkIcon()); return bytes; });
 }
 
 /* ---------- Excel: one sheet per statement, every subtotal a live formula, checks at the foot ---------- */
@@ -14035,7 +14218,7 @@ function cxIfrsWorkbook(D){
   const toc = [[{ v: D.g.name, s:'group' }], [{ v: D.tocTitle || 'Consolidated financial statements', s:'title' }], [{ v:`For the ${D.word} ended ${D.endLong} · presented in ${D.cur}`, s:'sub' }], []];
   plan.forEach(({ s, name }) => toc.push([{ f:`HYPERLINK("#'${name.replace(/'/g, "''")}'!A1","${s.title.replace(/"/g, "'")}")`, s:'toc' }]));
   toc.push([]);
-  toc.push([{ v: D.tocNote || 'FINAL figures from the group statements, after the posted consolidation journal entries. Subtotals are live formulas; the grey check rows should all be nil.', s:'sub' }]);
+  toc.push([{ v: D.tocNote || 'FINAL figures from the group statements, after the posted consolidation journal entries. The grey check rows should all be nil.', s:'sub' }]);
   return [{ name:'Contents', rows: toc, cols:[100], grid: false }].concat(out);
 }
 function cxIfrsFileBase(D){
@@ -14044,8 +14227,8 @@ function cxIfrsFileBase(D){
 function exportGroupIfrsExcel(){
   const D = cxIfrsDoc();
   if(D.state !== 'ok'){ showToast('No group statements to export for this period', warnIcon()); return null; }
-  return xlsxRichDownload(cxIfrsFileBase(D) + '.xlsx', cxIfrsWorkbook(D), CXI_STYLES).then(bytes => {
-    showToast('IFRS statements exported to Excel — subtotals are live formulas', checkIcon());
+  return xlsxRichDownload(cxIfrsFileBase(D) + '.xlsx', cxXlValues(cxIfrsWorkbook(D)), CXI_STYLES).then(bytes => {
+    showToast('IFRS statements exported to Excel', checkIcon());
     return bytes;
   });
 }
@@ -22838,11 +23021,20 @@ let cxResetting = false;
 
 function cxSaveDurableState(){
   if(cxResetting) return;
+  if(CX_SRV){ cxServerSave(); return; }
   try { localStorage.setItem(CX_SIM_KEY, JSON.stringify(cxCollectDurableState())); }
   catch(e){ /* storage full/unavailable — nothing else to do client-side */ }
 }
 
 function cxResetWorkspace(){
+  if(CX_SRV){
+    if(!CX_SRV.org || CX_SRV.org.role !== 'admin') return;
+    if(!confirm(`Reset ${CX_SRV.org.name}?\n\nThis permanently deletes every entity, shareholding, reporting period, chart of accounts entry, upload and journal entry of this organisation, for every user. It cannot be undone.`)) return;
+    cxResetting = true;
+    cxApi('PUT', '/api/orgs/' + CX_SRV.org.id + '/state', { version: cxSrvVersion, state: null, reset: true })
+      .then(() => location.reload()).catch(e => { cxResetting = false; showToast(e.message, warnIcon()); });
+    return;
+  }
   if(!confirm('Reset workspace data?\n\nThis permanently deletes every entity, shareholding, reporting period, chart of accounts entry, upload and journal entry saved in this browser. It cannot be undone.')) return;
   cxResetting = true;
   try { localStorage.removeItem(CX_SIM_KEY); } catch(e){}
@@ -22851,7 +23043,7 @@ function cxResetWorkspace(){
 
 function cxLoadDurableState(){
   try {
-    const raw = localStorage.getItem(CX_SIM_KEY);
+    const raw = CX_SRV ? (window.CX_BOOT_STATE ? JSON.stringify(window.CX_BOOT_STATE) : null) : localStorage.getItem(CX_SIM_KEY);
     if(!raw) return false;
     const s = JSON.parse(raw);
     entities = s.entities || [];
@@ -25280,7 +25472,137 @@ function cmSetRole(code, role){
 }
 function cmResetRoles(){ CM_ROLE_OV = {}; refreshActivePage(); cmOpenSources(); showToast('Roles reset to the chart of accounts', checkIcon()); }
 
+
+/* ============ v39.40 HOSTED VERSION: saving, organisations, account ============ */
+/* var, not let: the start-up code above may call the save before this line runs; nothing is sent until
+   cxServerStart() has taken the loaded data as the saved baseline */
+var cxSrvVersion = CX_SRV && CX_SRV.org ? CX_SRV.org.version : 0;
+var cxSrvLast = null, cxSrvBusy = null, cxSrvStopped = false, cxSrvReady = false;
+function cxSrvBody(){ try { return JSON.stringify(cxCollectDurableState()); } catch(e){ return null; } }
+function cxSrvDirty(){ if(!CX_SRV || !CX_SRV.org || cxSrvStopped || !cxSrvReady) return false; const b = cxSrvBody(); return b != null && b !== cxSrvLast; }
+function cxSaveBadge(state, msg){
+  const el = document.getElementById('cxSaveState'); if(!el) return;
+  el.style.display = ''; el.classList.toggle('warn', state === 'conflict' || state === 'error' || state === 'signedout');
+  el.innerHTML = state === 'saving' ? 'Saving…' : state === 'saved' ? 'All changes saved'
+    : state === 'conflict' ? escapeHtml(msg || 'Someone else saved this organisation.') + ' <button onclick="location.reload()">Reload</button>'
+    : state === 'signedout' ? 'Signed out — your latest changes were not saved. <button onclick="location.reload()">Sign in</button>'
+    : 'Not saved: ' + escapeHtml(msg || 'no connection') + ' — retrying';
+}
+/* one save at a time; nothing is sent when nothing changed. A save refused because someone else saved in between
+   stops saving (their work is never overwritten) until the page is reloaded. */
+function cxServerSave(now){
+  if(!CX_SRV || !CX_SRV.org || cxSrvStopped || !cxSrvReady) return Promise.resolve();
+  if(cxSrvBusy) return now ? cxSrvBusy.then(() => cxServerSave(true)) : cxSrvBusy;
+  const body = cxSrvBody(); if(body == null || body === cxSrvLast) return Promise.resolve();
+  cxSaveBadge('saving');
+  cxSrvBusy = cxApi('PUT', '/api/orgs/' + CX_SRV.org.id + '/state', '{"version":' + Number(cxSrvVersion) + ',"state":' + body + '}')
+    .then(d => { cxSrvVersion = d.version; cxSrvLast = body; cxSaveBadge('saved'); })
+    .catch(e => {
+      if(e.status === 409){ cxSrvStopped = true; cxSaveBadge('conflict', e.message + ' Your changes since then were not saved.'); }
+      else if(e.status === 401){ cxSrvStopped = true; cxSaveBadge('signedout'); }
+      else cxSaveBadge('error', e.message);
+      throw e;
+    })
+    .finally(() => { cxSrvBusy = null; });
+  return cxSrvBusy.catch(() => {});
+}
+function cxSwitchOrg(id){
+  const go = () => cxApi('POST', '/api/session/org', { orgId: +id }).then(() => location.reload()).catch(e => showToast(e.message, warnIcon()));
+  if(cxSrvDirty()) cxServerSave(true).then(go); else go();
+}
+function cxOpenPassword(forced){
+  let m = document.getElementById('cxPwModal');
+  if(!m){ m = document.createElement('div'); m.id = 'cxPwModal'; document.body.appendChild(m); }
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="cxPwT"><h3 id="cxPwT" style="margin:0 0 6px; font-size:16px;">${forced ? 'Choose your own password' : 'Change password'}</h3>
+    <p style="margin:0 0 12px; font-size:12.5px; color:var(--text-secondary);">${forced ? 'You signed in with a temporary password. ' : ''}At least 10 characters, with letters and numbers.</p>
+    <label style="font-size:12px;">Current password<input id="cxPw0" type="password" autocomplete="current-password"></label>
+    <label style="font-size:12px;">New password<input id="cxPw1" type="password" autocomplete="new-password"></label>
+    <div class="cx-err" id="cxPwErr" style="color:var(--danger); font-size:12.5px; min-height:16px;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">${forced ? '' : '<button type="button" class="small" onclick="document.getElementById(\'cxPwModal\').classList.remove(\'show\')">Cancel</button>'}
+    <button type="button" class="small primary" onclick="cxSavePassword(${forced ? 'true' : 'false'})">Save password</button></div></div>`;
+  m.classList.add('show');
+  setTimeout(() => { const f = document.getElementById('cxPw0'); if(f) f.focus(); }, 30);
+}
+function cxSavePassword(forced){
+  cxApi('POST', '/api/me/password', { current: document.getElementById('cxPw0').value, next: document.getElementById('cxPw1').value })
+    .then(() => { document.getElementById('cxPwModal').classList.remove('show'); CX_SRV.user.mustChangePassword = false; showToast('Password changed', checkIcon()); })
+    .catch(e => { document.getElementById('cxPwErr').textContent = e.message; });
+}
+/* the group in view needs an add-on that changes its figures — and the client has not bought it */
+function cxAddonNeeds(){
+  if(!CX_SRV) return [];
+  const p = activePeriod(); if(!p) return [];
+  const g = cmGroupFor(p); if(!g) return [];
+  const why = {};
+  try {
+    const cfg = getPeriodConfig(p.id);
+    cxMvMembers(cfg, p, g).forEach(e => cxMvNodesFull(cfg, p, g, e.id).forEach(n => {
+      if(/^ea_|^jc$/.test(n.cls || '')) why.equity = why.equity || `${e.legalName} is accounted for under the equity method`;
+      if(n.cls === 'cons' && n.pct != null && n.pct < 100 - 1e-6) why.nci = why.nci || `${e.legalName} is held at ${Math.round(n.pct * 100) / 100}%`;
+    }));
+    cxGroupWindows(p).list.forEach(r => r.windows.forEach(w => { if(w.entry === 'acq') why.goodwill = why.goodwill || `${r.e.legalName} is acquired during the period`; }));
+  } catch(err){ /* an incomplete set-up: nothing to lock yet */ }
+  return Object.keys(why).filter(k => !cxHasAddon(k)).map(k => ({ key: k, why: why[k] }));
+}
+var CX_PAGE_ADDON = { 'group-ifrs':'ifrs', 'group-seg':'segments', 'group-disc':'notes', 'comm-mgmt':'comms', 'comm-inv':'comms' };
+var CX_CONSOL_PAGES = ['group-bs', 'group-pl', 'group-cf', 'group-disc', 'group-ifrs', 'group-seg', 'comm-mgmt', 'comm-inv'];
+function cxPageLock(page){
+  if(!CX_SRV || !CX_PAGE_ADDON) return null;
+  const k = CX_PAGE_ADDON[page];
+  if(k && !cxHasAddon(k)) return { title: `${CX_ADDON_NAMES[k]} is an add-on`, text: `Your plan does not include ${CX_ADDON_NAMES[k]}. Ask your administrator to add it.` };
+  if(CX_CONSOL_PAGES.includes(page)){
+    const need = cxAddonNeeds();
+    if(need.length) return { title: 'This group needs ' + need.map(n => CX_ADDON_NAMES[n.key]).join(', '),
+      text: need.map(n => `${n.why}, which needs the ${CX_ADDON_NAMES[n.key]} add-on.`).join(' ') + ' Its consolidated figures are not shown, so that no incomplete statements go out. Ask your administrator to add it.' };
+  }
+  return null;
+}
+function cxServerStart(){
+  if(!CX_SRV) return;
+  const U = CX_SRV.user;
+  if(!U) return;   /* signed out: the sign-in form */
+  cxSrvLast = cxSrvBody(); cxSrvReady = true;
+  const org = CX_SRV.org;
+  const role = org && org.role === 'admin' ? 'Admin' : 'User';
+  cxCurrentUser = { username: U.email, role, name: U.name || U.email, title: U.title || (org ? org.name : '') };
+  const login = document.getElementById('consolixLogin'); if(login) login.style.display = 'none';
+  document.body.classList.remove('cx-locked');
+  const box = document.getElementById('cxOrgBox'), sel = document.getElementById('cxOrgSel');
+  if(box && sel && (CX_SRV.orgs || []).length){
+    box.style.display = '';
+    sel.innerHTML = CX_SRV.orgs.map(o => `<option value="${o.id}" ${org && o.id === org.id ? 'selected' : ''}>${escapeHtml(o.name)}${U.superadmin ? ' — ' + escapeHtml(o.client) : ''}</option>`).join('');
+  }
+  const acct = document.getElementById('cxAcctBox'); if(acct) acct.style.display = '';
+  const adm = document.getElementById('cxAdminLink'); if(adm && U.superadmin) adm.style.display = '';
+  const rb = document.getElementById('cxResetBtn'); if(rb && role !== 'Admin') rb.style.display = 'none';
+  const ab = document.getElementById('viewBtnAdmin'); if(ab && role !== 'Admin') ab.style.display = 'none';
+  window.addEventListener('beforeunload', ev => { if(cxSrvDirty()){ cxServerSave(true); ev.preventDefault(); ev.returnValue = ''; } });
+  if(typeof onConsolixSignedIn === 'function'){ try { onConsolixSignedIn(cxCurrentUser); } catch(_){ } }
+  if(!org){
+    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+    document.getElementById('lockTitle').textContent = 'No organisation yet';
+    document.getElementById('lockText').innerHTML = U.superadmin ? 'Create a client and its organisation in <a href="/admin">Administration</a> first.' : 'Your account is not linked to an organisation yet. Ask your administrator to give you access.';
+    document.getElementById('page-locked').classList.add('active');
+  }
+  if(U.mustChangePassword) cxOpenPassword(true);
+  else cxOfferBrowserImport();
+}
+/* the first time an organisation administrator opens an empty organisation, the data this browser kept from the
+   single-browser version can be brought in (once; the browser copy is left untouched) */
+function cxOfferBrowserImport(){
+  const org = CX_SRV && CX_SRV.org;
+  if(!org || org.role !== 'admin' || window.CX_BOOT_STATE) return;
+  let raw = null; try { raw = localStorage.getItem(CX_SIM_KEY); } catch(e){}
+  if(!raw) return;
+  let s; try { s = JSON.parse(raw); } catch(e){ return; }
+  const n = (s.entities || []).length, j = (s.journalEntries || []).length;
+  if(!n && !j) return;
+  if(!confirm(`This browser holds data from the single-browser version of ConsolX (${n} entities, ${j} journal entries).\n\nCopy it into ${org.name}? Everyone with access to ${org.name} will then see it.`)) return;
+  cxApi('PUT', '/api/orgs/' + org.id + '/state', '{"version":' + Number(cxSrvVersion) + ',"state":' + raw + '}')
+    .then(() => location.reload()).catch(e => showToast(e.message, warnIcon()));
+}
 setViewRole('admin');
+cxServerStart();
 </script>
 </body>
 </html>

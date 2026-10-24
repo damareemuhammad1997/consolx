@@ -1,114 +1,104 @@
-# ConsolX — Railway deployment package
+# ConsolX — hosted, several clients on one server
 
-Tested locally before packaging: `npm install && PORT=9234 npm start` was
-run against this exact folder, confirmed serving `index.html` at `/` with
-a `200`, and the byte count served matched the source file exactly
-(1,212,952 bytes) — nothing was truncated or corrupted in the copy.
+One Railway service serves every client. An **administrator** creates clients (accounting firms or holding
+companies), their organisations and users, sets the plans and add-ons, and issues invoices. Users sign in and
+work in the organisations they were given; each organisation's data is stored on the server, separate from every
+other organisation's.
 
-## What's in here
+## What is in here
 
-- `index.html` — the whole app (self-contained, no other assets)
-- `package.json` / `package-lock.json` — pulls in [`serve`](https://www.npmjs.com/package/serve), a tiny static file server
-- `railway.json` — tells Railway exactly how to build and start it (Nixpacks + `serve`)
-- `.gitignore` — keeps `node_modules` out of git
+| Path | What it does |
+| --- | --- |
+| `index.html` | The app. Served by the server with the signed-in user, their organisations and add-ons, and the data of the organisation they have open. Opened on its own (no server), it still works as before, in that browser only. |
+| `admin.html` | The administration console at `/admin`: clients, organisations, users, plans, add-ons, invoices, settings. |
+| `server/index.js` | Express server: sign-in, the organisation data API, the administration API, printable invoices. |
+| `server/db.js` | PostgreSQL connection, schema (created at start-up) and first-run plans and add-ons. |
+| `server/auth.js` | Passwords (bcrypt), sessions (HttpOnly cookie, hashed token), sign-in throttling, the administrator's first account. |
+| `server/billing.js` | Plans, limits, add-ons, invoice calculation and numbering. |
+| `server/gateways/` | Payment methods. Manual (bank transfer, marked paid by the administrator) is live; PayPal has a slot. |
 
-No Dockerfile needed — Railway's Nixpacks builder auto-detects this as a
-Node project from `package.json` and runs `npm install` then `npm start`.
-`serve -s . -l $PORT` binds to whatever port Railway assigns via the
-`PORT` environment variable (Railway sets this automatically — don't
-hardcode a port anywhere).
+## Deploy on Railway
 
----
+1. **Add a database.** In the Railway project: **New → Database → PostgreSQL**.
+2. **Set the variables** on the ConsolX service (**Variables**):
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (Railway offers it as a reference variable)
+   - `ADMIN_EMAIL` = the administrator's e-mail
+   - `ADMIN_PASSWORD` = at least 10 characters, letters and numbers
+   - `NODE_ENV` = `production`
+3. **Deploy** (a push to `main` deploys). At first start the server creates the tables, the starting plans and
+   add-ons, and the administrator account. If `ADMIN_PASSWORD` is missing or too weak, it generates one and prints
+   it once in the deploy logs; you are asked to change it at first sign-in.
+4. Open **`https://<your domain>/admin`** and sign in as the administrator.
 
-## Step-by-step deploy
+Without `DATABASE_URL` the service keeps serving the single-browser app (no sign-in, no clients) and logs a warning,
+so the site stays up while the database is being added.
 
-### 1. Get the code into a place Railway can pull from
+**Backups:** turn on Railway's PostgreSQL backups. All client data is in the database: the `organisations` table
+holds each organisation's data as one JSON document.
 
-Railway deploys either from a GitHub repo (recommended — gives you
-auto-deploy on every push) or directly from your machine via their CLI.
-Pick one:
+## Running the business from `/admin`
 
-**Option A — GitHub (recommended)**
+1. **Plans and add-ons** — set your prices first (they start at nil). Each plan is for one client type and
+   includes a number of users and organisations; a holding company's plan has one organisation (its group).
+   Prices are monthly; annual billing is twelve months less the annual discount set under **Settings**.
+2. **Settings** — currency, annual discount, invoice prefix, payment terms, your company details and the bank
+   details printed on every invoice.
+3. **Clients → New client** — name, type, plan, billing cycle, add-ons.
+4. In the client: **add organisations**, then **create users** and give each one access to organisations as
+   **Admin** (Admin and User views) or **User** (User view). A temporary password is shown once; the user
+   chooses their own at first sign-in. **Reset password**, **Disable**, and **Suspend** the whole client (its users
+   cannot sign in) are on the same page.
+5. **Invoices** — preview and issue one for a client, or **Run billing** for every monthly (or annual) client
+   for a period. Open an invoice to print it or save it as PDF; **Mark paid** with the transfer reference.
+
+Limits are hard: a user or organisation beyond the plan is refused with a message, and a plan cannot be changed to
+one smaller than what the client already uses.
+
+## Add-ons
+
+| Key | Add-on | Without it |
+| --- | --- | --- |
+| `ifrs` | IFRS statements | The Group IFRS statements page is locked. |
+| `notes` | Disclosure notes | Group disclosures is locked, and the IFRS statements have no notes. |
+| `segments` | Segment information | The Segment information page is locked. |
+| `comms` | Management and investor communication | The Management and Investors pages are locked. |
+| `equity` | Equity accounting | A group with an associate or joint venture shows a notice instead of its consolidated figures. |
+| `goodwill` | Goodwill and business combinations | A group with an acquisition during the period shows a notice instead of its figures. |
+| `nci` | Non-controlling interests | A group with a subsidiary held below 100% shows a notice instead of its figures. |
+
+The last three change the consolidated numbers, so a group that needs one the client has not bought is locked
+rather than shown incomplete. The administrator always has every add-on.
+
+## Data and saving
+
+- The app saves the open organisation a few seconds after each change ("All changes saved" in the top bar).
+- Every save carries the version it started from. If someone else saved the organisation in between, the save
+  is refused, nothing is overwritten, and the top bar says who saved and offers a reload.
+- Excel downloads of reports (group statements, cash flow, disclosures, IFRS statements, segment information)
+  contain values, not formulas.
+- The first time an organisation admin opens an empty organisation in a browser that holds data from the
+  single-browser version, they are offered to copy it in.
+
+## Payments
+
+Today invoices are paid by bank transfer and marked paid by the administrator. Online gateways plug in behind
+`server/gateways/index.js`: a gateway creates the payment and its webhook calls `billing.markPaid`. PayPal has a
+slot there (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`) and is not connected yet.
+
+## Security notes
+
+- Passwords are hashed with bcrypt; sessions are random tokens in an HttpOnly, SameSite=Lax cookie (Secure in
+  production), stored hashed, and expire after 14 days.
+- Every change request must carry the `X-ConsolX` header, so another site cannot post on a user's behalf.
+- Sign-in is throttled (8 failures per address and per e-mail in 15 minutes).
+- A user only ever receives the organisations of their own client they were given; every organisation request is
+  checked against that.
+
+## Local development
+
 ```bash
-cd consolx-railway
-git init
-git add .
-git commit -m "ConsolX static app"
+npm install
+# PostgreSQL running locally:
+DATABASE_URL=postgres://user:pass@localhost:5432/consolx ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=ChangeMe2026 npm start
+# app: http://localhost:3000/   administration: http://localhost:3000/admin
 ```
-Then create a new empty repo on GitHub (no README/license, so there's no
-merge conflict) and push:
-```bash
-git remote add origin https://github.com/<your-username>/<repo-name>.git
-git branch -M main
-git push -u origin main
-```
-
-**Option B — Railway CLI, no GitHub needed**
-```bash
-npm install -g @railway/cli
-railway login
-cd consolx-railway
-railway init
-railway up
-```
-This uploads the folder directly and deploys it — good if you'd rather
-not create a repo for this yet.
-
-### 2. Create the Railway project
-
-Once your Railway account (that you're setting up now) is ready:
-
-1. Railway dashboard → **New Project**.
-2. If you went with Option A: choose **Deploy from GitHub repo**, authorize
-   Railway to access your GitHub account if prompted, and pick the repo
-   you just pushed.
-   If you went with Option B: `railway up` already created and deployed
-   the project for you — skip to step 3.
-3. Railway will detect `package.json`, build with Nixpacks, and start it
-   with the command from `railway.json`. First deploy usually takes well
-   under a minute for something this small.
-
-### 3. Get it publicly reachable
-
-By default a new Railway service isn't exposed to the internet yet.
-
-1. Open the service → **Settings → Networking**.
-2. Click **Generate Domain** — gives you a free
-   `something.up.railway.app` URL immediately, HTTPS included. Good
-   enough to sanity-check the deploy before touching DNS.
-
-### 4. Point your real domain at it
-
-Once you've picked and bought a domain (from the earlier
-`getconsolx.com` / `consolx.io` discussion):
-
-1. Same **Settings → Networking** panel → **Custom Domain** → enter your
-   domain (or a subdomain like `app.getconsolx.com`).
-2. Railway gives you a CNAME target (something like
-   `xxxx.up.railway.app`). Add that as a CNAME record at your registrar's
-   DNS settings — Cloudflare/Porkbun both do this from their dashboard's
-   DNS tab, root-domain CNAME flattening is supported by both.
-3. Wait for DNS to propagate (usually minutes, sometimes up to a few
-   hours) — Railway auto-provisions an HTTPS certificate once it sees the
-   CNAME resolve correctly.
-
-### 5. Redeploys
-
-- Option A (GitHub): every `git push` to the connected branch auto-deploys.
-- Option B (CLI): run `railway up` again from the folder whenever you've
-  updated `index.html`.
-
----
-
-## Notes specific to this app
-
-- **No environment variables needed** — this is a pure static file, no
-  API keys, no database. Don't add any unless/until the app actually
-  grows a real backend (the heavy-calculation/big-file backend options we
-  discussed separately would be a *second* Railway service, not a change
-  to this one).
-- **No database/volume needed either** — data lives in each visitor's
-  browser `localStorage`, not on the server.
-- If you later split off a backend service for heavy calculations, that
-  would live as its own Railway service in the same project — this
-  static frontend stays exactly as-is.
