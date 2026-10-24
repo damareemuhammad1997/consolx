@@ -42,7 +42,11 @@ label.f{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var
 .pill{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; }
 .pill.ok{ background:var(--ok-bg); color:var(--ok); } .pill.warn{ background:var(--warn-bg); color:var(--warn); } .pill.bad{ background:var(--danger-bg); color:var(--danger); } .pill.mute{ background:var(--surface-2); color:var(--muted); border:1px solid var(--border); }
 .muted{ color:var(--muted); } .small{ font-size:12.5px; }
-.chk{ display:flex; gap:6px; align-items:flex-start; padding:4px 0; } .chk input{ margin-top:3px; }
+/* add-on choices: a large checkbox in a tile that is clickable as a whole and shows when it is chosen */
+.chk{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--border); border-radius:8px; cursor:pointer; background:var(--surface); }
+.chk:hover{ border-color:var(--border-strong); }
+.chk:has(input:checked){ border-color:var(--accent); background:var(--accent-2); }
+.chk input{ width:20px; height:20px; margin:1px 0 0; flex-shrink:0; cursor:pointer; accent-color:var(--accent); }
 #toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:9px 16px; border-radius:8px; display:none; max-width:90vw; z-index:20; }
 #login{ max-width:380px; margin:10vh auto; }
 .secret{ font-family:ui-monospace, Menlo, Consolas, monospace; background:var(--warn-bg); color:var(--warn); padding:2px 6px; border-radius:5px; }
