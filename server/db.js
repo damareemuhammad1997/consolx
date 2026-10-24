@@ -1,6 +1,8 @@
 /* Postgres: connection, schema (idempotent, applied at start-up) and first-run seed.
    Railway: add the PostgreSQL plugin; it sets DATABASE_URL on the service. */
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+/* DATE columns as 'YYYY-MM-DD' text, not a JS Date at local midnight (which can shift a day) */
+types.setTypeParser(1082, v => v);
 
 const url = process.env.DATABASE_URL;
 if(!url) throw new Error('DATABASE_URL is not set — add a PostgreSQL database to the service (Railway: New → Database → PostgreSQL).');
@@ -116,6 +118,17 @@ CREATE TABLE IF NOT EXISTS invoices (
   notes text NOT NULL DEFAULT ''
 );
 CREATE UNIQUE INDEX IF NOT EXISTS invoices_client_period ON invoices(client_id, period_start, cycle) WHERE status <> 'void';
+/* discount codes: a percentage off a client's invoices (100% = free, e.g. an internal test client) */
+CREATE TABLE IF NOT EXISTS discount_codes (
+  code text PRIMARY KEY,
+  percent numeric(5,2) NOT NULL CHECK (percent > 0 AND percent <= 100),
+  description text NOT NULL DEFAULT '',
+  valid_until date,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS discount_code text REFERENCES discount_codes(code);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS discounts jsonb NOT NULL DEFAULT '[]';
 `;
 
 /* add-ons sold on top of a plan (keys are what the app checks) */

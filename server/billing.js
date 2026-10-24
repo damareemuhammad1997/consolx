@@ -1,7 +1,7 @@
 /* Plans, add-ons, limits and invoices.
    A client (accounting firm or holding company) is on one plan ("tier"): the plan includes a number of users and
    organisations and has a monthly price; add-ons are priced monthly on top. Annual billing is twelve months less
-   the annual discount. Limits are hard: a user or organisation beyond the plan is refused until the plan is raised.
+   the annual discount, then less the client's discount code if it has a valid one. Limits are hard: a user or organisation beyond the plan is refused until the plan is raised.
    Payment goes through a gateway (server/gateways): 'manual' (bank transfer, marked paid by the administrator)
    today; PayPal and others plug in behind the same interface. */
 const { q, tx, getSettings } = require('./db');
@@ -65,8 +65,19 @@ async function quote(clientId, cycle, start){
     rows.forEach(a => lines.push({ kind: 'addon', key: a.key, description: `Add-on: ${a.name}`, qty: months, unit: money(a.price_monthly), amount: money(a.price_monthly * months) }));
   }
   const subtotal = money(lines.reduce((t, l) => t + l.amount, 0));
-  const discount = cycle === 'annual' ? money(subtotal * Number(s.annual_discount_pct || 0) / 100) : 0;
-  return { client: c, cycle, period: per, currency: s.currency, lines, subtotal, discount, total: money(subtotal - discount), usage: use };
+  const discounts = [];
+  const pct = Number(s.annual_discount_pct || 0);
+  if(cycle === 'annual' && pct > 0) discounts.push({ label: `Annual billing discount (${pct}%)`, amount: money(subtotal * pct / 100) });
+  let codeNote = null;
+  if(c.discount_code){
+    const d = (await q('SELECT * FROM discount_codes WHERE code = $1', [c.discount_code])).rows[0];
+    if(d && d.active && (!d.valid_until || per.start <= d.valid_until)){
+      const base = subtotal - discounts.reduce((t, x) => t + x.amount, 0);
+      discounts.push({ label: `Discount code ${d.code} (${Number(d.percent)}%)` + (d.description ? ' — ' + d.description : ''), amount: money(base * Number(d.percent) / 100), code: d.code });
+    } else codeNote = d ? `Discount code ${d.code} not applied: ${!d.active ? 'it is switched off' : 'it expired on ' + d.valid_until}.` : null;
+  }
+  const discount = money(discounts.reduce((t, x) => t + x.amount, 0));
+  return { client: c, cycle, period: per, currency: s.currency, lines, subtotal, discounts, discount, total: money(Math.max(0, subtotal - discount)), usage: use, codeNote };
 }
 async function issueInvoice(clientId, cycle, start, notes){
   const Q = await quote(clientId, cycle, start);
@@ -78,9 +89,12 @@ async function issueInvoice(clientId, cycle, start, notes){
     const n = Number(S.next_invoice_no || 1);
     const number = String(S.invoice_prefix || '') + String(n).padStart(5, '0');
     await db.query(`UPDATE settings SET value = $1 WHERE key = 'next_invoice_no'`, [JSON.stringify(n + 1)]);
-    const { rows } = await db.query(`INSERT INTO invoices(client_id, number, period_start, period_end, cycle, currency, lines, subtotal, discount, total, due_date, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, current_date + $11::int, $12) RETURNING *`,
-      [clientId, number, Q.period.start, Q.period.end, Q.cycle, Q.currency, JSON.stringify(Q.lines), Q.subtotal, Q.discount, Q.total, Number(S.payment_terms_days || 14), notes || '']);
+    /* nothing to pay (a 100% discount): recorded as paid, "No charge" */
+    const free = Q.total <= 0;
+    const { rows } = await db.query(`INSERT INTO invoices(client_id, number, period_start, period_end, cycle, currency, lines, subtotal, discount, discounts, total, due_date, notes, status, paid_at, paid_ref)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, current_date + $12::int, $13, $14, $15, $16) RETURNING *`,
+      [clientId, number, Q.period.start, Q.period.end, Q.cycle, Q.currency, JSON.stringify(Q.lines), Q.subtotal, Q.discount, JSON.stringify(Q.discounts), Q.total,
+       Number(S.payment_terms_days || 14), notes || '', free ? 'paid' : 'issued', free ? new Date() : null, free ? 'No charge' : '']);
     return rows[0];
   });
 }
@@ -89,7 +103,10 @@ async function runBilling(cycle, start){
   const { rows } = await q(`SELECT id, name FROM clients WHERE status = 'active' AND cycle = $1 ORDER BY id`, [cycle]);
   const out = [];
   for(const c of rows){
-    try { const inv = await issueInvoice(c.id, cycle, start); out.push({ client: c.name, number: inv.number, total: inv.total }); }
+    try {
+      const Q = await quote(c.id, cycle, start);
+      if(Q.total <= 0){ out.push({ client: c.name, skipped: 'no charge (' + (Q.discounts.map(d => d.label).join(', ') || 'nil prices') + ')' }); continue; }
+      const inv = await issueInvoice(c.id, cycle, start); out.push({ client: c.name, number: inv.number, total: inv.total }); }
     catch(e){ out.push({ client: c.name, skipped: e.message }); }
   }
   return out;

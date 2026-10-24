@@ -54,6 +54,14 @@ holds each organisation's data as one JSON document.
 Limits are hard: a user or organisation beyond the plan is refused with a message, and a plan cannot be changed to
 one smaller than what the client already uses.
 
+## Discount codes
+
+Under **Plans and add-ons → Discount codes**, create a code with a percentage (optionally an end date), then pick
+it on a client (**Discount code** in the client's form). It comes off every invoice of that client, after the
+annual discount. A **100%** code makes a client free — use it for your own test environment: an invoice for a free
+period is recorded as paid ("No charge"), and **Run billing** skips the client. Switch a code off, or let its end
+date pass, and the client's next invoices are charged in full (the preview says why).
+
 ## Add-ons
 
 | Key | Add-on | Without it |

@@ -145,17 +145,28 @@ A.get('/overview', wrap(async (req, res) => {
     FROM clients c JOIN tiers t ON t.id = c.tier_id ORDER BY c.name`)).rows;
   const tiers = (await q('SELECT * FROM tiers ORDER BY kind, sort, id')).rows;
   const addons = (await q('SELECT * FROM addons ORDER BY sort')).rows;
-  res.json({ clients, tiers, addons, settings: await db.getSettings(), gateways: gateways.list(), me: { name: req.user.name, email: req.user.email, mustChangePassword: req.user.must_change_password } });
+  const codes = (await q(`SELECT d.*, (SELECT count(*)::int FROM clients c WHERE c.discount_code = d.code) AS clients FROM discount_codes d ORDER BY d.created_at DESC`)).rows;
+  res.json({ clients, tiers, addons, codes, settings: await db.getSettings(), gateways: gateways.list(), me: { name: req.user.name, email: req.user.email, mustChangePassword: req.user.must_change_password } });
 }));
 
+/* a client's discount code: '' or none clears it; otherwise an existing code that is switched on */
+async function codeFor(v, current){
+  const c = str(v, 40).toUpperCase();
+  if(!c) return null;
+  if(c === current) return c;
+  const d = (await q('SELECT code, active FROM discount_codes WHERE code = $1', [c])).rows[0];
+  if(!d) throw bad(400, `There is no discount code ${c}.`);
+  if(!d.active) throw bad(400, `Discount code ${c} is switched off.`);
+  return d.code;
+}
 A.post('/clients', wrap(async (req, res) => {
   const b = req.body || {};
   const kind = b.kind === 'holding' ? 'holding' : b.kind === 'firm' ? 'firm' : null;
   if(!kind) throw bad(400, 'Choose accounting firm or holding company.');
   const name = str(b.name); if(!name) throw bad(400, 'Give the client a name.');
   const t = await tierFor(kind, b.tier_id);
-  const r = await q(`INSERT INTO clients(name, kind, tier_id, cycle, addons, billing_email, billing_address, notes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [name, kind, t.id, b.cycle === 'annual' ? 'annual' : 'monthly', await cleanAddons(b.addons), str(b.billing_email), str(b.billing_address, 1000), str(b.notes, 2000)]);
+  const r = await q(`INSERT INTO clients(name, kind, tier_id, cycle, addons, billing_email, billing_address, notes, discount_code) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [name, kind, t.id, b.cycle === 'annual' ? 'annual' : 'monthly', await cleanAddons(b.addons), str(b.billing_email), str(b.billing_address, 1000), str(b.notes, 2000), await codeFor(b.discount_code)]);
   res.json(r.rows[0]);
 }));
 A.get('/clients/:id', wrap(async (req, res) => {
@@ -178,11 +189,11 @@ A.patch('/clients/:id', wrap(async (req, res) => {
     const use = await billing.clientUsage(id, c);
     if(use.users > t.max_users || use.orgs > t.max_orgs)
       throw bad(409, `${t.name} includes ${t.max_users} users and ${t.max_orgs} organisations; ${cur.name} has ${use.users} users and ${use.orgs} organisations. Remove some first.`);
-    return (await c.query(`UPDATE clients SET name = $2, kind = $3, tier_id = $4, cycle = $5, addons = $6, status = $7, billing_email = $8, billing_address = $9, notes = $10 WHERE id = $1 RETURNING *`,
+    return (await c.query(`UPDATE clients SET name = $2, kind = $3, tier_id = $4, cycle = $5, addons = $6, status = $7, billing_email = $8, billing_address = $9, notes = $10, discount_code = $11 WHERE id = $1 RETURNING *`,
       [id, b.name != null ? (str(b.name) || cur.name) : cur.name, kind, t.id, b.cycle === 'annual' || b.cycle === 'monthly' ? b.cycle : cur.cycle,
        b.addons != null ? await cleanAddons(b.addons) : cur.addons, b.status === 'suspended' || b.status === 'active' ? b.status : cur.status,
        b.billing_email != null ? str(b.billing_email) : cur.billing_email, b.billing_address != null ? str(b.billing_address, 1000) : cur.billing_address,
-       b.notes != null ? str(b.notes, 2000) : cur.notes])).rows[0];
+       b.notes != null ? str(b.notes, 2000) : cur.notes, b.discount_code !== undefined ? await codeFor(b.discount_code, cur.discount_code) : cur.discount_code])).rows[0];
   });
   if(r.status === 'suspended') await q('DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE client_id = $1)', [id]);
   res.json(r);
@@ -287,6 +298,24 @@ A.patch('/addons/:key', wrap(async (req, res) => {
      b.price_monthly != null ? price(b.price_monthly) : a.price_monthly, b.active != null ? !!b.active : a.active]);
   res.json(r.rows[0]);
 }));
+/* discount codes */
+A.post('/codes', wrap(async (req, res) => {
+  const b = req.body || {};
+  const code = str(b.code, 40).toUpperCase();
+  if(!/^[A-Z0-9_-]{3,40}$/.test(code)) throw bad(400, 'A code is 3 to 40 letters, numbers, - or _.');
+  const pct = Number(b.percent); if(!(pct > 0 && pct <= 100)) throw bad(400, 'The discount is more than 0 and at most 100%.');
+  const until = str(b.valid_until, 10) || null; if(until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) throw bad(400, 'Valid until is a date.');
+  if((await q('SELECT 1 FROM discount_codes WHERE code = $1', [code])).rows[0]) throw bad(409, `Code ${code} already exists.`);
+  res.json((await q('INSERT INTO discount_codes(code, percent, description, valid_until) VALUES ($1,$2,$3,$4) RETURNING *', [code, pct, str(b.description, 200), until])).rows[0]);
+}));
+A.patch('/codes/:code', wrap(async (req, res) => {
+  const b = req.body || {};
+  const d = (await q('SELECT * FROM discount_codes WHERE code = $1', [str(req.params.code, 40).toUpperCase()])).rows[0]; if(!d) throw bad(404, 'Code not found.');
+  const until = b.valid_until !== undefined ? (str(b.valid_until, 10) || null) : d.valid_until;
+  if(until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) throw bad(400, 'Valid until is a date.');
+  res.json((await q('UPDATE discount_codes SET description = $2, valid_until = $3, active = $4 WHERE code = $1 RETURNING *',
+    [d.code, b.description != null ? str(b.description, 200) : d.description, until, b.active != null ? !!b.active : d.active])).rows[0]);
+}));
 A.put('/settings', wrap(async (req, res) => {
   const b = req.body || {}, set = {};
   if(b.currency != null){ const c = str(b.currency, 3).toUpperCase(); if(!/^[A-Z]{3}$/.test(c)) throw bad(400, 'Currency is a three-letter code.'); set.currency = c; }
@@ -332,9 +361,9 @@ pre{white-space:pre-wrap;font:inherit;margin:0}@media print{body{padding:0}.nopr
 <table><thead><tr><th>Description</th><th class="n">Months</th><th class="n">Monthly price</th><th class="n">Amount (${esc(i.currency)})</th></tr></thead><tbody>
 ${i.lines.map(l => `<tr><td>${esc(l.description)}</td><td class="n">${l.qty}</td><td class="n">${m(l.unit)}</td><td class="n">${m(l.amount)}</td></tr>`).join('')}
 <tr><td colspan="3">Subtotal</td><td class="n">${m(i.subtotal)}</td></tr>
-${Number(i.discount) ? `<tr><td colspan="3">Annual billing discount</td><td class="n">(${m(i.discount)})</td></tr>` : ''}
+${(i.discounts && i.discounts.length ? i.discounts : (Number(i.discount) ? [{ label: 'Annual billing discount', amount: i.discount }] : [])).map(x => `<tr><td colspan="3">${esc(x.label)}</td><td class="n">(${m(x.amount)})</td></tr>`).join('')}
 <tr class="tot"><td colspan="3">Total due</td><td class="n">${esc(i.currency)} ${m(i.total)}</td></tr></tbody></table>
-${i.status === 'paid' ? `<p>Paid on ${d(i.paid_at)}${i.paid_ref ? ' · reference ' + esc(i.paid_ref) : ''} (${esc(g.name)}).</p>` : `<h3>How to pay</h3><pre>${esc(g.instructions(i, s))}</pre>`}
+${i.status === 'paid' && Number(i.total) === 0 ? '<p>No charge.</p>' : i.status === 'paid' ? `<p>Paid on ${d(i.paid_at)}${i.paid_ref ? ' · reference ' + esc(i.paid_ref) : ''} (${esc(g.name)}).</p>` : `<h3>How to pay</h3><pre>${esc(g.instructions(i, s))}</pre>`}
 ${i.notes ? `<p class="muted">${esc(i.notes)}</p>` : ''}</main></body></html>`);
 }));
 

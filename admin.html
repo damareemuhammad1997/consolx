@@ -123,13 +123,15 @@ const tiersOf = kind => O.tiers.filter(t => t.kind === kind && t.active);
 const tierOpts = (kind, sel) => tiersOf(kind).map(t => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)} — ${t.max_users} users, ${t.max_orgs} org${t.max_orgs === 1 ? '' : 's'}, ${money(t.price_monthly)} ${esc(O.settings.currency)}/month</option>`).join('');
 const addonBoxes = (sel, name) => O.addons.filter(a => a.active || sel.includes(a.key)).map(a => `<label class="chk"><input type="checkbox" name="${name}" value="${a.key}" ${sel.includes(a.key) ? 'checked' : ''}><span><strong>${esc(a.name)}</strong> · ${money(a.price_monthly)} ${esc(O.settings.currency)}/month<br><span class="muted small">${esc(a.description)}</span></span></label>`).join('');
 const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(x => x.value);
+const codeOpts = sel => `<option value="">None</option>` + (O.codes || []).filter(d => d.active || d.code === sel)
+  .map(d => `<option value="${esc(d.code)}" ${d.code === sel ? 'selected' : ''}>${esc(d.code)} — ${Number(d.percent)}%${d.valid_until ? ' until ' + esc(d.valid_until) : ''}${!d.active ? ' (switched off)' : ''}</option>`).join('');
 const pricesUnset = () => O.tiers.every(t => !Number(t.price_monthly));
 
 /* ---------- clients ---------- */
 function renderClients(){
   if(clientId) return renderClient(clientId);
   const rows = O.clients.map(c => `<tr class="click" onclick="openClient(${c.id})"><td><strong>${esc(c.name)}</strong><div class="muted small">${kindLabel(c.kind)}</div></td>
-    <td>${esc(c.tier_name)}</td><td class="n">${c.users} / ${c.max_users}</td><td class="n">${c.orgs} / ${c.max_orgs}</td><td>${c.addons.length ? c.addons.map(k => esc((O.addons.find(a => a.key === k) || {}).name || k)).join(', ') : '<span class="muted">None</span>'}</td>
+    <td>${esc(c.tier_name)}${c.discount_code ? ` <span class="pill ok">${esc(c.discount_code)}</span>` : ''}</td><td class="n">${c.users} / ${c.max_users}</td><td class="n">${c.orgs} / ${c.max_orgs}</td><td>${c.addons.length ? c.addons.map(k => esc((O.addons.find(a => a.key === k) || {}).name || k)).join(', ') : '<span class="muted">None</span>'}</td>
     <td>${c.cycle === 'annual' ? 'Annual' : 'Monthly'}</td><td>${c.status === 'active' ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Suspended</span>'}</td>
     <td class="n">${Number(c.unpaid) ? `<span class="pill warn">${money(c.unpaid)}</span>` : '—'}</td></tr>`).join('');
   $('#main').innerHTML = (pricesUnset() ? `<div class="banner">Plan prices are all nil. Set them under Plans and add-ons before you issue invoices.</div>` : '') + `
@@ -140,12 +142,13 @@ function renderClients(){
     <label class="f">Type<select id="nc_kind" onchange="document.getElementById('nc_tier').innerHTML = tierOpts(this.value)"><option value="holding">Holding company (one group)</option><option value="firm">Accounting firm (several organisations)</option></select></label>
     <label class="f">Plan<select id="nc_tier">${tierOpts('holding')}</select></label>
     <label class="f">Billing<select id="nc_cycle"><option value="monthly">Monthly</option><option value="annual">Annual (${esc(O.settings.annual_discount_pct)}% discount)</option></select></label>
-    <label class="f">Billing e-mail<input id="nc_email" type="email"></label></div>
+    <label class="f">Billing e-mail<input id="nc_email" type="email"></label>
+    <label class="f">Discount code<select id="nc_code">${codeOpts('')}</select></label></div>
     <h3>Add-ons</h3><div class="grid">${addonBoxes([], 'nc_add')}</div>
     <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(newClient)">Create client</button></div></div>`;
 }
 async function newClient(){
-  const c = await api('POST', '/api/admin/clients', { name: $('#nc_name').value, kind: $('#nc_kind').value, tier_id: $('#nc_tier').value, cycle: $('#nc_cycle').value, billing_email: $('#nc_email').value, addons: checked('nc_add') });
+  const c = await api('POST', '/api/admin/clients', { name: $('#nc_name').value, kind: $('#nc_kind').value, tier_id: $('#nc_tier').value, cycle: $('#nc_cycle').value, billing_email: $('#nc_email').value, discount_code: $('#nc_code').value, addons: checked('nc_add') });
   toast('Client created'); O = await api('GET', '/api/admin/overview'); openClient(c.id);
 }
 function openClient(id){ clientId = id; renderClient(id); }
@@ -171,7 +174,8 @@ async function renderClient(id){
       <label class="f">Plan<select id="ec_tier">${tierOpts(c.kind, c.tier_id)}</select></label>
       <label class="f">Billing<select id="ec_cycle"><option value="monthly" ${c.cycle === 'monthly' ? 'selected' : ''}>Monthly</option><option value="annual" ${c.cycle === 'annual' ? 'selected' : ''}>Annual</option></select></label>
       <label class="f">Status<select id="ec_status"><option value="active" ${c.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${c.status === 'suspended' ? 'selected' : ''}>Suspended (users cannot sign in)</option></select></label>
-      <label class="f">Billing e-mail<input id="ec_email" value="${esc(c.billing_email)}"></label></div>
+      <label class="f">Billing e-mail<input id="ec_email" value="${esc(c.billing_email)}"></label>
+      <label class="f">Discount code<select id="ec_code">${codeOpts(c.discount_code || '')}</select></label></div>
     <label class="f" style="margin-top:10px;">Billing address<textarea id="ec_addr">${esc(c.billing_address)}</textarea></label>
     <h3>Add-ons</h3><div class="grid">${addonBoxes(c.addons, 'ec_add')}</div>
     <label class="f" style="margin-top:10px;">Notes<textarea id="ec_notes">${esc(c.notes)}</textarea></label>
@@ -196,7 +200,7 @@ function membEditor(p, orgs, cur){
 const membRead = p => [...document.querySelectorAll(`select[data-m="${p}"]`)].filter(s => s.value).map(s => ({ org_id: +s.dataset.org, role: s.value }));
 async function saveClient(id){
   await api('PATCH', '/api/admin/clients/' + id, { name: $('#ec_name').value, kind: $('#ec_kind').value, tier_id: $('#ec_tier').value, cycle: $('#ec_cycle').value, status: $('#ec_status').value,
-    billing_email: $('#ec_email').value, billing_address: $('#ec_addr').value, notes: $('#ec_notes').value, addons: checked('ec_add') });
+    billing_email: $('#ec_email').value, billing_address: $('#ec_addr').value, notes: $('#ec_notes').value, discount_code: $('#ec_code').value, addons: checked('ec_add') });
   toast('Client saved'); O = await api('GET', '/api/admin/overview'); renderClient(id);
 }
 async function newOrg(cid){ await api('POST', `/api/admin/clients/${cid}/orgs`, { name: $('#no_name').value }); toast('Organisation added'); renderClient(cid); }
@@ -223,15 +227,16 @@ async function resetPw(uid){
 function quoteHtml(Q){
   return `<div class="wrap-x" style="margin-top:10px;"><table><thead><tr><th>Description</th><th class="n">Months</th><th class="n">Monthly</th><th class="n">Amount (${esc(Q.currency)})</th></tr></thead><tbody>
     ${Q.lines.map(l => `<tr><td>${esc(l.description)}</td><td class="n">${l.qty}</td><td class="n">${money(l.unit)}</td><td class="n">${money(l.amount)}</td></tr>`).join('')}
-    ${Q.discount ? `<tr><td colspan="3">Annual billing discount</td><td class="n">(${money(Q.discount)})</td></tr>` : ''}
-    <tr><td colspan="3"><strong>Total for ${esc(Q.period.start)} to ${esc(Q.period.end)}</strong></td><td class="n"><strong>${money(Q.total)}</strong></td></tr></tbody></table></div>`;
+    ${(Q.discounts || []).map(d => `<tr><td colspan="3">${esc(d.label)}</td><td class="n">(${money(d.amount)})</td></tr>`).join('')}
+    <tr><td colspan="3"><strong>Total for ${esc(Q.period.start)} to ${esc(Q.period.end)}</strong></td><td class="n"><strong>${money(Q.total)}</strong></td></tr></tbody></table></div>`
+    + (Q.codeNote ? `<div class="banner" style="margin-top:8px;">${esc(Q.codeNote)}</div>` : '') + (Q.total <= 0 ? `<p class="muted small">Nothing to pay: an invoice issued for this period is recorded as paid ("No charge"). Run billing skips this client.</p>` : '');
 }
 async function quoteInv(cid){ const Q = await api('POST', '/api/admin/invoices/quote', { client_id: cid, cycle: $('#ii_cycle').value, start: $('#ii_start').value }); $('#quote').innerHTML = quoteHtml(Q); }
 async function issueInv(cid){ const i = await api('POST', '/api/admin/invoices', { client_id: cid, cycle: $('#ii_cycle').value, start: $('#ii_start').value }); toast('Invoice ' + i.number + ' issued'); renderClient(cid); }
 
 /* ---------- invoices ---------- */
 function invRow(i, withClient){
-  const st = i.status === 'paid' ? '<span class="pill ok">Paid</span>' : i.status === 'void' ? '<span class="pill mute">Void</span>' : (new Date(i.due_date) < new Date() ? '<span class="pill bad">Overdue</span>' : '<span class="pill warn">Issued</span>');
+  const st = i.status === 'paid' && Number(i.total) === 0 ? '<span class="pill ok">No charge</span>' : i.status === 'paid' ? '<span class="pill ok">Paid</span>' : i.status === 'void' ? '<span class="pill mute">Void</span>' : (new Date(i.due_date) < new Date() ? '<span class="pill bad">Overdue</span>' : '<span class="pill warn">Issued</span>');
   return `<tr><td><a href="/invoice/${i.id}" target="_blank" rel="noopener">${esc(i.number)}</a></td>${withClient ? `<td>${esc(i.client)}</td>` : ''}<td>${day(i.period_start)} – ${day(i.period_end)}</td>
     <td class="n">${esc(i.currency)} ${money(i.total)}</td><td>${st}${i.status === 'paid' ? `<div class="muted small">${day(i.paid_at)}${i.paid_ref ? ' · ' + esc(i.paid_ref) : ''}</div>` : ''}</td><td>${day(i.due_date)}</td>
     <td class="n">${i.status === 'issued' ? `<button class="b sm" onclick="act(() => paid(${i.id}))">Mark paid</button> <button class="b sm d" onclick="act(() => voidInv(${i.id}))">Void</button>` : ''}</td></tr>`;
@@ -273,7 +278,16 @@ function renderPlans(){
     <input id="nt_users" type="number" min="1" placeholder="Users" style="width:90px;"><input id="nt_orgs" type="number" min="1" placeholder="Organisations" style="width:120px;"><input id="nt_price" type="number" min="0" step="0.01" placeholder="Price / month" style="width:130px;">
     <button class="b p" onclick="act(newTier)">Add plan</button></div></div>
   <div class="card"><h2>Add-ons</h2><p class="muted small">Sold on top of a plan, per client, at a monthly price. Equity accounting, goodwill and non-controlling interests change the consolidated figures: a group that needs one the client has not bought shows a notice instead of its statements.</p>
-    <div class="wrap-x"><table><thead><tr><th>Add-on</th><th>What it unlocks</th><th class="n">Price / month</th><th>Status</th><th></th></tr></thead><tbody>${O.addons.map(ar).join('')}</tbody></table></div></div>`;
+    <div class="wrap-x"><table><thead><tr><th>Add-on</th><th>What it unlocks</th><th class="n">Price / month</th><th>Status</th><th></th></tr></thead><tbody>${O.addons.map(ar).join('')}</tbody></table></div></div>
+  <div class="card"><h2>Discount codes</h2><p class="muted small">A percentage off every invoice of the clients that carry the code (after the annual discount). 100% makes a client free — for example your own test client. Switch a code off, or give it an end date, to stop it applying to later periods.</p>
+    <div class="wrap-x"><table><thead><tr><th>Code</th><th class="n">Discount</th><th>Description</th><th>Valid until</th><th class="n">Clients</th><th>Status</th><th></th></tr></thead><tbody>
+    ${(O.codes || []).map(d => `<tr><td><strong>${esc(d.code)}</strong></td><td class="n">${Number(d.percent)}%</td><td><input id="dd_${esc(d.code)}" value="${esc(d.description)}" style="width:100%;"></td>
+      <td><input id="du_${esc(d.code)}" type="date" value="${esc(d.valid_until || '')}"></td><td class="n">${d.clients}</td>
+      <td><select id="da_${esc(d.code)}"><option value="1" ${d.active ? 'selected' : ''}>On</option><option value="0" ${!d.active ? 'selected' : ''}>Off</option></select></td>
+      <td class="n"><button class="b sm" onclick="act(() => saveCode('${esc(d.code)}'))">Save</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">No codes yet.</td></tr>'}</tbody></table></div>
+    <h3>New code</h3><div class="row"><input id="nd_code" placeholder="Code, e.g. INTERNAL100" style="width:180px;" oninput="this.value = this.value.toUpperCase()"><input id="nd_pct" type="number" min="1" max="100" placeholder="%" style="width:80px;">
+    <input id="nd_desc" placeholder="Description (e.g. Internal test client)" style="min-width:240px;"><label class="f">Valid until (optional)<input id="nd_until" type="date"></label>
+    <button class="b p" onclick="act(newCode)">Add code</button></div></div>`;
 }
 async function saveTier(id){
   const o = document.getElementById('to_' + id);
@@ -283,6 +297,14 @@ async function saveTier(id){
 async function newTier(){
   await api('POST', '/api/admin/tiers', { name: $('#nt_name').value, kind: $('#nt_kind').value, max_users: $('#nt_users').value, max_orgs: $('#nt_orgs').value || 1, price_monthly: $('#nt_price').value || 0 });
   toast('Plan added'); O = await api('GET', '/api/admin/overview'); renderPlans();
+}
+async function newCode(){
+  await api('POST', '/api/admin/codes', { code: $('#nd_code').value, percent: $('#nd_pct').value, description: $('#nd_desc').value, valid_until: $('#nd_until').value });
+  toast('Code added'); O = await api('GET', '/api/admin/overview'); renderPlans();
+}
+async function saveCode(c){
+  await api('PATCH', '/api/admin/codes/' + encodeURIComponent(c), { description: $('#dd_' + c).value, valid_until: $('#du_' + c).value, active: $('#da_' + c).value === '1' });
+  toast('Code saved'); O = await api('GET', '/api/admin/overview'); renderPlans();
 }
 async function saveAddon(k){
   await api('PATCH', '/api/admin/addons/' + k, { name: $('#an_' + k).value, description: $('#ad_' + k).value, price_monthly: $('#ap_' + k).value, active: $('#aa_' + k).value === '1' });
