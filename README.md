@@ -16,6 +16,8 @@ other organisation's.
 | `server/auth.js` | Passwords (bcrypt), sessions (HttpOnly cookie, hashed token), sign-in throttling, the administrator's first account. |
 | `server/billing.js` | Plans, limits, add-ons, invoice calculation and numbering. |
 | `server/gateways/` | Payment methods. Manual (bank transfer, marked paid by the administrator) is live; PayPal has a slot. |
+| `server/assistant.js` | Yai, the AI assistant (the `ai` add-on): answers with Claude from the guide, the app map and a summary of the open organisation. |
+| `docs/guide.md` | The preparer's guide: the order of work, every page, every upload kit's columns and rules. Yai answers from it. |
 
 ## Deploy on Railway
 
@@ -25,6 +27,8 @@ other organisation's.
    - `ADMIN_EMAIL` = the administrator's e-mail
    - `ADMIN_PASSWORD` = at least 10 characters, letters and numbers
    - `NODE_ENV` = `production`
+   - `ANTHROPIC_API_KEY` = an Anthropic API key, to switch Yai on (optional; without it the add-on says Yai is not
+     switched on yet). `CONSOLX_AI_MODEL` changes the model (default `claude-opus-5-5`).
 3. **Deploy** (a push to `main` deploys). At first start the server creates the tables, the starting plans and
    add-ons, and the administrator account. If `ADMIN_PASSWORD` is missing or too weak, it generates one and prints
    it once in the deploy logs; you are asked to change it at first sign-in.
@@ -73,9 +77,27 @@ date pass, and the client's next invoices are charged in full (the preview says 
 | `equity` | Equity accounting | A group with an associate or joint venture shows a notice instead of its consolidated figures. |
 | `goodwill` | Goodwill and business combinations | A group with an acquisition during the period shows a notice instead of its figures. |
 | `nci` | Non-controlling interests | A group with a subsidiary held below 100% shows a notice instead of its figures. |
+| `ai` | AI assistant (Yai) | No Yai bubble. |
 
 The last three change the consolidated numbers, so a group that needs one the client has not bought is locked
 rather than shown incomplete. The administrator always has every add-on.
+
+## Yai, the assistant
+
+With the `ai` add-on, a round **Yai** bubble sits at the bottom right of the app (as in PayrollX). Yai:
+
+- shows, step by step, how to do anything in ConsolX, starting from the page the person is on (Admin or User view);
+- prepares the CSV upload kits — entities, shareholders, chart of accounts, journal entries — with the organisation's
+  own entity and account codes, shown in the chat with a **Download** button; for the Excel kits (entity packs,
+  intragroup templates, chart workbook) it explains how to fill them.
+
+It answers from `docs/guide.md`, a map of the menus and a summary of the open organisation (entities, ownership in
+force, periods, chart of accounts, journal numbering, which packs are in) — codes, not figures. It cannot change
+anything. The conversation lives in the page only; the server keeps the count of questions and tokens per
+organisation and month (`ai_usage`), shown under **Settings → Yai** in `/admin`, where the monthly allowance per
+organisation is set (default 1,000). Each person may ask 8 questions a minute. Questions, the last turns and the
+organisation summary are sent to Anthropic's API. Keep `docs/guide.md` and the app map in `server/assistant.js` in
+step with the app when pages or file formats change.
 
 ## Data and saving
 

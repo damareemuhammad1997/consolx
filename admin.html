@@ -323,11 +323,15 @@ function renderSettings(){
     <label class="f" style="margin-top:10px;">Address<textarea id="s_ia">${esc(i.address)}</textarea></label>
     <label class="f" style="margin-top:10px;">How to pay (bank details for transfers)<textarea id="s_pay">${esc(s.payment_instructions)}</textarea></label>
     <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(saveSettings)">Save settings</button></div></div>
+  <div class="card"><h2>Yai, the AI assistant</h2><p class="muted small">Clients with the <b>AI assistant (Yai)</b> add-on see the round Yai bubble in the app. ${O.yai && O.yai.enabled ? '<span class="pill ok">Switched on</span>' : '<span class="pill warn">Not switched on — set ANTHROPIC_API_KEY on the server</span>'}</p>
+    <div class="grid"><label class="f">Questions a month, per organisation<input id="s_ai" type="number" min="1" value="${esc(s.ai_monthly_questions || 1000)}"></label></div>
+    <div class="row" style="margin-top:12px;"><button class="b p" onclick="act(saveSettings)">Save settings</button></div>
+    ${O.yai && O.yai.usage.length ? `<table style="margin-top:12px;"><thead><tr><th>Organisation</th><th>Client</th><th class="n">Questions in ${esc(O.yai.month)}</th><th class="n">Tokens in / out</th></tr></thead><tbody>${O.yai.usage.map(u => `<tr><td>${esc(u.org)}</td><td>${esc(u.client)}</td><td class="n">${esc(u.questions)}</td><td class="n">${Number(u.input_tokens).toLocaleString()} / ${Number(u.output_tokens).toLocaleString()}</td></tr>`).join('')}</tbody></table>` : '<p class="muted small">No questions asked this month yet.</p>'}</div>
   <div class="card"><h2>Payment methods</h2><table><thead><tr><th>Method</th><th>Status</th></tr></thead><tbody>${O.gateways.map(g => `<tr><td>${esc(g.name)}</td><td>${g.key === 'manual' ? '<span class="pill ok">In use — mark invoices paid by hand</span>' : g.configured ? '<span class="pill warn">Keys set — not connected yet</span>' : '<span class="pill mute">Not connected</span>'}</td></tr>`).join('')}</tbody></table></div>
   <div class="card"><h2>Your password</h2><div class="row"><input id="p0" type="password" placeholder="Current password" autocomplete="current-password"><input id="p1" type="password" placeholder="New password" autocomplete="new-password"><button class="b" onclick="act(changePw)">Change password</button></div></div>`;
 }
 async function saveSettings(){
-  O.settings = await api('PUT', '/api/admin/settings', { currency: $('#s_cur').value, annual_discount_pct: $('#s_disc').value, invoice_prefix: $('#s_pre').value, payment_terms_days: $('#s_days').value,
+  O.settings = await api('PUT', '/api/admin/settings', { currency: $('#s_cur').value, annual_discount_pct: $('#s_disc').value, invoice_prefix: $('#s_pre').value, payment_terms_days: $('#s_days').value, ai_monthly_questions: $('#s_ai').value,
     payment_instructions: $('#s_pay').value, issuer: { name: $('#s_in').value, email: $('#s_ie').value, tax_id: $('#s_it').value, address: $('#s_ia').value } });
   toast('Settings saved');
 }

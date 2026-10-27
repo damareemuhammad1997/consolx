@@ -1568,6 +1568,60 @@ body.cx-locked{ overflow:hidden; }
   .cxs-legend i.lg-ext{ border:1.5px dashed var(--border-strong); background:var(--surface-2); border-radius:7px; }
   .cxs-legend i.lg-rev{ border:0; border-top:2px dashed var(--chart-line); height:0; background:none; border-radius:0; }
   .cxs-legend .lg-tip{ color:var(--text-tertiary); }
+  /* Yai, the ConsolX assistant (the "ai" add-on): the round bubble at the bottom right (gradient wordmark; lifts on
+     hover, turns into a close button when open, its spark spins while Yai is thinking) and its panel */
+  .askp{position:fixed;right:16px;bottom:94px;width:min(460px,calc(100vw - 32px));max-height:min(660px,calc(100vh - 124px));display:flex;flex-direction:column;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:9000;font-family:var(--sans);font-size:14px}
+  .askp[hidden]{display:none}
+  .askp .hd{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}.askp .sp{flex:1}
+  .askp .ib{width:32px;height:32px;border-radius:8px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:grid;place-items:center}.askp .ib:hover{background:var(--surface-2);color:var(--text)}
+  .askp .ib svg{width:18px;height:18px}
+  .askp .ghost{font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer}.askp .ghost:hover{border-color:var(--accent-vivid);color:var(--accent-vivid)}
+  .askb{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+  .askt{white-space:pre-wrap;overflow-wrap:anywhere;padding:8px 10px;border-radius:var(--radius-sm);line-height:1.45;max-width:92%}.askt.user{align-self:flex-end;background:var(--accent-vivid-light)}.askt.assistant{align-self:flex-start;background:var(--surface-2)}
+  .askf{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);align-items:flex-end}
+  .askf textarea{flex:1;resize:none;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text)}
+  .askf textarea:focus{outline:2px solid var(--accent-vivid);outline-offset:-1px}
+  .askf .pri{font:inherit;font-weight:600;padding:9px 16px;border-radius:var(--radius-sm);border:0;background:var(--accent-vivid);color:var(--on-vivid);cursor:pointer}.askf .pri:disabled{opacity:.5;cursor:default}
+  .ask-err{margin:0 12px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger);font-size:13px}
+  .ask-use{padding:0 12px 8px;font-size:11.5px;color:var(--text-tertiary)}
+  .askfile{margin:6px 0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);white-space:normal}
+  .askfile .fh{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);font-size:13px}.askfile .fh b{flex:1;overflow-wrap:anywhere;font-family:var(--mono);font-size:12px}
+  .askfile .fh button{font:inherit;font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:0;background:var(--accent-vivid);color:var(--on-vivid);cursor:pointer}
+  .askfile pre{margin:0;padding:6px 8px;max-height:150px;overflow:auto;font-family:var(--mono);font-size:11.5px;line-height:1.4;white-space:pre;color:var(--text-secondary)}
+  .askbub{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;padding:0;cursor:pointer;color:#fff;z-index:9001;
+    background:linear-gradient(135deg,#3d6bff 0%,#2f86e8 50%,#22c1a6 100%);box-shadow:0 8px 22px rgba(30,70,190,.38),inset 0 1px 0 rgba(255,255,255,.28);display:grid;place-items:center;
+    transition:transform .2s cubic-bezier(.2,.8,.3,1.2),box-shadow .2s ease}
+  .askbub[hidden]{display:none}
+  .askbub:hover{background:linear-gradient(135deg,#3d6bff 0%,#2f86e8 50%,#22c1a6 100%);transform:translateY(-3px);box-shadow:0 14px 30px rgba(30,70,190,.48),inset 0 1px 0 rgba(255,255,255,.3)}
+  .askbub:active{transform:translateY(0) scale(.95)}.askbub:focus-visible{outline:3px solid #9db3ff;outline-offset:3px}
+  .askbub-face,.askbub-x{grid-area:1/1;transition:opacity .18s ease,transform .25s cubic-bezier(.2,.8,.3,1.2)}
+  .askbub-face{position:relative;font:800 20px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.03em}.askbub-face span{font-weight:600;opacity:.94}
+  .askbub-spark{position:absolute;top:-7px;right:-9px;width:10px;height:10px;animation:xai-twinkle 3.2s ease-in-out infinite}
+  .askbub-x{width:22px;height:22px;opacity:0;transform:rotate(-90deg) scale(.5)}
+  .askbub.on,.askbub.on:hover{background:var(--sidebar-bg)}.askbub.on .askbub-face{opacity:0;transform:rotate(90deg) scale(.5)}.askbub.on .askbub-x{opacity:1;transform:none}
+  .askbub.busy .askbub-spark{animation:xai-spin .9s linear infinite}
+  .askbub-ring{position:absolute;inset:0;border-radius:50%;pointer-events:none;animation:xai-pulse 2.6s ease-out .8s 3}
+  .askbub-tip{position:absolute;right:72px;top:50%;white-space:nowrap;background:var(--sidebar-bg);color:#eef2fc;font:600 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;padding:8px 11px;border-radius:8px;
+    box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transform:translate(8px,-50%);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+  .askbub:hover .askbub-tip,.askbub:focus-visible .askbub-tip{opacity:1;transform:translate(0,-50%)}.askbub.on .askbub-tip{display:none}
+  .askp{transform-origin:bottom right;animation:xai-in .2s cubic-bezier(.2,.8,.3,1.1)}
+  .xai-hd{display:flex;align-items:center;gap:10px}.xai-av{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;white-space:nowrap;color:#fff;font:800 13px/1 system-ui,sans-serif;letter-spacing:-.03em;background:linear-gradient(135deg,#3d6bff,#2f86e8 50%,#22c1a6)}
+  .xai-av span{font-weight:600}.xai-t{display:flex;flex-direction:column;line-height:1.2}.xai-t small{color:var(--text-tertiary);font-size:12px;font-weight:500}
+  .xai-hi{display:flex;flex-direction:column;gap:10px}.xai-hi p{margin:0}.xai-hi .small{font-size:12px;color:var(--text-tertiary)}
+  .xai-sugg{display:flex;flex-wrap:wrap;gap:6px}.xai-sugg button{font:inherit;font-size:13px;text-align:left;padding:7px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+  .xai-sugg button:hover{border-color:var(--accent-vivid);color:var(--accent-vivid);transform:translateY(-1px)}
+  .askt.typing{display:inline-flex;gap:4px;align-items:center;padding:12px 14px}.askt.typing i{width:7px;height:7px;border-radius:50%;background:var(--text-tertiary);animation:xai-dot 1.1s ease-in-out infinite}
+  .askt.typing i:nth-child(2){animation-delay:.15s}.askt.typing i:nth-child(3){animation-delay:.3s}
+  @keyframes xai-pulse{0%{box-shadow:0 0 0 0 rgba(61,107,255,.5)}100%{box-shadow:0 0 0 18px rgba(61,107,255,0)}}
+  @keyframes xai-twinkle{0%,100%{transform:scale(1) rotate(0);opacity:1}50%{transform:scale(.6) rotate(45deg);opacity:.7}}
+  @keyframes xai-spin{to{transform:rotate(360deg)}}
+  @keyframes xai-in{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes xai-dot{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.askbub,.askbub-face,.askbub-x,.askbub-tip{transition:none}.askbub-ring,.askbub-spark,.askp,.askt.typing i{animation:none}}
+  /* phones and tablets: the menu runs along the bottom, so the bubble and the panel sit above it */
+  @media (max-width:860px){.askbub{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.askp{bottom:156px;max-height:calc(100vh - 176px)}}
+  @media (max-width:520px){.askp{right:8px;left:8px;width:auto}.askbub-tip{display:none}}
+  @media print{.askp,.askbub{display:none!important}}
 </style>
 <script>
 /* Theme switch: apply the saved choice before first paint so the page never flashes the wrong theme. */
@@ -3654,7 +3708,7 @@ body.cx-locked{ overflow:hidden; }
    Opened without the server (a file, a plain static host), everything works as before, in this browser only. */
 const CX_SRV = (window.CX_SERVER && window.CX_SERVER.mode === 'server') ? window.CX_SERVER : null;
 const CX_ADDON_NAMES = { ifrs:'IFRS statements', notes:'Disclosure notes', segments:'Segment information', comms:'Management and investor communication',
-  equity:'Equity accounting', goodwill:'Goodwill and business combinations', nci:'Non-controlling interests' };
+  equity:'Equity accounting', goodwill:'Goodwill and business combinations', nci:'Non-controlling interests', ai:'AI assistant (Yai)' };
 function cxHasAddon(k){ return !CX_SRV || !CX_SRV.entitlements || (CX_SRV.entitlements.addons || []).includes(k); }
 async function cxApi(method, url, body){
   const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-ConsolX': '1' }, credentials: 'same-origin', body: body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)) });
@@ -25601,8 +25655,103 @@ function cxOfferBrowserImport(){
   cxApi('PUT', '/api/orgs/' + org.id + '/state', '{"version":' + Number(cxSrvVersion) + ',"state":' + raw + '}')
     .then(() => location.reload()).catch(e => showToast(e.message, warnIcon()));
 }
+/* ================= Yai, the ConsolX assistant (hosted, the "ai" add-on) =================
+   The round bubble at the bottom right opens a panel: how to do things in ConsolX, and the upload kits — for the CSV
+   kits Yai writes the file itself (between <file name="…"> and </file>), shown here with a Download button.
+   The conversation stays in this page only; the server sends Claude the question, the last turns, the page the person
+   is on and a summary of the organisation (codes, not figures). */
+var AIQ = { open: false, turns: [], busy: false, err: '', usage: null };
+function cxYaiOn(){ return !!(CX_SRV && CX_SRV.user && CX_SRV.org && CX_SRV.entitlements && (CX_SRV.entitlements.addons || []).includes('ai')); }
+/* Where the person is, so "how do I …" answers start from their page */
+function cxYaiWhere(){
+  const page = (document.querySelector('.page.active') || {}).id ? document.querySelector('.page.active').id.replace(/^page-/, '') : cxLastPage;
+  const view = currentRole === 'admin' ? 'Admin view' : 'User view';
+  for(const role of ['admin', 'user']) for(const item of CX_NAV_TREE[role]){
+    if(item.kind === 'page' && item.page === page) return (role === 'admin' ? 'Admin view' : 'User view') + ' › ' + item.label;
+    if(item.kind === 'group'){ const c = item.children.find(x => x[0] === page); if(c) return (role === 'admin' ? 'Admin view' : 'User view') + ' › ' + item.label + ' › ' + c[1]; }
+  }
+  const h = document.querySelector('.page.active h1, .page.active h2');
+  return view + (h && h.textContent.trim() ? ' › ' + h.textContent.trim().slice(0, 50) : '');
+}
+/* Questions to start with: the page first, then by view */
+function cxYaiSuggestions(){
+  const by = currentRole === 'admin'
+    ? ['How do I set up a new group from scratch?', 'Prepare the shareholders CSV for my entities', 'How do I import the chart of accounts?']
+    : ['How do I fill in an entity pack?', 'Prepare a journal entry CSV to eliminate an intragroup loan', 'How do intragroup splits work?'];
+  return ['What can I do on this page?'].concat(by);
+}
+const CX_YAI_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+/* An answer's text with its files: <file name="x.csv"> … </file> becomes a card with a Download button */
+function cxYaiParts(text){
+  const out = []; const re = /<file name="([^"]{1,80})">\n?([\s\S]*?)\n?<\/file>/g; let m, at = 0;
+  while((m = re.exec(text))){ if(m.index > at) out.push({ text: text.slice(at, m.index) }); out.push({ file: m[1].replace(/[^\w.() -]/g, '_'), body: m[2] }); at = re.lastIndex; }
+  if(at < text.length) out.push({ text: text.slice(at) });
+  return out.map(p => p.text != null ? Object.assign(p, { text: p.text.replace(/^\n+|\n+$/g, '') }) : p).filter(p => p.file || p.text);
+}
+function cxYaiTurnHtml(t, i){
+  if(t.role === 'user') return `<div class="askt user">${escapeHtml(t.text)}</div>`;
+  return `<div class="askt assistant">${cxYaiParts(t.text).map((p, j) => p.file
+    ? `<div class="askfile"><div class="fh"><b>${escapeHtml(p.file)}</b><button type="button" data-yai="dl" data-t="${i}" data-p="${j}">Download</button></div><pre>${escapeHtml(p.body)}</pre></div>`
+    : escapeHtml(p.text)).join('\n')}</div>`;
+}
+function cxYaiSync(){
+  const on = cxYaiOn(); const bub = document.getElementById('askBubble');
+  if(bub){ bub.hidden = !on; bub.setAttribute('aria-expanded', String(AIQ.open)); bub.classList.toggle('on', AIQ.open); bub.classList.toggle('busy', AIQ.busy); }
+}
+function cxYaiDraw(){
+  cxYaiSync(); const el = document.getElementById('ask'); if(!el) return;
+  el.hidden = !AIQ.open || !cxYaiOn(); if(el.hidden) return;
+  const first = ((CX_SRV.user.name || '').split(' ')[0] || '').trim();
+  const turns = AIQ.turns.map(cxYaiTurnHtml).join('');
+  el.innerHTML = `<div class="hd"><div class="xai-hd"><span class="xai-av" aria-hidden="true">Y<span>ai</span></span><div class="xai-t"><b>Yai</b><small>ConsolX assistant</small></div></div><span class="sp"></span>${AIQ.turns.length ? '<button type="button" class="ghost" data-yai="clear">New</button>' : ''}<button type="button" class="ib" data-yai="close" aria-label="Close">${CX_YAI_X}</button></div>
+    <div class="askb">${turns || `<div class="xai-hi"><p>Hi${first ? ' ' + escapeHtml(first) : ''}, I’m Yai. Ask me how to do anything in ConsolX — setting up entities, ownership, the chart of accounts and periods, packs, intragroup, journals and reports — or ask me to prepare an upload file (entities, shareholders, chart of accounts, journal entries) with your own codes.</p>
+      <div class="xai-sugg">${cxYaiSuggestions().map(q => `<button type="button" data-yai="sugg" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('')}</div><p class="small">Yai is an AI assistant: check anything that matters, and every file before you import it.</p></div>`}${AIQ.busy ? '<div class="askt assistant typing" role="status" aria-label="Yai is thinking"><i></i><i></i><i></i></div>' : ''}</div>
+    ${AIQ.err ? `<div class="ask-err">${escapeHtml(AIQ.err)}</div>` : ''}
+    <form class="askf" id="askForm"><textarea name="q" rows="2" maxlength="2000" placeholder="Ask Yai a question" required ${AIQ.busy ? 'disabled' : ''}></textarea><button class="pri" ${AIQ.busy ? 'disabled' : ''}>Ask</button></form>
+    ${AIQ.usage ? `<div class="ask-use">${AIQ.usage.questions} of ${AIQ.usage.allowance} questions used this month by ${escapeHtml(CX_SRV.org.name)}</div>` : ''}`;
+  const b = el.querySelector('.askb'); b.scrollTop = b.scrollHeight;
+  const ta = el.querySelector('textarea'); if(ta && !AIQ.busy) ta.focus();
+}
+async function cxYaiAsk(q){
+  q = String(q || '').trim(); if(!q || AIQ.busy) return;
+  AIQ.busy = true; AIQ.err = ''; AIQ.turns.push({ role: 'user', text: q }); cxYaiDraw();
+  try {
+    const r = await cxApi('POST', '/api/assistant', { orgId: CX_SRV.org.id, question: q, history: AIQ.turns.slice(0, -1).slice(-20), where: cxYaiWhere(), view: currentRole });
+    AIQ.turns.push({ role: 'assistant', text: r.answer + (r.truncated ? '\n\n(The answer was cut short: ask me to continue.)' : '') });
+    AIQ.usage = r.usage || AIQ.usage;
+  } catch(e){ AIQ.turns.pop(); AIQ.err = e.message; }
+  AIQ.busy = false; cxYaiDraw();
+}
+function cxYaiDownload(ti, pi){
+  const t = AIQ.turns[ti]; const p = t && cxYaiParts(t.text)[pi]; if(!p || !p.file) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([p.body.replace(/\n?$/, '\n')], { type: /\.csv$/i.test(p.file) ? 'text/csv' : 'text/plain' }));
+  a.download = p.file; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast('Downloaded ' + p.file + ' — check it before importing', checkIcon());
+}
+function cxYaiStart(){
+  if(!cxYaiOn() || document.getElementById('askBubble')) return;
+  document.body.insertAdjacentHTML('beforeend', `<aside id="ask" class="askp" aria-label="Yai, the ConsolX assistant" hidden></aside>
+    <button type="button" id="askBubble" class="askbub" aria-label="Ask Yai, the ConsolX assistant" aria-expanded="false"><span class="askbub-ring" aria-hidden="true"></span><span class="askbub-face" aria-hidden="true">Y<span>ai</span><svg class="askbub-spark" viewBox="0 0 12 12"><path d="M6 0l1.3 4.7L12 6l-4.7 1.3L6 12 4.7 7.3 0 6l4.7-1.3z" fill="currentColor"/></svg></span><svg class="askbub-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="askbub-tip" aria-hidden="true">Ask Yai</span></button>`);
+  const bub = document.getElementById('askBubble'), el = document.getElementById('ask');
+  bub.addEventListener('click', () => { AIQ.open = !AIQ.open; cxYaiDraw(); });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-yai]'); if(!b) return;
+    const k = b.dataset.yai;
+    if(k === 'close'){ AIQ.open = false; cxYaiDraw(); bub.focus(); }
+    else if(k === 'clear'){ AIQ.turns = []; AIQ.err = ''; cxYaiDraw(); }
+    else if(k === 'sugg') cxYaiAsk(b.dataset.q);
+    else if(k === 'dl') cxYaiDownload(+b.dataset.t, +b.dataset.p);
+  });
+  el.addEventListener('submit', e => { e.preventDefault(); const ta = el.querySelector('textarea'); cxYaiAsk(ta && ta.value); });
+  el.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey && e.target.tagName === 'TEXTAREA'){ e.preventDefault(); e.target.form.requestSubmit(); } });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && AIQ.open){ AIQ.open = false; cxYaiDraw(); bub.focus(); } });
+  cxYaiSync();
+  cxApi('GET', '/api/assistant?orgId=' + CX_SRV.org.id).then(r => { AIQ.usage = r.usage; if(!r.enabled) AIQ.err = 'Yai is not switched on on this server yet: ask your ConsolX administrator.'; }).catch(() => {});
+}
 setViewRole('admin');
 cxServerStart();
+cxYaiStart();
 </script>
 </body>
 </html>

@@ -129,6 +129,16 @@ CREATE TABLE IF NOT EXISTS discount_codes (
 );
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS discount_code text REFERENCES discount_codes(code);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS discounts jsonb NOT NULL DEFAULT '[]';
+/* Yai (the AI assistant add-on): questions and tokens per organisation and month — nothing of the questions is kept */
+CREATE TABLE IF NOT EXISTS ai_usage (
+  org_id int NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  month text NOT NULL,
+  questions int NOT NULL DEFAULT 0,
+  input_tokens bigint NOT NULL DEFAULT 0,
+  output_tokens bigint NOT NULL DEFAULT 0,
+  cache_read_tokens bigint NOT NULL DEFAULT 0,
+  PRIMARY KEY (org_id, month)
+);
 `;
 
 /* add-ons sold on top of a plan (keys are what the app checks) */
@@ -140,6 +150,7 @@ const ADDONS = [
   ['equity', 'Equity accounting', 'Associates and joint ventures accounted for under the equity method.'],
   ['goodwill', 'Goodwill and business combinations', 'Acquisitions during the period: goodwill or a bargain purchase.'],
   ['nci', 'Non-controlling interests', 'Subsidiaries held at less than 100%.'],
+  ['ai', 'AI assistant (Yai)', 'Yai answers how to use ConsolX and prepares upload kits (entities, shareholders, chart, journals).'],
 ];
 /* placeholder plans: prices start at nil until set in the admin console */
 const TIERS = [
@@ -154,6 +165,7 @@ const SETTINGS = {
   payment_terms_days: 14,
   issuer: { name: 'ConsolX', address: '', email: '', tax_id: '' },
   payment_instructions: 'Bank transfer — details to be completed in the admin console.',
+  ai_monthly_questions: 1000,
 };
 
 async function migrate(){

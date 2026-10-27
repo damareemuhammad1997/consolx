@@ -24,6 +24,7 @@ const { q, tx } = db;
 const auth = require('./auth');
 const billing = require('./billing');
 const gateways = require('./gateways');
+const { assistant } = require('./assistant');
 
 const ROOT = path.join(__dirname, '..');
 const app = express();
@@ -125,6 +126,11 @@ app.put('/api/orgs/:id/state', auth.requireUser, wrap(async (req, res) => {
   res.json({ version: r.rows[0].version, updatedAt: r.rows[0].updated_at });
 }));
 
+/* ---------- Yai, the assistant (the "ai" add-on) ---------- */
+const yai = assistant({ q, getSettings: db.getSettings, entitlements: billing.entitlements, orgAccess });
+app.get('/api/assistant', auth.requireUser, wrap(yai.status));
+app.post('/api/assistant', auth.requireUser, wrap(yai.ask));
+
 /* ---------- administration ---------- */
 const A = express.Router();
 A.use(auth.requireSuper);
@@ -146,7 +152,10 @@ A.get('/overview', wrap(async (req, res) => {
   const tiers = (await q('SELECT * FROM tiers ORDER BY kind, sort, id')).rows;
   const addons = (await q('SELECT * FROM addons ORDER BY sort')).rows;
   const codes = (await q(`SELECT d.*, (SELECT count(*)::int FROM clients c WHERE c.discount_code = d.code) AS clients FROM discount_codes d ORDER BY d.created_at DESC`)).rows;
-  res.json({ clients, tiers, addons, codes, settings: await db.getSettings(), gateways: gateways.list(), me: { name: req.user.name, email: req.user.email, mustChangePassword: req.user.must_change_password } });
+  const m = new Date().toISOString().slice(0, 7);
+  const yaiUse = (await q(`SELECT o.name AS org, c.name AS client, u.questions, u.input_tokens, u.output_tokens, u.cache_read_tokens
+    FROM ai_usage u JOIN organisations o ON o.id = u.org_id JOIN clients c ON c.id = o.client_id WHERE u.month = $1 ORDER BY u.questions DESC`, [m])).rows;
+  res.json({ clients, tiers, addons, codes, yai: { enabled: yai.enabled(), month: m, usage: yaiUse }, settings: await db.getSettings(), gateways: gateways.list(), me: { name: req.user.name, email: req.user.email, mustChangePassword: req.user.must_change_password } });
 }));
 
 /* a client's discount code: '' or none clears it; otherwise an existing code that is switched on */
@@ -323,6 +332,7 @@ A.put('/settings', wrap(async (req, res) => {
   if(b.invoice_prefix != null) set.invoice_prefix = str(b.invoice_prefix, 12);
   if(b.payment_terms_days != null){ const n = parseInt(b.payment_terms_days, 10); if(!(n >= 0 && n <= 365)) throw bad(400, 'Payment terms are 0 to 365 days.'); set.payment_terms_days = n; }
   if(b.payment_instructions != null) set.payment_instructions = str(b.payment_instructions, 2000);
+  if(b.ai_monthly_questions != null){ const n = parseInt(b.ai_monthly_questions, 10); if(!(n >= 1 && n <= 1000000)) throw bad(400, 'Yai questions a month: a whole number from 1.'); set.ai_monthly_questions = n; }
   if(b.issuer != null) set.issuer = { name: str(b.issuer.name), address: str(b.issuer.address, 1000), email: str(b.issuer.email), tax_id: str(b.issuer.tax_id) };
   for(const [k, v] of Object.entries(set)) await q('UPDATE settings SET value = $2 WHERE key = $1', [k, JSON.stringify(v)]);
   res.json(await db.getSettings());
@@ -384,4 +394,4 @@ async function start(){
   return new Promise(r => { const s = app.listen(port, () => { console.log(`[consolx] listening on ${port}`); r(s); }); });
 }
 if(require.main === module) start().catch(e => { console.error(e); process.exit(1); });
-module.exports = { app, start };
+module.exports = { app, start, yai };
