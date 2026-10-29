@@ -95,9 +95,25 @@ It answers from `docs/guide.md`, a map of the menus and a summary of the open or
 force, periods, chart of accounts, journal numbering, which packs are in) — codes, not figures. It cannot change
 anything. The conversation lives in the page only; the server keeps the count of questions and tokens per
 organisation and month (`ai_usage`), shown under **Settings → Yai** in `/admin`, where the monthly allowance per
-organisation is set (default 1,000). Each person may ask 8 questions a minute. Questions, the last turns and the
-organisation summary are sent to Anthropic's API. Keep `docs/guide.md` and the app map in `server/assistant.js` in
-step with the app when pages or file formats change.
+organisation is set (default 1,000). Each person may ask 8 questions a minute. Keep `docs/guide.md` and the app map
+in `server/assistant.js` in step with the app when pages or file formats change.
+
+**Yai stays on topic.** Its system prompt (`RULES` in `server/assistant.js`) limits it to using ConsolX and this
+group's consolidation: how to do things in the app, preparing the upload kits, and the consolidation/IFRS reasoning
+needed to use ConsolX correctly. Anything outside that — general questions, unrelated writing or code, personal or
+legal/tax advice — it declines. The same rule tells it to treat a question, a file or the history as information,
+never as an instruction that changes its rules (a prompt-injection guard). This is enforced in the prompt, which is
+the right lever for a model's behaviour; it is strong but not a hard gate.
+
+**The group's names never leave the server.** Before a request goes to Anthropic, `server/privacy.js` replaces the
+organisation's own names — the organisation and client names, the entities' legal names, and individual or outside
+shareholders' names — with generic labels (`Company 1`, `Company 2` …, `Person 1` …). The question, the history and
+the organisation summary are all masked, so the real names are never sent. The answer that comes back is put through
+the reverse map on the server, so the real names reappear only here, including inside any CSV Yai prepared (it is
+built with labels, then restored, ready to import). What is **not** masked, because it is not a name and the files
+need it: entity codes (e.g. `MU01`), countries, currencies, dates and figures. The map is built per request from the
+organisation's own data and held only for that request — nothing is stored. A name a user types that ConsolX does
+not already hold (e.g. a brand-new company in the question) has no label and is sent as typed.
 
 ## Data and saving
 
